@@ -88,6 +88,17 @@ class BundleTests(unittest.TestCase):
         self.assertIn("jsonschema==4.26.0", lock)
         self.assertIn("rpds-py==0.30.0", lock)
 
+    def test_consumer_runtime_core_is_explicit_and_slim(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        consumer = contract["consumer_distribution"]
+        self.assertEqual(mod.CONSUMER_RUNTIME_FILES, consumer["vendored_files"])
+        self.assertEqual("PROJECT.template.md", consumer["vendored_file_source_overrides"]["PROJECT.md"])
+        self.assertEqual("CONSUMER_INSTALL.json", consumer["install_marker_path"])
+        self.assertNotIn("README.md", consumer["vendored_files"])
+        self.assertNotIn("scripts/package.py", consumer["vendored_files"])
+        self.assertFalse(any(path.startswith("tests/") for path in consumer["vendored_files"]))
+        self.assertFalse(any(path.startswith(".github/") for path in consumer["vendored_files"]))
+
     def test_reproducibility_controls_are_canonical(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         self.assertIn(".gitattributes", contract["distribution"]["required_files"])
@@ -1229,8 +1240,13 @@ class ReadinessTests(unittest.TestCase):
             self.assertEqual("FAIL", check["status"])
 
     def test_template_is_not_ready(self):
-        r = mod.readiness(ROOT / "PROJECT.md", "development")
+        r = mod.readiness(ROOT / "PROJECT.template.md", "development")
         self.assertEqual("FAIL", r["documented"])
+
+    def test_upstream_project_facts_are_documented(self):
+        r = mod.readiness(ROOT / "PROJECT.md", "development")
+        self.assertEqual("PASS", r["documented"], r)
+        self.assertNotEqual("FAIL", r["verified"], r)
 
     def test_readiness_can_use_external_project_root(self):
         with tempfile.TemporaryDirectory() as td:
