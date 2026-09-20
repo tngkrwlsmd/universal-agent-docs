@@ -137,6 +137,7 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertEqual("PASS", checked["status"], checked)
             with zipfile.ZipFile(zip_path) as zf:
                 names = [x.filename for x in zf.infolist() if not x.is_dir()]
+                self.assertTrue(all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist()))
                 consumer_agents = zf.read("universal-agent-docs-consumer/AGENTS.md").decode("utf-8")
             self.assertIn("universal-agent-docs-consumer/AGENTS.md", names)
             self.assertIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
@@ -167,6 +168,7 @@ class PackagingPropertyTests(unittest.TestCase):
             import zipfile
             with zipfile.ZipFile(first["zip"]) as zf:
                 names = set(zf.namelist())
+                self.assertTrue(all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist()))
             self.assertFalse(any(
                 name.endswith(".trust.json") or name.endswith(".release.json") or name.endswith(".sha256")
                 for name in names
