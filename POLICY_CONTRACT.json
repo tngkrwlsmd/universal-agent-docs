@@ -1010,6 +1010,10 @@
       ".github/workflows/release.yml",
       ".github/workflows/verify-release.yml",
       "conformance/README.md",
+      "conformance/schema.json",
+      "conformance/result.schema.json",
+      "conformance/suite.json",
+      "conformance/reference_runner.py",
       "conformance/golden.json",
       "conformance/invalid.json",
       "tests/test_conformance.py"
@@ -1051,6 +1055,10 @@
       ".github/workflows/release.yml",
       ".github/workflows/verify-release.yml",
       "conformance/README.md",
+      "conformance/schema.json",
+      "conformance/result.schema.json",
+      "conformance/suite.json",
+      "conformance/reference_runner.py",
       "conformance/golden.json",
       "conformance/invalid.json",
       "tests/test_conformance.py"
