@@ -21,6 +21,7 @@ universal-agent-docs/
 ├── README.md
 ├── LICENSE
 ├── requirements.txt
+├── requirements.lock
 ├── conformance/
 │   ├── README.md
 │   ├── golden.json
@@ -51,6 +52,8 @@ universal-agent-docs/
 - [`APPROVAL_ASSERTION.schema.json`](APPROVAL_ASSERTION.schema.json): explicit approval을 exact action digest + single-use execution nonce에 결박하는 wire contract
 - [`PROTECTED_OVERRIDE.schema.json`](PROTECTED_OVERRIDE.schema.json): protected override를 `PROHIBITED_WITHOUT_OVERRIDE` imminent action에 정확히 결박하는 독립 wire contract
 - [`LICENSE`](LICENSE): 코드·문서·스키마·테스트를 포함한 저장소 전체에 적용되는 Apache License 2.0
+- `requirements.txt`: validator의 직접 dependency intent
+- `requirements.lock`: CI/release용 hash-locked transitive dependency closure
 - `scripts/validate.py`: bundle, routing, runtime action, exposure derivation, approval binding, readiness, protected override, distribution artifact 검증과 `PROJECT.md` bootstrap candidate 생성
 - `scripts/package.py`: canonical ZIP, detached core trust manifest, detached full release manifest, ZIP SHA-256을 일관되게 생성하고 다시 검증하는 release packager
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
@@ -98,7 +101,7 @@ python scripts/validate.py --readiness development
 python scripts/validate.py --readiness deployment
 ```
 
-validator는 Python 3.10+를 기준으로 한다. `requirements.txt`의 `jsonschema`는 JSON Schema 검증에만 사용하며 재현 가능한 enforcement 환경을 위해 exact version으로 고정한다.
+validator는 Python 3.10+를 기준으로 한다. `requirements.txt`는 사람이 검토하는 직접 dependency intent를 유지하고, CI/release는 `requirements.lock`의 전체 transitive closure를 `--require-hashes`로 설치한다. lock은 지원하는 Python 3.10/3.14와 Linux/macOS/Windows에서 사용되는 wheel까지 SHA-256으로 고정한다.
 
 회귀 테스트는 다음처럼 실행한다.
 

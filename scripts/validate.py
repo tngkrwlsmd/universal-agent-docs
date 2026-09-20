@@ -113,7 +113,7 @@ ACTION_DIGEST_FORMAT = "universal-agent-docs-action-digest-v3"
 TRUSTED_CORE_FILES = [
     "AGENTS.md", "POLICIES.md", "POLICY_CONTRACT.json", "POLICY_CONTRACT.schema.json",
     "ROUTING_ALIASES.json", "ROUTING_ALIASES.schema.json", "RUNTIME_ACTION.schema.json",
-    "APPROVAL_ASSERTION.schema.json", "PROTECTED_OVERRIDE.schema.json", "scripts/validate.py", "scripts/package.py", "requirements.txt",
+    "APPROVAL_ASSERTION.schema.json", "PROTECTED_OVERRIDE.schema.json", "scripts/validate.py", "scripts/package.py", "requirements.txt", "requirements.lock",
 ]
 REVIEW_FRESHNESS_DAYS = 90
 PROJECT_FACT_KEYS = (
@@ -135,6 +135,7 @@ CANONICAL_REQUIRED_FILES = [
     "README.md",
     "LICENSE",
     "requirements.txt",
+    "requirements.lock",
     "scripts/validate.py",
     "scripts/package.py",
     "tests/__init__.py",
