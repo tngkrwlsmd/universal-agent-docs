@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
+import zipfile
 from pathlib import Path
 
 from .contract import (
