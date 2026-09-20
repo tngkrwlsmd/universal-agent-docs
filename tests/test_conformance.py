@@ -6,84 +6,101 @@ import sys
 import unittest
 from pathlib import Path
 
+import jsonschema
+
 ROOT = Path(__file__).resolve().parents[1]
-VALIDATOR = ROOT / "scripts" / "validate.py"
-spec = importlib.util.spec_from_file_location("policy_validate_conformance", VALIDATOR)
-mod = importlib.util.module_from_spec(spec)
-assert spec.loader is not None
-sys.modules[spec.name] = mod
-spec.loader.exec_module(mod)
+RUNNER = ROOT / "scripts" / "conformance.py"
+spec = importlib.util.spec_from_file_location("uad_conformance_runner", RUNNER)
+runner = importlib.util.module_from_spec(spec)
+assert spec and spec.loader
+sys.modules[spec.name] = runner
+spec.loader.exec_module(runner)
 
 
-class AdapterConformanceTests(unittest.TestCase):
+class LanguageNeutralConformanceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        cls.contract = json.loads((ROOT / "POLICY_CONTRACT.json").read_text(encoding="utf-8"))
+        cls.schema = json.loads((ROOT / "conformance" / "corpus.schema.json").read_text(encoding="utf-8"))
+        cls.result_schema = json.loads((ROOT / "conformance" / "result.schema.json").read_text(encoding="utf-8"))
+        cls.coverage = json.loads((ROOT / "conformance" / "coverage.json").read_text(encoding="utf-8"))
+        cls.corpora = [
+            json.loads((ROOT / "conformance" / name).read_text(encoding="utf-8"))
+            for name in ("golden.json", "invalid.json")
+        ]
+        cls.vectors = [v for corpus in cls.corpora for v in corpus["vectors"]]
 
-    def evaluate(self, vector):
-        return mod.evaluate_execution_boundary(
-            self.contract,
-            vector["planned_operations"],
-            vector["actual_operations"],
-            vector.get("affected_resources", []),
-            vector.get("targets", []),
-            vector["environment"],
-            None,
-            vector.get("runtime_effect"),
-            vector.get("actual_action", ""),
-            exposure_facts=vector["exposure_facts"],
-            correlation_id=f"conformance-{vector['id']}",
-            execution_nonce=f"nonce-{vector['id']}-00000001",
-            adapter={
-                "id": "conformance-adapter",
-                "surface": "adapter-conformance-kit",
-                "assertion_source": "human_reviewed",
-                "version": "1",
-            },
-            semantic_details=vector.get("semantic_details", {}),
-        )
+    def test_corpora_validate_against_language_neutral_schema(self):
+        jsonschema.Draft202012Validator.check_schema(self.schema)
+        for corpus in self.corpora:
+            jsonschema.validate(corpus, self.schema)
+            self.assertEqual("universal-agent-docs-conformance-v2", corpus["format"])
+            self.assertEqual(2, corpus["schema_version"])
+            self.assertEqual(self.contract["schema_version"], corpus["policy_schema_version"])
 
-    def test_golden_vectors(self):
-        doc = json.loads((ROOT / "conformance" / "golden.json").read_text(encoding="utf-8"))
-        self.assertEqual(1, doc["schema_version"])
-        for vector in doc["vectors"]:
-            with self.subTest(vector=vector["id"]):
-                result = self.evaluate(vector)
-                for key, expected in vector["expected"].items():
-                    self.assertEqual(expected, result.get(key), result)
-
-    def test_invalid_vectors_fail_closed(self):
-        doc = json.loads((ROOT / "conformance" / "invalid.json").read_text(encoding="utf-8"))
-        self.assertEqual(1, doc["schema_version"])
-        for vector in doc["vectors"]:
-            with self.subTest(vector=vector["id"]):
-                result = self.evaluate(vector)
-                self.assertEqual("FAIL", result["status"], result)
-                joined = "\n".join(result["errors"])
-                self.assertIn(vector["expected_error_contains"], joined, result)
-
-    def test_minimum_cross_family_operation_coverage(self):
-        doc = json.loads((ROOT / "conformance" / "golden.json").read_text(encoding="utf-8"))
-        covered = {
-            operation
-            for vector in doc["vectors"]
-            for operation in vector.get("actual_operations", [])
+    def test_vector_ids_are_globally_unique_and_legacy_ids_are_preserved(self):
+        ids = [v["id"] for v in self.vectors]
+        self.assertEqual(len(ids), len(set(ids)))
+        legacy_ids = {
+            "terraform-destroy-is-cloud-delete",
+            "git-reset-hard-is-destructive",
+            "production-deploy-escalates-l4-x2",
+            "terraform-destroy-underreported-as-change",
+            "opaque-command-runtime-operation",
+            "actual-write-not-covered-by-plan",
         }
-        required = {
-            "build.execute", "lint.execute", "typecheck.execute", "format.execute",
-            "filesystem.generated_delete", "filesystem.tracked_delete", "filesystem.delete",
-            "dependency.install", "database.write", "permission.change", "credential.use",
-            "file.import", "file.export", "external.upload", "git.push",
-            "cloud.resource_delete", "deploy.execute", "rollback.execute",
-            "observability.inspect", "package.publish", "release.publish",
-            "git.destructive_change", "secret.read",
-        }
+        self.assertEqual(set(), legacy_ids - set(ids))
+
+    def test_normative_fields_exist_and_do_not_exact_match_diagnostics(self):
+        for vector in self.vectors:
+            with self.subTest(vector=vector["id"]):
+                self.assertTrue(vector["normative_fields"])
+                for pointer in vector["normative_fields"]:
+                    runner.json_pointer_get(vector["expected"], pointer)
+                    self.assertNotIn(pointer, {"/errors", "/warnings"})
+                    self.assertFalse(pointer.startswith("/errors/"))
+                    self.assertFalse(pointer.startswith("/warnings/"))
+
+    def test_required_semantic_coverage_is_complete(self):
+        covered = {item for v in self.vectors for item in v["covers"]}
+        required = set(self.coverage["required_semantics"])
         self.assertEqual(set(), required - covered)
+
+    def test_operation_catalog_has_direct_coverage_or_explicit_exemption(self):
+        direct = set()
+        for vector in self.vectors:
+            data = vector["input"]
+            candidates = [data]
+            if isinstance(data.get("base"), dict):
+                candidates.append(data["base"])
+            if isinstance(data.get("boundary"), dict):
+                candidates.append(data["boundary"])
+            for item in candidates:
+                direct.update(item.get("planned_operations", []))
+                direct.update(item.get("actual_operations", []))
+        catalog = {op["id"] for op in self.contract["routing"]["operation_catalog"]}
+        exemptions = set(self.coverage["operation_exemptions"])
+        self.assertEqual(set(), catalog - direct - exemptions)
+        self.assertEqual(set(), exemptions - catalog)
+        self.assertEqual(set(), direct.intersection(exemptions))
+
+    def test_reference_runner_passes_entire_corpus(self):
+        result = runner.run_suite()
+        jsonschema.Draft202012Validator.check_schema(self.result_schema)
+        jsonschema.validate(result, self.result_schema)
+        self.assertEqual(0, result["summary"]["failed"], [
+            (item["id"], item["mismatches"])
+            for item in result["results"] if item["status"] == "FAIL"
+        ])
+        self.assertEqual(len(self.vectors), result["summary"]["total"])
 
     def test_policy_contract_digest_is_stable_for_key_order(self):
         a = self.contract
         b = {k: a[k] for k in reversed(list(a.keys()))}
-        self.assertEqual(mod.canonical_policy_contract_digest(a), mod.canonical_policy_contract_digest(b))
+        self.assertEqual(
+            runner.policy_validate.canonical_policy_contract_digest(a),
+            runner.policy_validate.canonical_policy_contract_digest(b),
+        )
 
 
 if __name__ == "__main__":
