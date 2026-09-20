@@ -1,0 +1,1311 @@
+{
+  "conformance_version": 2,
+  "contract_schema_version": 16,
+  "cases": [
+    {
+      "id": "terraform-destroy-is-cloud-delete",
+      "description": "Legacy golden vector: terraform-destroy-is-cloud-delete",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "cloud.resource_delete"
+        ],
+        "actual_operations": [
+          "cloud.resource_delete"
+        ],
+        "actual_action": "terraform destroy -auto-approve",
+        "affected_resources": [
+          "infra/main.tf"
+        ],
+        "targets": [
+          "cloud/project-demo"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X0",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "git-reset-hard-is-destructive",
+      "description": "Legacy golden vector: git-reset-hard-is-destructive",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "git.destructive_change"
+        ],
+        "actual_operations": [
+          "git.destructive_change"
+        ],
+        "actual_action": "git reset --hard HEAD~1",
+        "affected_resources": [
+          ".git/refs/heads/main"
+        ],
+        "targets": [
+          "repository/main"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X0",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "public-package-publish-escalates-l4",
+      "description": "Legacy golden vector: public-package-publish-escalates-l4",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "package.publish"
+        ],
+        "actual_operations": [
+          "package.publish"
+        ],
+        "actual_action": "npm publish --access public",
+        "affected_resources": [
+          "package.json"
+        ],
+        "targets": [
+          "registry.npmjs.org/example-package"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "public_destination",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "isolated-staging-package-publish-remains-l3",
+      "description": "Legacy golden vector: isolated-staging-package-publish-remains-l3",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "package.publish"
+        ],
+        "actual_operations": [
+          "package.publish"
+        ],
+        "actual_action": "publish package to isolated staging registry",
+        "affected_resources": [
+          "package.json"
+        ],
+        "targets": [
+          "registry.staging.internal/example-package"
+        ],
+        "environment": "staging",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "negligible"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "production-deploy-escalates-l4-x2",
+      "description": "Legacy golden vector: production-deploy-escalates-l4-x2",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "deploy.execute"
+        ],
+        "actual_operations": [
+          "deploy.execute"
+        ],
+        "actual_action": "deploy service api",
+        "affected_resources": [
+          "deploy/service.yaml"
+        ],
+        "targets": [
+          "cluster/prod/api"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "privileged-secret-read-is-x3",
+      "description": "Legacy golden vector: privileged-secret-read-is-x3",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "secret.read"
+        ],
+        "actual_operations": [
+          "secret.read"
+        ],
+        "actual_action": "read production deployment secret",
+        "affected_resources": [
+          "secret://prod/deploy"
+        ],
+        "targets": [
+          "secret/prod/deploy"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "restricted",
+          "credential_class": "privileged_credential",
+          "tenant_scope": "organization_wide",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X3",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "generated-build-delete-is-reversible",
+      "description": "Legacy golden vector: generated-build-delete-is-reversible",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "filesystem.generated_delete"
+        ],
+        "actual_operations": [
+          "filesystem.generated_delete"
+        ],
+        "actual_action": "rm -rf ./build",
+        "affected_resources": [
+          "build/"
+        ],
+        "targets": [
+          "workspace/build"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "general-local-delete-is-l4",
+      "description": "Legacy golden vector: general-local-delete-is-l4",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "filesystem.delete"
+        ],
+        "actual_operations": [
+          "filesystem.delete"
+        ],
+        "actual_action": "rm -rf ./user-work",
+        "affected_resources": [
+          "user-work/"
+        ],
+        "targets": [
+          "workspace/user-work"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X0",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "kubectl-delete-pod-is-bounded-change",
+      "description": "Legacy golden vector: kubectl-delete-pod-is-bounded-change",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_action": "kubectl delete pod api-123",
+        "affected_resources": [
+          "pod/api-123"
+        ],
+        "targets": [
+          "staging/cluster-a/pod/api-123"
+        ],
+        "environment": "staging",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "kubectl-delete-namespace-is-resource-delete",
+      "description": "Legacy golden vector: kubectl-delete-namespace-is-resource-delete",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "cloud.resource_delete"
+        ],
+        "actual_operations": [
+          "cloud.resource_delete"
+        ],
+        "actual_action": "kubectl delete namespace demo",
+        "affected_resources": [
+          "namespace/demo"
+        ],
+        "targets": [
+          "test/cluster-a/namespace/demo"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "local-build-is-l2",
+      "description": "Legacy golden vector: local-build-is-l2",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "build.execute"
+        ],
+        "actual_operations": [
+          "build.execute"
+        ],
+        "actual_action": "npm run build",
+        "affected_resources": [
+          "package.json"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "local-lint-is-l1",
+      "description": "Legacy golden vector: local-lint-is-l1",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "lint.execute"
+        ],
+        "actual_operations": [
+          "lint.execute"
+        ],
+        "actual_action": "ruff check .",
+        "affected_resources": [
+          "src/"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "local-typecheck-is-l1",
+      "description": "Legacy golden vector: local-typecheck-is-l1",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "typecheck.execute"
+        ],
+        "actual_operations": [
+          "typecheck.execute"
+        ],
+        "actual_action": "mypy src",
+        "affected_resources": [
+          "src/"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "local-format-is-l2",
+      "description": "Legacy golden vector: local-format-is-l2",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "format.execute"
+        ],
+        "actual_operations": [
+          "format.execute"
+        ],
+        "actual_action": "ruff format .",
+        "affected_resources": [
+          "src/"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "clean-tracked-file-delete-is-l2",
+      "description": "Legacy golden vector: clean-tracked-file-delete-is-l2",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "filesystem.tracked_delete"
+        ],
+        "actual_operations": [
+          "filesystem.tracked_delete"
+        ],
+        "actual_action": "remove obsolete tracked source file",
+        "affected_resources": [
+          "src/obsolete.py"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "semantic_details": {
+          "recoverability": "git_tracked_clean",
+          "recovery_revision": "abc123"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "dependency-install-and-build-multi-operation",
+      "description": "Legacy golden vector: dependency-install-and-build-multi-operation",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "dependency.install",
+          "build.execute"
+        ],
+        "actual_operations": [
+          "dependency.install",
+          "build.execute"
+        ],
+        "actual_action": "install locked dependencies then build",
+        "affected_resources": [
+          "requirements.lock",
+          "src/"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "test-database-write-requires-approval",
+      "description": "Legacy golden vector: test-database-write-requires-approval",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "database.write"
+        ],
+        "actual_operations": [
+          "database.write"
+        ],
+        "actual_action": "update test user status",
+        "affected_resources": [
+          "users"
+        ],
+        "targets": [
+          "db/test/users"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "local-permission-change-requires-approval",
+      "description": "Legacy golden vector: local-permission-change-requires-approval",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "permission.change"
+        ],
+        "actual_operations": [
+          "permission.change"
+        ],
+        "actual_action": "change repository access permission",
+        "affected_resources": [
+          "repository/settings"
+        ],
+        "targets": [
+          "repository/example"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X0",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "privileged-credential-use-is-x3",
+      "description": "Legacy golden vector: privileged-credential-use-is-x3",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "credential.use"
+        ],
+        "actual_operations": [
+          "credential.use"
+        ],
+        "actual_action": "use privileged deployment credential",
+        "affected_resources": [
+          "credential/prod"
+        ],
+        "targets": [
+          "credential/prod"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "restricted",
+          "credential_class": "privileged_credential",
+          "tenant_scope": "organization_wide",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X3",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "local-file-import-is-l2",
+      "description": "Legacy golden vector: local-file-import-is-l2",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "file.import"
+        ],
+        "actual_operations": [
+          "file.import"
+        ],
+        "actual_action": "import validated local fixture",
+        "affected_resources": [
+          "fixtures/input.csv"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "local-file-export-is-l2",
+      "description": "Legacy golden vector: local-file-export-is-l2",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "file.export"
+        ],
+        "actual_operations": [
+          "file.export"
+        ],
+        "actual_action": "export local report fixture",
+        "affected_resources": [
+          "out/report.csv"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "external-upload-requires-approval",
+      "description": "Legacy golden vector: external-upload-requires-approval",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "external.upload"
+        ],
+        "actual_operations": [
+          "external.upload"
+        ],
+        "actual_action": "upload artifact to external destination",
+        "affected_resources": [
+          "dist/app.zip"
+        ],
+        "targets": [
+          "external/storage/example"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "public_destination",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "git-push-is-external-effect",
+      "description": "Legacy golden vector: git-push-is-external-effect",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "git.push"
+        ],
+        "actual_operations": [
+          "git.push"
+        ],
+        "actual_action": "git push origin feature/example",
+        "affected_resources": [
+          "refs/heads/feature/example"
+        ],
+        "targets": [
+          "origin/feature/example"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "staging-rollback-requires-approval",
+      "description": "Legacy golden vector: staging-rollback-requires-approval",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "rollback.execute"
+        ],
+        "actual_operations": [
+          "rollback.execute"
+        ],
+        "actual_action": "rollback staging service to previous artifact",
+        "affected_resources": [
+          "service/api"
+        ],
+        "targets": [
+          "staging/service/api"
+        ],
+        "environment": "staging",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "production-observability-read-uses-guards",
+      "description": "Legacy golden vector: production-observability-read-uses-guards",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "observability.inspect"
+        ],
+        "actual_operations": [
+          "observability.inspect"
+        ],
+        "actual_action": "inspect production error metrics",
+        "affected_resources": [
+          "metrics/api"
+        ],
+        "targets": [
+          "production/metrics/api"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X2",
+        "action_gate": "AUTO_WITH_GUARDS"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "public-release-publish-is-l4",
+      "description": "Legacy golden vector: public-release-publish-is-l4",
+      "category": "execution_boundary",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "release.publish"
+        ],
+        "actual_operations": [
+          "release.publish"
+        ],
+        "actual_action": "publish public release",
+        "affected_resources": [
+          "dist/release"
+        ],
+        "targets": [
+          "public/release/example"
+        ],
+        "environment": "public",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "public_destination",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_effect",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "terraform-destroy-underreported-as-change",
+      "description": "Legacy fail-closed vector: terraform-destroy-underreported-as-change",
+      "category": "execution_boundary_invalid",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_action": "terraform destroy -auto-approve",
+        "affected_resources": [
+          "infra/main.tf"
+        ],
+        "targets": [
+          "cloud/project-demo"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    },
+    {
+      "id": "opaque-command-runtime-operation",
+      "description": "Legacy fail-closed vector: opaque-command-runtime-operation",
+      "category": "execution_boundary_invalid",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "command.execute"
+        ],
+        "actual_operations": [
+          "command.execute"
+        ],
+        "actual_action": "python script.py",
+        "affected_resources": [
+          "script.py"
+        ],
+        "targets": [
+          "workspace"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    },
+    {
+      "id": "actual-write-not-covered-by-plan",
+      "description": "Legacy fail-closed vector: actual-write-not-covered-by-plan",
+      "category": "execution_boundary_invalid",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "code.modify"
+        ],
+        "actual_operations": [
+          "external.api_write"
+        ],
+        "actual_action": "POST /admin/tenants/123",
+        "affected_resources": [
+          "api/admin"
+        ],
+        "targets": [
+          "tenant/123"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    },
+    {
+      "id": "missing-raw-exposure-facts",
+      "description": "Legacy fail-closed vector: missing-raw-exposure-facts",
+      "category": "execution_boundary_invalid",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "external.api_write"
+        ],
+        "actual_operations": [
+          "external.api_write"
+        ],
+        "actual_action": "POST /internal/update",
+        "affected_resources": [
+          "api/internal"
+        ],
+        "targets": [
+          "tenant/123"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "internal"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    },
+    {
+      "id": "kubectl-namespace-delete-underreported-as-change",
+      "description": "Legacy fail-closed vector: kubectl-namespace-delete-underreported-as-change",
+      "category": "execution_boundary_invalid",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_action": "kubectl delete namespace demo",
+        "affected_resources": [
+          "namespace/demo"
+        ],
+        "targets": [
+          "test/cluster-a/namespace/demo"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    },
+    {
+      "id": "tracked-delete-without-recoverability-proof",
+      "description": "Legacy fail-closed vector: tracked-delete-without-recoverability-proof",
+      "category": "execution_boundary_invalid",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "filesystem.tracked_delete"
+        ],
+        "actual_operations": [
+          "filesystem.tracked_delete"
+        ],
+        "actual_action": "delete src/obsolete.py",
+        "affected_resources": [
+          "src/obsolete.py"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "semantic_details": {}
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    }
+  ]
+}
