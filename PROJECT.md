@@ -2,6 +2,8 @@
 
 이 파일은 `PROJECT_MAP.md`와 `ARCHITECTURE.md` 역할을 통합한 단일 프로젝트 지도다. 상세 제품 명세나 장기 계획을 복제하지 말고 실제 Source of Truth의 위치를 가리킨다.
 
+**이 upstream 저장소의 `PROJECT.md`는 consumer 프로젝트가 채워 넣기 위한 template이다.** 따라서 `profile: "template"`과 Unknown fact가 남아 있는 것이 의도된 초기 상태이며, 이 파일 자체를 `universal-agent-docs` upstream의 readiness PASS 주장으로 사용하지 않는다. consumer 설치에서는 `.agent-policy/PROJECT.md`를 편집하고 `--project-root <consumer-repo>`로 실제 프로젝트의 경로/Git evidence를 검증한다.
+
 아래 machine-readable block은 validator가 읽는다. 텍스트 설명과 충돌하면 block을 실제 evidence에 맞게 수정한다. object/array/string 타입이 잘못된 malformed block은 readiness 예외로 중단하지 않고 구조화된 `FAIL`로 처리한다.
 
 <!-- project-facts:start -->

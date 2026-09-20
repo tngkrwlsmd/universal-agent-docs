@@ -169,6 +169,18 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertEqual("FAIL", checked["status"], checked)
             self.assertTrue(any("symlink" in x for x in checked["errors"]), checked)
 
+    def test_consumer_packager_is_deterministic_and_outputs_detached_files(self):
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            first = consumer_package_mod.package_consumer(Path(a))
+            second = consumer_package_mod.package_consumer(Path(b))
+            self.assertEqual("PASS", first["status"], first)
+            self.assertEqual(first["sha256"], second["sha256"])
+            self.assertEqual("universal-agent-docs-consumer.zip", Path(first["zip"]).name)
+            self.assertEqual("universal-agent-docs-consumer.release.json", Path(first["release_manifest"]).name)
+            self.assertEqual("universal-agent-docs-consumer.sha256", Path(first["sha256_file"]).name)
+            with zipfile.ZipFile(first["zip"]) as zf:
+                self.assertTrue(all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist() if not info.is_dir()))
+
     def test_packager_is_deterministic_and_outputs_detached_files(self):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
             first = package_mod.package(Path(a))

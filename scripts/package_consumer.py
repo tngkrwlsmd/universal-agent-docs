@@ -206,7 +206,7 @@ def package_consumer(output_dir: Path) -> dict:
     validation = validate_consumer_zip(zip_path, contract, release_path)
     if validation["status"] != "PASS":
         raise RuntimeError("consumer package self-validation failed: " + json.dumps(validation, ensure_ascii=False))
-    return {"status":"PASS","zip":str(zip_path),"release_manifest":str(release_path),"sha256_file":str(sha_path),"validation":validation}
+    return {"status":"PASS","zip":str(zip_path),"sha256":manifest["artifact_sha256"],"release_manifest":str(release_path),"sha256_file":str(sha_path),"validation":validation}
 
 
 def main() -> int:
@@ -230,6 +230,7 @@ def main() -> int:
         return 1
     print("Consumer packaging: PASS")
     print("ZIP:", result["zip"])
+    print("SHA-256:", result["sha256"])
     print("Detached consumer release manifest:", result["release_manifest"])
     print("SHA file:", result["sha256_file"])
     return 0
