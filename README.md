@@ -320,6 +320,8 @@ python -m unittest tests.test_conformance -v
 
 소비 프로젝트에는 `scripts/package_consumer.py`가 만드는 `universal-agent-docs-consumer.zip`을 사용한다. 이 artifact는 top-level `universal-agent-docs-consumer/` 아래에 root `AGENTS.md`와 `.agent-policy/`를 둔다. canonical upstream bundle 전체는 `.agent-policy/` 아래에 vendor되므로 기존 `README.md`, `LICENSE`, `requirements.txt`, `tests/`, `.github/workflows/`와 이름이 충돌하지 않는다.
 
+`.agent-policy/`에 upstream bundle 전체를 두는 것은 의도적이다. consumer validator가 vendored policy를 source bundle과 같은 `bundle_checks`로 self-verify하고 conformance corpus까지 그대로 사용할 수 있게 하기 위한 선택이다. 대신 모든 source-only 파일은 `.agent-policy/` 아래에 격리되어 소비 프로젝트 root의 동명 파일을 덮어쓰지 않는다.
+
 ```text
 universal-agent-docs-consumer/
 ├── AGENTS.md
@@ -331,7 +333,7 @@ universal-agent-docs-consumer/
     └── ...
 ```
 
-consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박한다. root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
+consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박한다. readiness를 실행할 때는 `python .agent-policy/scripts/validate.py --project-root . --readiness development`처럼 소비 repository root를 명시해 evidence path와 Git revision을 실제 프로젝트 기준으로 검증한다. root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
 
 ```bash
 python scripts/package_consumer.py --output-dir ./dist
@@ -344,17 +346,19 @@ consumer verifier는 root router가 canonical source에서 생성되었는지, `
 
 ## Release packaging
 
-배포 ZIP, detached manifests, ZIP checksum을 수작업으로 조립하지 않는다. 공식 packager는 먼저 bundle validation을 실행하고 canonical manifest에 있는 파일만 deterministic ZIP에 넣은 뒤, **core trust manifest와 full release manifest를 각각 생성**하고 새 ZIP에 대해 distribution + 두 manifest 검증을 다시 수행한다. manifest와 checksum은 **ZIP 바깥**에 생성된다.
+배포 ZIP, detached manifests, ZIP checksum을 수작업으로 조립하지 않는다. 공식 packager는 먼저 bundle validation을 실행하고 canonical manifest에 있는 파일만 **fixed timestamp + ZIP_STORED** 방식의 deterministic ZIP에 넣은 뒤, **core trust manifest와 full release manifest를 각각 생성**하고 새 ZIP에 대해 distribution + 두 manifest 검증을 다시 수행한다. manifest와 checksum은 **ZIP 바깥**에 생성된다.
 
 ```bash
 python scripts/package.py --output-dir ./dist
 ```
 
+`.gitattributes`는 canonical text checkout을 LF로 고정하고, packager는 압축기/zlib 버전에 따른 DEFLATE byte 차이를 피하기 위해 `ZIP_STORED`를 사용한다. 따라서 같은 Git revision의 canonical source bytes는 지원 OS/Python에서 동일한 ZIP SHA-256을 생성해야 한다. source와 consumer packager 모두 같은 규칙을 사용한다.
+
 source packager 출력은 항상 `universal-agent-docs.zip`, `universal-agent-docs.trust.json`, `universal-agent-docs.release.json`, `universal-agent-docs.sha256` 네 파일이다. consumer packager는 `universal-agent-docs-consumer.zip`, `universal-agent-docs-consumer.release.json`, `universal-agent-docs-consumer.sha256`을 별도로 만든다. 날짜나 버전 suffix를 파일명에 넣지 않는다. trust/release manifest에는 `POLICY_CONTRACT.json`의 SHA-256이 포함되어 정책 계약 bytes와 함께 검증된다. manifest를 실제 trust anchor로 사용할 때는 ZIP과 같은 비신뢰 채널에만 두지 말고 독립된 protected release/CI/organization channel 또는 검증 가능한 서명과 함께 보관한다.
 
-GitHub 저장소에서는 `.github/workflows/release.yml`을 수동 실행하면 동일한 canonical artifact를 생성하고 `actions/attest@v4`로 GitHub Artifact Attestation을 만든다. 이는 OIDC 기반 Sigstore 서명으로 build provenance를 제공한다. 저장소/플랜에서 attestation을 사용할 수 없는 경우에도 deterministic ZIP, SHA-256, detached manifests는 그대로 생성된다.
+GitHub 저장소에서는 `.github/workflows/release.yml`을 수동 실행하면 **source와 consumer artifact를 모두** 생성·upload하고, 이어서 full-SHA pinned `actions/attest`로 두 artifact 계열 전체에 GitHub Artifact Attestation을 만든다. 이는 OIDC 기반 Sigstore build provenance를 제공한다. upload를 attestation보다 먼저 수행하므로 attestation 단계가 실패해도 생성된 artifact 자체는 workflow artifact로 남을 수 있지만, workflow 전체는 실패하며 `verify-release.yml`은 `conclusion=success`가 아닌 release run을 신뢰하지 않는다.
 
-`.github/workflows/verify-release.yml`은 release workflow run ID와 **별도 trusted channel에서 얻은 40-hex `expected_source_sha`**를 함께 입력받는다. verifier는 해당 run이 `.github/workflows/release.yml`의 성공한 `workflow_dispatch`이고 `main`에서 실행되었는지 확인한 뒤 run의 `head_sha`가 외부 expected SHA와 정확히 같은지 검증한다. 그 후 각 canonical artifact에 대해 `gh attestation verify`로 repository, signer workflow, `refs/heads/main`, source digest를 함께 고정하고 detached ZIP checksum과 trust/release manifest를 검증한다. run 자신이 제공한 SHA만으로 trust expectation을 만들지 않는다.
+`.github/workflows/verify-release.yml`은 release workflow run ID와 **별도 trusted channel에서 얻은 40-hex `expected_source_sha`**를 함께 입력받는다. verifier는 해당 run이 `.github/workflows/release.yml`의 성공한 `workflow_dispatch`이고 `main`에서 실행되었는지 확인한 뒤 run의 `head_sha`가 외부 expected SHA와 정확히 같은지 검증한다. 그 후 source 4개와 consumer 3개, 총 7개 canonical artifact에 대해 `gh attestation verify`로 repository, signer workflow, `refs/heads/main`, source digest를 함께 고정하고 source/consumer detached ZIP checksum과 각각의 release manifest를 검증한다. run 자신이 제공한 SHA만으로 trust expectation을 만들지 않는다.
 
 GitHub Actions의 외부 action reference는 mutable major tag 대신 검토한 **full commit SHA**로 pin한다. branch protection/ruleset과 required review/CI는 repository governance의 별도 trust control이며 workflow 파일만으로 대체할 수 없다. provenance를 강한 trust signal로 사용하려면 `main` 보호 정책도 함께 설정하는 것이 권장된다.
 

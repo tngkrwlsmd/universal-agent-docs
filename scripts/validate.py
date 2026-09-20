@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {13}
+SUPPORTED_SCHEMA_VERSIONS = {15}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -131,6 +131,24 @@ TARGET_REQUIRED_EXPOSURE_LEVELS = ["X2", "X3"]
 TRUST_MANIFEST_FORMAT = "universal-agent-docs-trust-manifest-v2"
 RELEASE_MANIFEST_FORMAT = "universal-agent-docs-release-manifest-v2"
 ACTION_DIGEST_FORMAT = "universal-agent-docs-action-digest-v3"
+RELEASE_PROVENANCE = {
+    "mechanism": "github_artifact_attestation",
+    "workflow": ".github/workflows/release.yml",
+    "attestation_action": "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
+    "signature_model": "sigstore_oidc",
+    "required_source_ref": "refs/heads/main",
+    "verifier_requires_expected_source_digest": True,
+    "attested_artifacts": [
+    "universal-agent-docs.zip",
+    "universal-agent-docs.sha256",
+    "universal-agent-docs.trust.json",
+    "universal-agent-docs.release.json",
+    "universal-agent-docs-consumer.zip",
+    "universal-agent-docs-consumer.sha256",
+    "universal-agent-docs-consumer.release.json"
+],
+    "consumer_verification_required": True,
+}
 TRUSTED_CORE_FILES = [
     "AGENTS.md", "POLICIES.md", "POLICY_CONTRACT.json", "POLICY_CONTRACT.schema.json",
     "ROUTING_ALIASES.json", "ROUTING_ALIASES.schema.json", "RUNTIME_ACTION.schema.json",
@@ -143,6 +161,7 @@ PROJECT_FACT_KEYS = (
 )
 PROJECT_FACT_STATUSES = {"Confirmed", "Inferred", "Unknown", "N/A"}
 CANONICAL_REQUIRED_FILES = [
+    ".gitattributes",
     "AGENTS.md",
     "POLICIES.md",
     "PROJECT.md",
@@ -1464,7 +1483,7 @@ def verify_fact_evidence(project_root: Path, key: str, value: str, evidence: str
     return verify_evidence(project_root, evidence)
 
 
-def readiness(project_path: Path = PROJECT_PATH, mode: str = "development") -> dict:
+def readiness(project_path: Path = PROJECT_PATH, mode: str = "development", project_root: Path | None = None) -> dict:
     try:
         facts_doc = parse_project_facts(project_path)
     except Exception as exc:
@@ -1474,7 +1493,7 @@ def readiness(project_path: Path = PROJECT_PATH, mode: str = "development") -> d
     if shape_errors:
         return _readiness_structure_failure(mode, shape_errors)
 
-    project_root = project_path.parent
+    project_root = (project_root or project_path.parent).resolve()
     facts = facts_doc["facts"]
     required = ["repository_root", "primary_source", "build_command", "test_command", "runtime"]
     if mode == "deployment":
@@ -2023,7 +2042,7 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             and integrity.get("release_manifest_must_be_out_of_band") is True
             and integrity.get("publisher_authenticity_requires_trusted_channel_or_signature") is True
             and integrity.get("self_attestation_is_sufficient") is False
-            and integrity.get("release_provenance") == {"mechanism":"github_artifact_attestation","workflow":".github/workflows/release.yml","attestation_action":"actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6","signature_model":"sigstore_oidc","required_source_ref":"refs/heads/main","verifier_requires_expected_source_digest":True}
+            and integrity.get("release_provenance") == RELEASE_PROVENANCE
         )
         checks.append(Check(
             "integrity_contract_implementation_parity",
@@ -2856,6 +2875,8 @@ def main() -> int:
     parser.add_argument("--effect", choices=["L1", "L2", "L3", "L4"], help="optional runtime-observed Effect escalation; never lowers operation floors")
     parser.add_argument("--policy", action="append", default=[], metavar="ID", help="print a primary-owner policy section by policy ID; repeatable")
     parser.add_argument("--readiness", choices=["development", "deployment"])
+    parser.add_argument("--project-root", type=Path, help="project repository root for readiness evidence/Git checks; defaults to the selected PROJECT.md parent")
+    parser.add_argument("--project-file", type=Path, help="project facts Markdown for --readiness; defaults to the policy bundle PROJECT.md")
     parser.add_argument("--distribution", type=Path, help="validate a complete explicit distribution directory or ZIP")
     parser.add_argument("--trusted-manifest", type=Path, help="verify core policy hashes against an out-of-band trusted manifest; with --distribution, verifies the artifact")
     parser.add_argument("--release-manifest", type=Path, help="verify full distributed-file and ZIP integrity against an out-of-band release manifest; requires --distribution ZIP")
@@ -2953,8 +2974,14 @@ def main() -> int:
         if approval_result["object_validity"] != "VALID":
             exit_code = 1
 
+    if (args.project_root or args.project_file) and not args.readiness:
+        result["readiness_error"] = "--project-root/--project-file require --readiness"
+        exit_code = 1
+
     if args.readiness:
-        r = readiness(PROJECT_PATH, args.readiness)
+        project_path = args.project_file.resolve() if args.project_file else PROJECT_PATH
+        project_root = args.project_root.resolve() if args.project_root else project_path.parent
+        r = readiness(project_path, args.readiness, project_root=project_root)
         result["readiness"] = r
         if r["documented"] != "PASS" or r["verified"] == "FAIL":
             exit_code = 1
@@ -3003,6 +3030,7 @@ def main() -> int:
 
     policy_only = (
         bool(args.policy) and args.route is None and not args.action_boundary and not args.runtime_action and not args.readiness
+        and not args.project_root and not args.project_file
         and not args.distribution and not args.trusted_manifest and not args.release_manifest and not args.emit_trust_manifest
         and not args.approval_assertion and not args.protected_override and not args.override_ledger and not args.consume_override
         and not args.bootstrap_project

@@ -42,10 +42,24 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--source-ref refs/heads/main", workflow)
         self.assertIn("--source-digest", workflow)
         self.assertIn("sha256sum --check", workflow)
+        self.assertIn("universal-agent-docs-consumer", workflow)
+        self.assertIn("package_consumer.py", workflow)
 
     def test_release_workflow_requires_main_source(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn('test "$GITHUB_REF" = "refs/heads/main"', workflow)
+
+    def test_release_workflow_attests_consumer_artifacts_after_upload(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn("python scripts/package_consumer.py --output-dir dist", workflow)
+        self.assertIn("name: universal-agent-docs-consumer", workflow)
+        self.assertIn("dist/universal-agent-docs-consumer.zip", workflow)
+        self.assertLess(workflow.index("Upload canonical consumer artifacts"), workflow.index("Generate signed build provenance"))
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        provenance = contract["integrity"]["release_provenance"]
+        self.assertTrue(provenance["consumer_verification_required"])
+        self.assertIn("universal-agent-docs-consumer.zip", provenance["attested_artifacts"])
+
 
     def test_github_actions_are_pinned_to_full_commit_shas(self):
         import re
@@ -77,6 +91,14 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--hash=sha256:", lock)
         self.assertIn("jsonschema==4.26.0", lock)
         self.assertIn("rpds-py==0.30.0", lock)
+
+    def test_cross_platform_packaging_contract_is_canonical(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn(".gitattributes", contract["distribution"]["required_files"])
+        self.assertIn(".gitattributes", contract["distribution"]["allowed_files"])
+        self.assertIn(".gitattributes", mod.CANONICAL_REQUIRED_FILES)
+        self.assertIn("eol=lf", attrs)
 
     def test_license_is_part_of_canonical_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
@@ -1201,6 +1223,20 @@ class ReadinessTests(unittest.TestCase):
     def test_template_is_not_ready(self):
         r = mod.readiness(ROOT / "PROJECT.md", "development")
         self.assertEqual("FAIL", r["documented"])
+
+    def test_vendored_project_facts_can_validate_against_consumer_repo_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td) / "consumer"
+            policy = repo / ".agent-policy"
+            policy.mkdir(parents=True)
+            (repo / "src").mkdir()
+            data = self.base_data()
+            path = self.write_project(policy, data)
+            result = mod.readiness(path, "development", project_root=repo)
+            repo_check = next(x for x in result["verified_checks"] if x["name"] == "repository_root")
+            source_check = next(x for x in result["verified_checks"] if x["name"] == "primary_source")
+            self.assertEqual("PASS", repo_check["status"], result)
+            self.assertEqual("PASS", source_check["status"], result)
 
     def test_readiness_distinguishes_evidence_from_command_execution(self):
         with tempfile.TemporaryDirectory() as td:

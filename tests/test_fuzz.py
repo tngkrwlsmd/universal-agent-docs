@@ -136,7 +136,9 @@ class PackagingPropertyTests(unittest.TestCase):
             )
             self.assertEqual("PASS", checked["status"], checked)
             with zipfile.ZipFile(zip_path) as zf:
-                names = [x.filename for x in zf.infolist() if not x.is_dir()]
+                infos = [x for x in zf.infolist() if not x.is_dir()]
+                names = [x.filename for x in infos]
+                self.assertTrue(all(x.compress_type == zipfile.ZIP_STORED for x in infos))
             self.assertIn("universal-agent-docs-consumer/AGENTS.md", names)
             self.assertIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
             self.assertNotIn("universal-agent-docs-consumer/README.md", names)
@@ -144,6 +146,40 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertNotIn("universal-agent-docs-consumer/requirements.txt", names)
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/tests/") for x in names))
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.github/") for x in names))
+
+    def test_consumer_verifier_rejects_symlink_entry(self):
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            result = consumer_package_mod.package_consumer(out)
+            original = Path(result["zip"])
+            bad = out / "consumer-symlink.zip"
+            with zipfile.ZipFile(original) as src, zipfile.ZipFile(bad, "w") as dst:
+                for info in src.infolist():
+                    data = src.read(info.filename)
+                    if info.filename == "universal-agent-docs-consumer/AGENTS.md":
+                        link = zipfile.ZipInfo(info.filename, info.date_time)
+                        link.create_system = 3
+                        link.external_attr = (0o120777 << 16)
+                        dst.writestr(link, b".agent-policy/AGENTS.md")
+                    else:
+                        dst.writestr(info, data)
+            checked = consumer_package_mod.validate_consumer_zip(
+                bad, validate.load_json(ROOT / "POLICY_CONTRACT.json")
+            )
+            self.assertEqual("FAIL", checked["status"], checked)
+            self.assertTrue(any("symlink" in x for x in checked["errors"]), checked)
+
+    def test_consumer_packager_is_deterministic_and_outputs_detached_files(self):
+        with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
+            first = consumer_package_mod.package_consumer(Path(a))
+            second = consumer_package_mod.package_consumer(Path(b))
+            self.assertEqual("PASS", first["status"], first)
+            self.assertEqual(first["sha256"], second["sha256"])
+            self.assertEqual("universal-agent-docs-consumer.zip", Path(first["zip"]).name)
+            self.assertEqual("universal-agent-docs-consumer.release.json", Path(first["release_manifest"]).name)
+            self.assertEqual("universal-agent-docs-consumer.sha256", Path(first["sha256_file"]).name)
+            with zipfile.ZipFile(first["zip"]) as zf:
+                self.assertTrue(all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist() if not info.is_dir()))
 
     def test_packager_is_deterministic_and_outputs_detached_files(self):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
@@ -163,6 +199,8 @@ class PackagingPropertyTests(unittest.TestCase):
             import zipfile
             with zipfile.ZipFile(first["zip"]) as zf:
                 names = set(zf.namelist())
+                self.assertTrue(all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist() if not info.is_dir()))
+            self.assertIn("universal-agent-docs/.gitattributes", names)
             self.assertFalse(any(
                 name.endswith(".trust.json") or name.endswith(".release.json") or name.endswith(".sha256")
                 for name in names

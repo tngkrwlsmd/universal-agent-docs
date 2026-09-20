@@ -64,6 +64,12 @@ jobs:
           RUN_ID: ${{ inputs.run_id }}
         run: gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name universal-agent-docs --dir downloaded
 
+      - name: Download canonical consumer release artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ inputs.run_id }}
+        run: gh run download "$RUN_ID" --repo "$GITHUB_REPOSITORY" --name universal-agent-docs-consumer --dir downloaded
+
       - name: Verify GitHub artifact attestations
         env:
           GH_TOKEN: ${{ github.token }}
@@ -75,7 +81,10 @@ jobs:
             universal-agent-docs.zip \
             universal-agent-docs.sha256 \
             universal-agent-docs.trust.json \
-            universal-agent-docs.release.json
+            universal-agent-docs.release.json \
+            universal-agent-docs-consumer.zip \
+            universal-agent-docs-consumer.sha256 \
+            universal-agent-docs-consumer.release.json
           do
             gh attestation verify "downloaded/$file" \
               --repo "$GITHUB_REPOSITORY" \
@@ -88,9 +97,19 @@ jobs:
         working-directory: downloaded
         run: sha256sum --check universal-agent-docs.sha256
 
+      - name: Verify detached consumer ZIP checksum
+        working-directory: downloaded
+        run: sha256sum --check universal-agent-docs-consumer.sha256
+
       - name: Verify canonical distribution and manifests
         run: >-
           python scripts/validate.py
           --distribution downloaded/universal-agent-docs.zip
           --trusted-manifest downloaded/universal-agent-docs.trust.json
           --release-manifest downloaded/universal-agent-docs.release.json
+
+      - name: Verify canonical consumer distribution and manifest
+        run: >-
+          python scripts/package_consumer.py
+          --verify downloaded/universal-agent-docs-consumer.zip
+          --release-manifest downloaded/universal-agent-docs-consumer.release.json

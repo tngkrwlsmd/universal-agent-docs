@@ -1,5 +1,5 @@
 {
-  "schema_version": 13,
+  "schema_version": 15,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -974,6 +974,7 @@
   "distribution": {
     "canonical_root": "universal-agent-docs",
     "required_files": [
+      ".gitattributes",
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",
@@ -1003,6 +1004,7 @@
       "tests/test_conformance.py"
     ],
     "allowed_files": [
+      ".gitattributes",
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",
@@ -1287,7 +1289,17 @@
       "attestation_action": "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
       "signature_model": "sigstore_oidc",
       "required_source_ref": "refs/heads/main",
-      "verifier_requires_expected_source_digest": true
+      "verifier_requires_expected_source_digest": true,
+      "attested_artifacts": [
+        "universal-agent-docs.zip",
+        "universal-agent-docs.sha256",
+        "universal-agent-docs.trust.json",
+        "universal-agent-docs.release.json",
+        "universal-agent-docs-consumer.zip",
+        "universal-agent-docs-consumer.sha256",
+        "universal-agent-docs-consumer.release.json"
+      ],
+      "consumer_verification_required": true
     }
   },
   "operation_lifecycle": {

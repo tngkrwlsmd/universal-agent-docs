@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import re
+import stat
 import sys
 import tempfile
 import zipfile
@@ -43,7 +44,9 @@ def render_consumer_agents(policy_root: str) -> bytes:
     banner = (
         "> Consumer layout: the canonical universal-agent-docs bundle is vendored under "
         f"`{policy_root}/`. Bare policy filenames mentioned below refer to that directory; "
-        f"project facts live at `{policy_root}/PROJECT.md`."
+        f"project facts live at `{policy_root}/PROJECT.md`. When validating readiness, run "
+        f"`python {policy_root}/scripts/validate.py --project-root . --readiness development` "
+        "from the consuming repository root so evidence paths and Git revision checks target the project, not the vendored policy directory."
     )
     return (lines[0] + "\n\n" + banner + "\n\n" + "\n".join(lines[1:]) + "\n").encode("utf-8")
 
@@ -60,7 +63,7 @@ def _consumer_expected(contract: dict) -> tuple[str, str, list[str]]:
 
 def _write_entry(zf: zipfile.ZipFile, arcname: str, data: bytes, executable: bool = False) -> None:
     info = zipfile.ZipInfo(arcname, FIXED_ZIP_TIMESTAMP)
-    info.compress_type = zipfile.ZIP_DEFLATED
+    info.compress_type = zipfile.ZIP_STORED
     info.create_system = 3
     mode = 0o755 if executable else 0o644
     info.external_attr = (0o100000 | mode) << 16
@@ -69,25 +72,57 @@ def _write_entry(zf: zipfile.ZipFile, arcname: str, data: bytes, executable: boo
 
 def validate_consumer_zip(path: Path, contract: dict, release_manifest: Path | None = None) -> dict:
     root, policy_root, expected = _consumer_expected(contract)
+    cfg = contract["distribution"]
     if not path.is_file() or not zipfile.is_zipfile(path):
         return {"status":"FAIL","errors":["consumer distribution must be a ZIP archive"]}
+
     errors: list[str] = []
     prefix = root + "/"
     with zipfile.ZipFile(path) as zf:
-        infos = [i for i in zf.infolist() if not i.is_dir()]
-        names = [i.filename for i in infos]
-        if len(names) != len(set(names)):
-            errors.append("consumer ZIP contains duplicate entries")
+        normalized_seen: set[str] = set()
+        normalized_files: list[str] = []
+        resource_entries: list[tuple[str, int, int]] = []
         rels: list[str] = []
-        for name in names:
-            normalized, error = policy_validate.normalize_archive_entry(name)
+        names: list[str] = []
+        duplicates: list[str] = []
+        symlinks: list[str] = []
+
+        for info in zf.infolist():
+            normalized, error = policy_validate.normalize_archive_entry(info.filename)
             if error or normalized is None:
-                errors.append(f"unsafe consumer ZIP entry: {name}")
+                errors.append(f"unsafe consumer ZIP entry: {info.filename}: {error or 'invalid path'}")
                 continue
+            if normalized in normalized_seen and not info.is_dir():
+                duplicates.append(normalized)
+            normalized_seen.add(normalized)
+
+            mode = info.external_attr >> 16
+            if stat.S_ISLNK(mode):
+                symlinks.append(normalized)
+                continue
+            if info.is_dir():
+                resource_entries.append((normalized, 0, -1))
+                continue
+
+            normalized_files.append(normalized)
+            resource_entries.append((normalized, info.file_size, info.compress_size))
+            names.append(normalized)
             if not normalized.startswith(prefix):
-                errors.append(f"consumer ZIP entry is outside canonical root: {name}")
+                errors.append(f"consumer ZIP entry is outside canonical root: {info.filename}")
                 continue
             rels.append(normalized[len(prefix):])
+
+        if duplicates:
+            errors.append("consumer ZIP contains duplicate entries: " + ", ".join(sorted(set(duplicates))))
+        if symlinks and cfg.get("reject_symlinks", True):
+            errors.append("consumer ZIP contains symlink entries: " + ", ".join(sorted(symlinks)))
+        errors.extend(policy_validate._name_collision_checks(normalized_files, cfg))
+        errors.extend(policy_validate._resource_limit_checks(resource_entries, cfg))
+
+        forbidden = sorted(rel for rel in rels if policy_validate.forbidden_path(rel, cfg.get("forbidden_patterns", [])))
+        if forbidden:
+            errors.append("consumer ZIP contains forbidden paths: " + ", ".join(forbidden))
+
         if sorted(rels) != sorted(expected):
             missing = sorted(set(expected) - set(rels))
             extra = sorted(set(rels) - set(expected))
@@ -146,7 +181,7 @@ def package_consumer(output_dir: Path) -> dict:
     release_path = output_dir / "universal-agent-docs-consumer.release.json"
     sha_path = output_dir / "universal-agent-docs-consumer.sha256"
 
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_STORED) as zf:
         _write_entry(zf, f"{root}/AGENTS.md", render_consumer_agents(policy_root))
         for rel in contract["distribution"]["required_files"]:
             data = (ROOT / rel).read_bytes()
@@ -171,7 +206,7 @@ def package_consumer(output_dir: Path) -> dict:
     validation = validate_consumer_zip(zip_path, contract, release_path)
     if validation["status"] != "PASS":
         raise RuntimeError("consumer package self-validation failed: " + json.dumps(validation, ensure_ascii=False))
-    return {"status":"PASS","zip":str(zip_path),"release_manifest":str(release_path),"sha256_file":str(sha_path),"validation":validation}
+    return {"status":"PASS","zip":str(zip_path),"sha256":manifest["artifact_sha256"],"release_manifest":str(release_path),"sha256_file":str(sha_path),"validation":validation}
 
 
 def main() -> int:
@@ -195,6 +230,7 @@ def main() -> int:
         return 1
     print("Consumer packaging: PASS")
     print("ZIP:", result["zip"])
+    print("SHA-256:", result["sha256"])
     print("Detached consumer release manifest:", result["release_manifest"])
     print("SHA file:", result["sha256_file"])
     return 0
