@@ -23,7 +23,7 @@
     {"name": "tests", "path": "tests", "responsibility": "regression, fuzz, packaging and conformance tests"}
   ],
   "review": {
-    "reviewed_revision": "3e5ed1ec1e5251d80e670b7484a861ce591a8321",
+    "reviewed_revision": "3926155b588e573c9be2446321dc87637628eaf9",
     "reviewed_at": "2026-09-20",
     "reviewed_paths": [
       ".github/workflows/ci.yml",
