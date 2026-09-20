@@ -17,7 +17,7 @@ from validation.contract import *  # noqa: F401,F403,E402
 from validation.routing import *  # noqa: F401,F403,E402
 from validation.routing import _korean_literal_token_matches  # noqa: F401,E402
 from validation.risk import *  # noqa: F401,F403,E402
-from validation.risk import _concrete_targets, _max_level  # noqa: F401,E402
+from validation.risk import _EFFECT_RANK, _EXPOSURE_RANK, _concrete_targets, _max_level  # noqa: F401,E402
 from validation.runtime import *  # noqa: F401,F403,E402
 from validation.integrity import *  # noqa: F401,F403,E402
 from validation.readiness import *  # noqa: F401,F403,E402
