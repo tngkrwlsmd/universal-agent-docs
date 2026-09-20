@@ -105,7 +105,27 @@ baseline 확인 → 관련 구현/contract 확인 → policy routing
 
 버그 수정은 가능하면 재현 가능한 regression test를 남긴다. build, mock, 일부 suite, 실제 integration의 evidence 수준을 구분한다.
 
-## 8. 완료 조건
+## 8. 사용자 도구 opt-out
+
+사용자가 특정 도구·connector 사용을 금지하거나 opt-in으로 제한했다면 일반적인 개발 요청을 그 도구의 사용 허가로 확대 해석하지 않는다.
+
+이 저장소의 기본 범용 지침에서는 다음을 적용한다.
+
+- `chatgpt-codex-connector`는 **기본 비활성화**로 취급한다.
+- 사용자가 `chatgpt-codex-connector` 사용을 **명시적으로 요청한 경우에만** 사용한다.
+- "구현해", "수정해", "코드 리뷰해", "PR 확인해", "테스트해", "다음 작업 진행해" 같은 일반 개발 지시는 사용 허가가 아니다.
+- 코드 작성·검토·PR 확인·상태 polling·보조 분석을 이유로 자동 호출하지 않는다.
+- 다른 사용 가능한 도구나 방법으로 수행할 수 있으면 `chatgpt-codex-connector` 없이 진행한다.
+- 이 제한은 **`chatgpt-codex-connector` 자체에 대한 opt-out**이며, 사용자가 별도로 제한하지 않은 일반 GitHub tooling이나 다른 connector까지 자동으로 금지하는 뜻은 아니다.
+- 현재 이 규칙은 agent/tool 선택에 대한 human-facing instruction이다. runtime에서 machine-enforced라고 주장하려면 별도의 canonical contract와 enforcement evidence가 필요하다.
+
+기본값:
+
+```text
+chatgpt-codex-connector = DISABLED UNLESS EXPLICITLY REQUESTED
+```
+
+## 9. 완료 조건
 
 완료 전에 다음을 확인한다.
 
