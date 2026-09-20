@@ -357,6 +357,8 @@ consumer verifier는 root router가 canonical source에서 생성되었는지, `
 
 배포 ZIP, detached manifests, ZIP checksum을 수작업으로 조립하지 않는다. 공식 packager는 먼저 bundle validation을 실행하고 canonical manifest에 있는 파일만 deterministic ZIP에 넣은 뒤, **core trust manifest와 full release manifest를 각각 생성**하고 새 ZIP에 대해 distribution + 두 manifest 검증을 다시 수행한다. manifest와 checksum은 **ZIP 바깥**에 생성된다.
 
+여기서 deterministic은 **지원 CI matrix 전체에서 bit-for-bit 동일한 archive bytes**를 의미한다. repository text checkout은 `.gitattributes`로 LF를 고정하고, ZIP entry는 zlib/version별 압축 결과 차이를 피하기 위해 `ZIP_STORED`를 사용한다. CI의 기존 required check `ubuntu-latest / Python 3.14`는 나머지 5개 matrix artifact hash를 모아 source/consumer ZIP SHA-256이 6개 환경에서 정확히 하나의 값인지 검증한다.
+
 ```bash
 python scripts/package.py --output-dir ./dist
 ```
