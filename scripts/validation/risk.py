@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Iterable
 
 from .contract import ENVIRONMENT_EXPOSURE_FLOORS, EXPOSURE_DERIVATION
 
