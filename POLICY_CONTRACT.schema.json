@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 16
+      "const": 17
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -1138,7 +1138,11 @@
         "extraction_requires_collision_check",
         "consumer_project_facts_path",
         "vendored_project_template_path",
-        "readiness_requires_explicit_project_root"
+        "readiness_requires_explicit_project_root",
+        "vendored_files",
+        "vendored_file_source_overrides",
+        "install_marker_path",
+        "archive_hardening_source"
       ],
       "properties": {
         "canonical_root": {
@@ -1151,7 +1155,7 @@
           "const": "AGENTS.md"
         },
         "vendored_files_source": {
-          "const": "distribution.required_files"
+          "const": "consumer_distribution.vendored_files"
         },
         "release_manifest_format": {
           "const": "universal-agent-docs-consumer-release-manifest-v1"
@@ -1170,6 +1174,35 @@
         },
         "readiness_requires_explicit_project_root": {
           "const": true
+        },
+        "vendored_files": {
+          "const": [
+            "AGENTS.md",
+            "POLICIES.md",
+            "PROJECT.md",
+            "POLICY_CONTRACT.json",
+            "POLICY_CONTRACT.schema.json",
+            "ROUTING_ALIASES.json",
+            "ROUTING_ALIASES.schema.json",
+            "RUNTIME_ACTION.schema.json",
+            "APPROVAL_ASSERTION.schema.json",
+            "PROTECTED_OVERRIDE.schema.json",
+            "LICENSE",
+            "requirements.txt",
+            "requirements.lock",
+            "scripts/validate.py"
+          ]
+        },
+        "vendored_file_source_overrides": {
+          "const": {
+            "PROJECT.md": "PROJECT.template.md"
+          }
+        },
+        "install_marker_path": {
+          "const": "CONSUMER_INSTALL.json"
+        },
+        "archive_hardening_source": {
+          "const": "distribution"
         }
       }
     }
