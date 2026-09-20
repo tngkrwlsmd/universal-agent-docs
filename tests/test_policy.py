@@ -26,6 +26,18 @@ class BundleTests(unittest.TestCase):
         failures = [c for c in checks if c.status != "PASS"]
         self.assertEqual([], [(c.name, c.detail) for c in failures])
 
+    def test_release_attestation_verifier_is_part_of_canonical_distribution(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        path = ".github/workflows/verify-release.yml"
+        workflow = (ROOT / path).read_text(encoding="utf-8")
+        self.assertIn(path, contract["distribution"]["required_files"])
+        self.assertIn(path, contract["distribution"]["allowed_files"])
+        self.assertIn(path, mod.CANONICAL_REQUIRED_FILES)
+        self.assertIn("gh attestation verify", workflow)
+        self.assertIn("--signer-workflow", workflow)
+        self.assertIn("--source-digest", workflow)
+        self.assertIn("sha256sum --check", workflow)
+
     def test_hash_locked_requirements_are_part_of_trusted_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         lock = (ROOT / "requirements.lock").read_text(encoding="utf-8")

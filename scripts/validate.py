@@ -143,6 +143,7 @@ CANONICAL_REQUIRED_FILES = [
     "tests/test_fuzz.py",
     ".github/workflows/ci.yml",
     ".github/workflows/release.yml",
+    ".github/workflows/verify-release.yml",
     "conformance/README.md",
     "conformance/golden.json",
     "conformance/invalid.json",

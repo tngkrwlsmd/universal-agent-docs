@@ -36,7 +36,8 @@ universal-agent-docs/
 │   └── test_conformance.py
 └── .github/workflows/
     ├── ci.yml
-    └── release.yml
+    ├── release.yml
+    └── verify-release.yml
 ```
 
 각 파일은 하나의 분명한 책임만 가진다.
@@ -60,6 +61,7 @@ universal-agent-docs/
 - `conformance/`: runtime/tool adapter가 canonical operation과 exposure fact를 정확히 보고하는지 검증하는 golden/invalid vector kit
 - `.github/workflows/ci.yml`: Linux/macOS/Windows에서 bundle validation과 전체 테스트를 실행하는 CI
 - `.github/workflows/release.yml`: canonical artifact를 만들고 GitHub Artifact Attestation/Sigstore provenance를 생성하는 release workflow
+- `.github/workflows/verify-release.yml`: release run artifact의 signer workflow/source revision attestation, detached checksum, trust/release manifest를 소비자 관점에서 다시 검증하는 workflow
 
 프로젝트와 배포 산출물의 이름은 항상 **`universal-agent-docs`**로 유지한다. 날짜나 임의 suffix를 파일명에 붙이지 않는다. Git commit이 변경 이력을 담당하고, machine compatibility는 `schema_version`이 담당한다. 실행 승인 binding은 사람이 붙인 bundle version 대신 `POLICY_CONTRACT.json`의 canonical JSON SHA-256인 `policy_contract_digest`를 사용하므로 정확한 정책 의미를 계속 고정할 수 있다.
 
@@ -318,6 +320,8 @@ python scripts/package.py --output-dir ./dist
 출력은 항상 `universal-agent-docs.zip`, `universal-agent-docs.trust.json`, `universal-agent-docs.release.json`, `universal-agent-docs.sha256` 네 파일이다. 날짜나 버전 suffix를 파일명에 넣지 않는다. trust/release manifest에는 `POLICY_CONTRACT.json`의 SHA-256이 포함되어 정책 계약 bytes와 함께 검증된다. manifest를 실제 trust anchor로 사용할 때는 ZIP과 같은 비신뢰 채널에만 두지 말고 독립된 protected release/CI/organization channel 또는 검증 가능한 서명과 함께 보관한다.
 
 GitHub 저장소에서는 `.github/workflows/release.yml`을 수동 실행하면 동일한 canonical artifact를 생성하고 `actions/attest@v4`로 GitHub Artifact Attestation을 만든다. 이는 OIDC 기반 Sigstore 서명으로 build provenance를 제공한다. 저장소/플랜에서 attestation을 사용할 수 없는 경우에도 deterministic ZIP, SHA-256, detached manifests는 그대로 생성된다.
+
+`.github/workflows/verify-release.yml`은 검증할 release workflow run ID를 입력받아 해당 run의 source commit을 checkout하고 artifact를 내려받는다. 각 canonical artifact에 대해 `gh attestation verify`로 repository, signer workflow(`.github/workflows/release.yml`), source digest를 함께 고정한 뒤 detached ZIP checksum과 trust/release manifest 검증을 수행한다. 따라서 attestation을 생성하는 경로와 실제 소비 검증 경로가 분리되어 있다.
 
 ## Distribution validation
 
