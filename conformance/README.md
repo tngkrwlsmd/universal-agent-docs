@@ -77,8 +77,8 @@ Time-sensitive case는 `input.reference_time`을 명시한다. 구현체는 시�
     "version": "0.3.0"
   },
   "summary": {
-    "total": 69,
-    "passed": 69,
+    "total": 73,
+    "passed": 73,
     "failed": 0
   },
   "results": [
