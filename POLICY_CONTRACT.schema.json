@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 15
+      "const": 16
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -585,7 +585,8 @@
         "max_archive_entries",
         "max_file_uncompressed_bytes",
         "max_total_uncompressed_bytes",
-        "max_compression_ratio"
+        "max_compression_ratio",
+        "reproducible_archive"
       ],
       "properties": {
         "canonical_root": {
@@ -658,6 +659,13 @@
         "max_compression_ratio": {
           "type": "number",
           "exclusiveMinimum": 1
+        },
+        "reproducible_archive": {
+          "const": {
+            "entry_compression": "stored",
+            "text_checkout_eol": "lf",
+            "cross_platform_ci_required": true
+          }
         }
       }
     },
