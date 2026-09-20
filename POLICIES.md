@@ -1,6 +1,6 @@
 # POLICIES.md — universal development agent policies
 
-이 문서는 상세 정책의 **사람용 절차·근거·설명**에 대한 Source of Truth다. 각 `<a id="policy-*">` 섹션이 해당 human-facing 의미의 primary owner다. 반면 runtime이 자동 집행할 수 있는 canonical operation, Effect/Exposure floor, action gate, binding·replay 규칙은 `POLICY_CONTRACT.json`이 normative machine Source of Truth다. 두 표현이 enforcement 의미에서 불일치하면 어느 한쪽을 임의 우선하지 않고 **bundle validation 실패로 fail-closed**하며 둘을 함께 수정한다.
+이 문서는 상세 정책의 **사람용 절차·근거·설명**에 대한 Source of Truth다. 각 `<a id="policy-*">` 섹션이 해당 human-facing 의미의 primary owner다. 반면 runtime이 자동 집행할 수 있는 canonical operation, Effect/Exposure floor, action gate, binding·replay 규칙은 `POLICY_CONTRACT.json`이 normative machine Source of Truth다. 두 표현이 enforcement 의미에서 불일치하면 어느 한쪽을 임의 우선하지 않고 invalid로 취급해 둘을 함께 수정한다. validator의 자동 fail-closed parity는 machine-readable/schema/implementation invariant와 명시적 regression에 한정되며, 모든 prose 문장을 의미론적으로 파싱한다고 가정하지 않는다.
 
 정책을 적용할 때는 최초 사용자 문장뿐 아니라 **현재 계획, canonical operation ID, 실행하려는 명령, 실제 수정·접근 resource**를 함께 본다. 자연어는 canonical operation을 추론하는 비권위 힌트일 뿐 정책을 직접 결정하지 않으며 fallback alias는 `ROUTING_ALIASES.json`에 분리한다. `commit`, `push`, `branch`, `release`처럼 일반 프로그래밍 문맥에서도 쓰이는 단일 표현은 충분한 도메인 문맥 없이 Git/release operation으로 승격하지 않는다. 작업 중 계획이나 resource가 바뀌면 routing을 다시 평가한다. enforcement routing은 **해석된 canonical plan이 존재하는지**와 planned operation이 모두 canonical인지 fail-closed로 확인한다. 반면 자연어 task가 alias corpus에 없거나 task-derived hint와 plan이 다르다는 사실은 anomaly/warning으로 표면화하되 그 자체를 실행 승인 또는 거부의 최종 근거로 삼지 않는다. 실행 안전성의 강한 경계는 trusted runtime/tool adapter가 독립적으로 보고한 actual operation과 canonical plan의 비교가 소유한다.
 
@@ -101,7 +101,9 @@ Effect 계산은 `max(operation effect_floor, runtime/context escalation)`이다
 - **core trust manifest**는 `AGENTS.md`, `POLICIES.md`, contract/schema, routing/runtime/approval/protected-override schema, validator/packager 등 정책 의미와 enforcement를 소유하는 core bytes를 SHA-256으로 고정한다. 소비 프로젝트가 수정하는 `PROJECT.md`는 제외한다.
 - **full release manifest**는 canonical distribution의 모든 파일과 ZIP artifact 자체를 SHA-256으로 고정한다. README/test 변조나 ZIP 재조립도 이 층에서 탐지한다.
 - 두 manifest는 검증 대상 ZIP 내부가 아니라 protected CI/release artifact, 조직 정책 저장소, 외부 서명 등 독립된 신뢰 경로에서 획득한다.
-- manifest hash 일치는 bytes integrity를 증명하지만 publisher identity나 조직 승인 자체를 증명하지 않는다. GitHub release workflow는 `actions/attest@v4`의 OIDC/Sigstore Artifact Attestation으로 provenance 서명을 추가할 수 있으며, 다른 배포 채널에서는 동등한 trusted channel 또는 cryptographic signature가 필요하다.
+- manifest hash 일치는 bytes integrity를 증명하지만 publisher identity나 조직 승인 자체를 증명하지 않는다. GitHub release workflow는 full commit SHA로 pin한 `actions/attest`의 OIDC/Sigstore Artifact Attestation으로 provenance 서명을 추가할 수 있으며, 다른 배포 채널에서는 동등한 trusted channel 또는 cryptographic signature가 필요하다.
+- release verifier는 검증 대상 run에서 읽은 `head_sha`를 스스로 trust expectation으로 재사용하지 않는다. 별도 trusted channel의 expected source SHA와 일치시키고, release workflow path, `main` source ref, 성공 상태를 함께 확인한다.
+- branch protection/ruleset, required review/CI는 repository-level governance이며 artifact attestation이 이를 대신하지 않는다.
 - validator 자신이 교체될 수 있는 위협 모델에서는 higher-authority verifier가 hash/signature 확인을 수행해야 한다.
 
 ### Explicit approval assertion

@@ -33,10 +33,38 @@ class BundleTests(unittest.TestCase):
         self.assertIn(path, contract["distribution"]["required_files"])
         self.assertIn(path, contract["distribution"]["allowed_files"])
         self.assertIn(path, mod.CANONICAL_REQUIRED_FILES)
+        self.assertIn("expected_source_sha", workflow)
+        self.assertIn('test "$source_sha" = "$EXPECTED_SOURCE_SHA"', workflow)
+        self.assertIn('test "$workflow_path" = ".github/workflows/release.yml"', workflow)
+        self.assertIn('test "$source_branch" = "main"', workflow)
         self.assertIn("gh attestation verify", workflow)
         self.assertIn("--signer-workflow", workflow)
+        self.assertIn("--source-ref refs/heads/main", workflow)
         self.assertIn("--source-digest", workflow)
         self.assertIn("sha256sum --check", workflow)
+
+    def test_release_workflow_requires_main_source(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn('test "$GITHUB_REF" = "refs/heads/main"', workflow)
+
+    def test_github_actions_are_pinned_to_full_commit_shas(self):
+        import re
+        for rel in [
+            ".github/workflows/ci.yml",
+            ".github/workflows/release.yml",
+            ".github/workflows/verify-release.yml",
+        ]:
+            text = (ROOT / rel).read_text(encoding="utf-8")
+            uses = re.findall(r"^\s*-?\s*uses:\s*([^\s#]+)", text, flags=re.MULTILINE)
+            for ref in uses:
+                if ref.startswith("./"):
+                    continue
+                self.assertRegex(ref, r"^[^@]+@[0-9a-f]{40}$", (rel, ref))
+
+    def test_prose_validation_scope_does_not_overclaim_full_semantic_parsing(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        self.assertEqual("EXPLICIT_PARITY_CHECKS_ONLY", contract["authority"]["prose_validation_scope"])
+        self.assertIn("does not claim to semantically parse every sentence", contract["authority"]["conflict_rule"])
 
     def test_hash_locked_requirements_are_part_of_trusted_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")

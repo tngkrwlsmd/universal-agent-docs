@@ -104,7 +104,7 @@ python scripts/validate.py --readiness development
 python scripts/validate.py --readiness deployment
 ```
 
-validator는 Python 3.10+를 기준으로 한다. `requirements.txt`는 사람이 검토하는 직접 dependency intent를 유지하고, CI/release는 `requirements.lock`의 전체 transitive closure를 `--require-hashes`로 설치한다. lock은 지원하는 Python 3.10/3.14와 Linux/macOS/Windows에서 사용되는 wheel까지 SHA-256으로 고정한다.
+validator의 언어 기준선은 Python 3.10+다. `requirements.txt`는 사람이 검토하는 직접 dependency intent를 유지하고, CI/release는 `requirements.lock`의 전체 transitive closure를 `--require-hashes`로 설치한다. 이 저장소의 release qualification matrix는 현재 Python 3.10과 3.14를 Linux/macOS/Windows에서 직접 검증한다. 3.11~3.13을 지원 불가로 선언하는 것은 아니지만, 해당 minor가 이 저장소 CI에서 독립적으로 qualification되었다고 주장하지 않는다.
 
 회귀 테스트는 다음처럼 실행한다.
 
@@ -257,7 +257,7 @@ python scripts/validate.py \
 
 ## Source of Truth
 
-Source of Truth는 표현 계층을 분리한다. **machine-enforceable 규칙**(canonical operation, Effect/Exposure floor, gate, exact binding, replay)은 [`POLICY_CONTRACT.json`](POLICY_CONTRACT.json)이 normative owner다. **사람용 절차·근거·설명**은 [`POLICIES.md`](POLICIES.md)의 primary-owner 섹션이 소유한다. 둘이 enforcement 의미에서 불일치하면 Markdown이나 JSON 중 하나를 임의 우선하지 않고 bundle validation을 실패시켜 fail-closed한 뒤 함께 수정한다. validator는 contract/schema가 서로 동의한다는 사실만 믿지 않고 지원 `schema_version`, normalization ID, routing/action-boundary semantics를 구현 상수와도 비교한다.
+Source of Truth는 표현 계층을 분리한다. **machine-enforceable 규칙**(canonical operation, Effect/Exposure floor, gate, exact binding, replay)은 [`POLICY_CONTRACT.json`](POLICY_CONTRACT.json)이 normative owner다. **사람용 절차·근거·설명**은 [`POLICIES.md`](POLICIES.md)의 primary-owner 섹션이 소유한다. 둘이 enforcement 의미에서 불일치하면 Markdown이나 JSON 중 하나를 임의 우선하지 않고 **발견된 충돌을 invalid로 취급해 함께 수정한다.** 다만 validator가 `POLICIES.md`의 모든 자연어 문장을 의미론적으로 해석하는 것은 아니다. 자동 fail-closed 범위는 schema/contract/implementation 상수, risk matrix, routing/action-boundary semantics와 명시적 회귀 테스트처럼 **기계적으로 선언된 parity invariant**다. prose 전용 설명은 review/test에서 충돌이 발견되면 동일하게 invalid로 취급한다.
 
 ### 정책 무결성과 외부 trust anchor
 
@@ -352,7 +352,9 @@ source packager 출력은 항상 `universal-agent-docs.zip`, `universal-agent-do
 
 GitHub 저장소에서는 `.github/workflows/release.yml`을 수동 실행하면 동일한 canonical artifact를 생성하고 `actions/attest@v4`로 GitHub Artifact Attestation을 만든다. 이는 OIDC 기반 Sigstore 서명으로 build provenance를 제공한다. 저장소/플랜에서 attestation을 사용할 수 없는 경우에도 deterministic ZIP, SHA-256, detached manifests는 그대로 생성된다.
 
-`.github/workflows/verify-release.yml`은 검증할 release workflow run ID를 입력받아 해당 run의 source commit을 checkout하고 artifact를 내려받는다. 각 canonical artifact에 대해 `gh attestation verify`로 repository, signer workflow(`.github/workflows/release.yml`), source digest를 함께 고정한 뒤 detached ZIP checksum과 trust/release manifest 검증을 수행한다. 따라서 attestation을 생성하는 경로와 실제 소비 검증 경로가 분리되어 있다.
+`.github/workflows/verify-release.yml`은 release workflow run ID와 **별도 trusted channel에서 얻은 40-hex `expected_source_sha`**를 함께 입력받는다. verifier는 해당 run이 `.github/workflows/release.yml`의 성공한 `workflow_dispatch`이고 `main`에서 실행되었는지 확인한 뒤 run의 `head_sha`가 외부 expected SHA와 정확히 같은지 검증한다. 그 후 각 canonical artifact에 대해 `gh attestation verify`로 repository, signer workflow, `refs/heads/main`, source digest를 함께 고정하고 detached ZIP checksum과 trust/release manifest를 검증한다. run 자신이 제공한 SHA만으로 trust expectation을 만들지 않는다.
+
+GitHub Actions의 외부 action reference는 mutable major tag 대신 검토한 **full commit SHA**로 pin한다. branch protection/ruleset과 required review/CI는 repository governance의 별도 trust control이며 workflow 파일만으로 대체할 수 없다. provenance를 강한 trust signal로 사용하려면 `main` 보호 정책도 함께 설정하는 것이 권장된다.
 
 ## Distribution validation
 

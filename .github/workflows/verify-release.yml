@@ -7,6 +7,10 @@ on:
         description: "Release workflow run ID that produced the universal-agent-docs artifact"
         required: true
         type: string
+      expected_source_sha:
+        description: "Trusted 40-hex source commit SHA expected for that release"
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -17,21 +21,36 @@ jobs:
   verify:
     runs-on: ubuntu-latest
     steps:
-      - name: Resolve release source revision
+      - name: Verify release run identity and trusted source revision
         id: source
         env:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ inputs.run_id }}
+          EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
+        shell: bash
         run: |
-          source_sha="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID" --jq '.head_sha')"
-          test -n "$source_sha"
-          echo "sha=$source_sha" >> "$GITHUB_OUTPUT"
+          case "$EXPECTED_SOURCE_SHA" in
+            (*[!0-9a-f]*|'') echo "expected_source_sha must be lowercase hex" >&2; exit 1 ;;
+          esac
+          test "${#EXPECTED_SOURCE_SHA}" -eq 40
+          run_json="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")"
+          source_sha="$(jq -r '.head_sha' <<<"$run_json")"
+          source_branch="$(jq -r '.head_branch' <<<"$run_json")"
+          workflow_path="$(jq -r '.path' <<<"$run_json")"
+          conclusion="$(jq -r '.conclusion' <<<"$run_json")"
+          event="$(jq -r '.event' <<<"$run_json")"
+          test "$workflow_path" = ".github/workflows/release.yml"
+          test "$source_branch" = "main"
+          test "$event" = "workflow_dispatch"
+          test "$conclusion" = "success"
+          test "$source_sha" = "$EXPECTED_SOURCE_SHA"
+          echo "sha=$EXPECTED_SOURCE_SHA" >> "$GITHUB_OUTPUT"
 
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ steps.source.outputs.sha }}
 
-      - uses: actions/setup-python@v7
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.14"
           cache: pip

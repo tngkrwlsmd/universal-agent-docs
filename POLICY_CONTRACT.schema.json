@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 12
+      "const": 13
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -34,7 +34,8 @@
         "project_facts_source",
         "conflict_rule",
         "machine_policy_source",
-        "enforcement_conflict_behavior"
+        "enforcement_conflict_behavior",
+        "prose_validation_scope"
       ],
       "properties": {
         "root_router": {
@@ -58,6 +59,9 @@
         },
         "enforcement_conflict_behavior": {
           "const": "FAIL_CLOSED"
+        },
+        "prose_validation_scope": {
+          "const": "EXPLICIT_PARITY_CHECKS_ONLY"
         }
       }
     },
@@ -1052,8 +1056,10 @@
           "const": {
             "mechanism": "github_artifact_attestation",
             "workflow": ".github/workflows/release.yml",
-            "attestation_action": "actions/attest@v4",
-            "signature_model": "sigstore_oidc"
+            "attestation_action": "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
+            "signature_model": "sigstore_oidc",
+            "required_source_ref": "refs/heads/main",
+            "verifier_requires_expected_source_digest": true
           }
         }
       }

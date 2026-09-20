@@ -1,13 +1,14 @@
 {
-  "schema_version": 12,
+  "schema_version": 13,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
     "human_policy_source": "POLICIES.md",
     "project_facts_source": "PROJECT.md",
-    "conflict_rule": "Machine-enforceable rules are normative in POLICY_CONTRACT.json; POLICIES.md owns human procedures, rationale, and guidance. Any disagreement affecting enforcement is a bundle validation failure and must fail closed until reconciled.",
+    "conflict_rule": "Machine-enforceable rules are normative in POLICY_CONTRACT.json. Bundle validation fail-closes on explicit machine-readable/schema/implementation parity checks. Human-policy prose that conflicts with enforcement must be treated as invalid once detected and reconciled, but the validator does not claim to semantically parse every sentence in POLICIES.md.",
     "machine_policy_source": "POLICY_CONTRACT.json",
-    "enforcement_conflict_behavior": "FAIL_CLOSED"
+    "enforcement_conflict_behavior": "FAIL_CLOSED",
+    "prose_validation_scope": "EXPLICIT_PARITY_CHECKS_ONLY"
   },
   "policies": [
     {
@@ -1283,8 +1284,10 @@
     "release_provenance": {
       "mechanism": "github_artifact_attestation",
       "workflow": ".github/workflows/release.yml",
-      "attestation_action": "actions/attest@v4",
-      "signature_model": "sigstore_oidc"
+      "attestation_action": "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
+      "signature_model": "sigstore_oidc",
+      "required_source_ref": "refs/heads/main",
+      "verifier_requires_expected_source_digest": true
     }
   },
   "operation_lifecycle": {

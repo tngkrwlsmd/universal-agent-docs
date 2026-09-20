@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {12}
+SUPPORTED_SCHEMA_VERSIONS = {13}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -1923,6 +1923,12 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             "PASS" if schema_version in SUPPORTED_SCHEMA_VERSIONS else "FAIL",
             f"declared={schema_version!r}, supported={sorted(SUPPORTED_SCHEMA_VERSIONS)}",
         ))
+        authority = contract.get("authority") if isinstance(contract.get("authority"), dict) else {}
+        checks.append(Check(
+            "authority_prose_validation_scope",
+            "PASS" if authority.get("prose_validation_scope") == "EXPLICIT_PARITY_CHECKS_ONLY" else "FAIL",
+            json.dumps(authority, ensure_ascii=False),
+        ))
         routing = contract.get("routing") if isinstance(contract.get("routing"), dict) else {}
         normalization = routing.get("normalization")
         checks.append(Check(
@@ -2017,6 +2023,7 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             and integrity.get("release_manifest_must_be_out_of_band") is True
             and integrity.get("publisher_authenticity_requires_trusted_channel_or_signature") is True
             and integrity.get("self_attestation_is_sufficient") is False
+            and integrity.get("release_provenance") == {"mechanism":"github_artifact_attestation","workflow":".github/workflows/release.yml","attestation_action":"actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6","signature_model":"sigstore_oidc","required_source_ref":"refs/heads/main","verifier_requires_expected_source_digest":true}
         )
         checks.append(Check(
             "integrity_contract_implementation_parity",
