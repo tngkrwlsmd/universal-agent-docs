@@ -36,7 +36,7 @@ class BundleTests(unittest.TestCase):
         self.assertIn("release_tag", workflow)
         self.assertIn("expected_source_sha", workflow)
         self.assertIn('test "$resolved_sha" = "$EXPECTED_SOURCE_SHA"', workflow)
-        self.assertIn('test "$(jq -r \' .immutable\' <<<"$release_json")" = "true"'.replace(" \'", "\'"), workflow)
+        self.assertIn('test "$(jq -r \' .immutable\' <<<"$release_json")" = "true"'.replace("\' .", "\'."), workflow)
         self.assertIn("gh release verify", workflow)
         self.assertIn("gh release verify-asset", workflow)
         self.assertIn("gh attestation verify", workflow)
@@ -63,7 +63,7 @@ class BundleTests(unittest.TestCase):
     def test_release_workflow_publishes_and_verifies_immutable_release(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn("gh release create", workflow)
-        self.assertIn('test "$(jq -r \' .immutable\' <<<"$release_json")" = "true"'.replace(" \'", "\'"), workflow)
+        self.assertIn('test "$(jq -r \' .immutable\' <<<"$release_json")" = "true"'.replace("\' .", "\'."), workflow)
         self.assertIn("gh release verify", workflow)
         self.assertIn("gh release verify-asset", workflow)
         self.assertLess(workflow.index("Generate signed build provenance"), workflow.index("Publish GitHub Release with canonical assets"))
