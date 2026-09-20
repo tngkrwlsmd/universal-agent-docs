@@ -42,10 +42,24 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--source-ref refs/heads/main", workflow)
         self.assertIn("--source-digest", workflow)
         self.assertIn("sha256sum --check", workflow)
+        self.assertIn("universal-agent-docs-consumer", workflow)
+        self.assertIn("package_consumer.py", workflow)
 
     def test_release_workflow_requires_main_source(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn('test "$GITHUB_REF" = "refs/heads/main"', workflow)
+
+    def test_release_workflow_attests_consumer_artifacts_after_upload(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn("python scripts/package_consumer.py --output-dir dist", workflow)
+        self.assertIn("name: universal-agent-docs-consumer", workflow)
+        self.assertIn("dist/universal-agent-docs-consumer.zip", workflow)
+        self.assertLess(workflow.index("Upload canonical consumer artifacts"), workflow.index("Generate signed build provenance"))
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        provenance = contract["integrity"]["release_provenance"]
+        self.assertTrue(provenance["consumer_verification_required"])
+        self.assertIn("universal-agent-docs-consumer.zip", provenance["attested_artifacts"])
+
 
     def test_github_actions_are_pinned_to_full_commit_shas(self):
         import re
