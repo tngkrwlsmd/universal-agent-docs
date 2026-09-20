@@ -140,15 +140,58 @@ class PackagingPropertyTests(unittest.TestCase):
                 self.assertTrue(all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist()))
                 consumer_agents = zf.read("universal-agent-docs-consumer/AGENTS.md").decode("utf-8")
             self.assertIn("universal-agent-docs-consumer/AGENTS.md", names)
-            self.assertIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
+            self.assertIn("universal-agent-docs-consumer/.agent-policy/POLICIES.md", names)
+            self.assertIn("universal-agent-docs-consumer/.agent-policy/PROJECT.md", names)
+            self.assertIn("universal-agent-docs-consumer/.agent-policy/CONSUMER_INSTALL.json", names)
             self.assertIn("](PROJECT.md)", consumer_agents)
             self.assertIn("--project-file ./PROJECT.md --project-root .", consumer_agents)
             self.assertNotIn("](.agent-policy/PROJECT.md)", consumer_agents)
             self.assertNotIn("universal-agent-docs-consumer/README.md", names)
-            self.assertNotIn("universal-agent-docs-consumer/LICENSE", names)
-            self.assertNotIn("universal-agent-docs-consumer/requirements.txt", names)
-            self.assertFalse(any(x.startswith("universal-agent-docs-consumer/tests/") for x in names))
-            self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.github/") for x in names))
+            self.assertNotIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
+            self.assertNotIn("universal-agent-docs-consumer/.agent-policy/scripts/package.py", names)
+            self.assertNotIn("universal-agent-docs-consumer/.agent-policy/scripts/package_consumer.py", names)
+            self.assertFalse(any("/tests/" in x for x in names))
+            self.assertFalse(any("/.github/" in x for x in names))
+
+    def test_consumer_archive_hardening_rejects_symlink_and_collision(self):
+        contract = validate.load_json(ROOT / "POLICY_CONTRACT.json")
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            result = consumer_package_mod.package_consumer(out)
+            original = Path(result["zip"])
+            bad = out / "bad-consumer.zip"
+            with zipfile.ZipFile(original) as src, zipfile.ZipFile(bad, "w", compression=zipfile.ZIP_STORED) as dst:
+                for info in src.infolist():
+                    dst.writestr(info, src.read(info.filename))
+                link = zipfile.ZipInfo("universal-agent-docs-consumer/.agent-policy/link")
+                link.create_system = 3
+                link.external_attr = (0o120777 << 16)
+                dst.writestr(link, b"PROJECT.md")
+                dst.writestr("universal-agent-docs-consumer/.agent-policy/policies.md", b"collision")
+            checked = consumer_package_mod.validate_consumer_zip(bad, contract)
+            self.assertEqual("FAIL", checked["status"], checked)
+            joined = "\n".join(checked["errors"])
+            self.assertIn("symlink", joined.lower())
+            self.assertIn("collision", joined.lower())
+
+    def test_consumer_archive_hardening_rejects_traversal_and_resource_limits(self):
+        contract = validate.load_json(ROOT / "POLICY_CONTRACT.json")
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            result = consumer_package_mod.package_consumer(out)
+            original = Path(result["zip"])
+            bad = out / "bad-consumer.zip"
+            with zipfile.ZipFile(original) as src, zipfile.ZipFile(bad, "w", compression=zipfile.ZIP_STORED) as dst:
+                for info in src.infolist():
+                    dst.writestr(info, src.read(info.filename))
+                dst.writestr("../outside.txt", b"x")
+                huge = b"x" * (contract["distribution"]["max_file_uncompressed_bytes"] + 1)
+                dst.writestr("universal-agent-docs-consumer/.agent-policy/huge.bin", huge)
+            checked = consumer_package_mod.validate_consumer_zip(bad, contract)
+            self.assertEqual("FAIL", checked["status"], checked)
+            joined = "\n".join(checked["errors"])
+            self.assertIn("unsafe consumer ZIP entry", joined)
+            self.assertIn("exceed", joined)
 
     def test_packager_is_deterministic_and_outputs_detached_files(self):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
