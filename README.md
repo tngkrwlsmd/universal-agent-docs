@@ -24,10 +24,14 @@ universal-agent-docs/
 ├── requirements.lock
 ├── conformance/
 │   ├── README.md
+│   ├── corpus.schema.json
+│   ├── result.schema.json
+│   ├── coverage.json
 │   ├── golden.json
 │   └── invalid.json
 ├── scripts/
 │   ├── validate.py
+│   ├── conformance.py
 │   ├── package.py
 │   └── package_consumer.py
 ├── tests/
@@ -59,7 +63,8 @@ universal-agent-docs/
 - `scripts/validate.py`: 기존 CLI/import 호환성을 유지하는 얇은 orchestration facade. 실제 policy logic은 `scripts/validation/`의 `contract`, `routing`, `risk`, `runtime`, `integrity`, `readiness`, `bundle`, `distribution`, `approval`, `override` 모듈로 분리되어 있다.
 - `scripts/package.py`: canonical ZIP, detached core trust manifest, detached full release manifest, ZIP SHA-256을 일관되게 생성하고 다시 검증하는 release packager
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
-- `conformance/`: runtime/tool adapter가 canonical operation과 exposure fact를 정확히 보고하는지 검증하는 golden/invalid vector kit
+- `conformance/`: Python API와 독립된 JSON v2 corpus/schema/result protocol. TypeScript/Go/Rust/Java 구현체도 같은 normative fields를 비교할 수 있다.
+- `scripts/conformance.py`: language-neutral corpus를 실행하는 Python reference runner. policy semantics의 Source of Truth가 아니라 reference implementation이다.
 - `.github/workflows/ci.yml`: Linux/macOS/Windows에서 bundle validation과 전체 테스트를 실행하는 CI
 - `.github/workflows/release.yml`: `vMAJOR.MINOR.PATCH` SemVer tag push를 release identity로 사용해 canonical artifact를 만들고 build attestation을 생성한 뒤 immutable GitHub Release로 publish하는 workflow
 - `.github/workflows/verify-release.yml`: trusted release tag + source SHA를 기준으로 immutable release attestation, build provenance, detached checksum, trust/release manifest를 소비자 관점에서 다시 검증하는 workflow
@@ -302,17 +307,21 @@ readiness는 세 범위를 분리해 보고한다.
 
 `--bootstrap-project`는 repository를 관찰해 `PROJECT.inferred.md` 후보를 만든다. `src`/`services`/`packages` 같은 source 후보, `package.json`/`Makefile`의 command literal, runtime version source, component path와 Git revision을 탐색하지만 모든 자동 발견 fact는 `Inferred`로 남긴다. 따라서 bootstrap 자체가 documented readiness를 PASS로 만들지 못한다. 기존 output이 있으면 기본적으로 덮어쓰지 않으며, 잘못 추론된 후보를 사용자가 evidence에 맞게 교정하는 흐름을 전제로 한다.
 
-## Adapter conformance kit
+## Language-neutral conformance suite
 
-범용 정책 엔진의 가장 중요한 신뢰 경계는 runtime/tool adapter가 실제 action을 정확한 canonical operation과 exposure fact로 보고하는지 여부다. `conformance/golden.json`은 반드시 통과해야 하는 대표 mapping을, `conformance/invalid.json`은 under-reporting/opaque mapping처럼 반드시 차단되어야 하는 사례를 정의한다.
+`conformance/golden.json`과 `conformance/invalid.json`은 `universal-agent-docs-conformance-v2` JSON corpus다. 각 vector는 `kind`, `input`, `expected`, `normative_fields`, `covers`를 가지며, 구현체는 diagnostic 전체가 아니라 `normative_fields`의 JSON Pointer만 비교한다. Python 함수 이름이나 exception text는 conformance contract가 아니다.
 
 ```bash
+python scripts/conformance.py
+python scripts/conformance.py --coverage
 python -m unittest tests.test_conformance -v
 ```
 
-새 adapter를 붙일 때는 이 corpus를 그대로 실행하고, adapter 전용 사례가 필요하면 같은 wire shape의 vector를 추가한다. 특히 `terraform destroy`, `git reset --hard`, public package/artifact publish, privileged credential 사용처럼 Effect/Exposure가 크게 달라지는 action은 구조화된 semantics와 실제 operation ID가 함께 맞아야 한다.
+`conformance/corpus.schema.json`은 corpus wire format을, `result.schema.json`은 외부 구현체가 반환할 aggregate result 형식을 정의한다. `coverage.json`은 필수 semantic coverage와 operation direct-coverage/exemption ledger를 갖기 때문에 새 canonical operation이 추가되었는데 vector 또는 명시적 exemption이 없으면 coverage test가 실패한다.
 
-기본 corpus는 일반 개발 루프의 `build.execute`/`lint.execute`/`typecheck.execute`/`format.execute`, multi-operation build 흐름, generated/tracked/general delete 구분도 포함한다. `filesystem.tracked_delete`는 단순 파일명으로 L2가 되지 않으며 runtime adapter가 `recoverability=git_tracked_clean`과 `recovery_revision`을 제출해야 한다.
+현재 suite는 routing authority/advisory/enforcement, unknown/deprecated lifecycle, Effect floor와 production/context escalation, raw Exposure derivation, plan/actual mismatch, opaque runtime operation, high-confidence signature, target/environment requirement, action digest determinism, approval/override exact binding·expiry·replay, readiness evidence state, ZIP traversal/duplicate/casefold/Unicode/symlink/resource limit, trust/release manifest integrity를 포함한다.
+
+다른 언어 구현체는 repository Python 코드를 import할 필요가 없다. `POLICY_CONTRACT.json`과 `conformance/` JSON 파일만 소비해 동일 vector ID와 normative result를 반환하면 된다. 상세 wire protocol과 stable vector lifecycle은 `conformance/README.md`를 따른다.
 
 ## Consumer installation layout
 
