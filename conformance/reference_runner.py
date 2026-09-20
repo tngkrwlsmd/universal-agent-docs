@@ -259,6 +259,12 @@ def evaluate_case(case: dict, contract: dict) -> dict:
         )
 
     if kind == "lifecycle":
+        if data.get("scenario") == "deprecated_policy":
+            lifecycle = contract["operation_lifecycle"]
+            return {
+                "deprecated_operation_requires_replacement": lifecycle["deprecated_operation_requires_replacement"],
+                "adapter_must_reject_unknown_operation_ids": lifecycle["adapter_must_reject_unknown_operation_ids"],
+            }
         item = operation_catalog(contract).get(data["operation"])
         return {"known": item is not None, "lifecycle_status": item.get("lifecycle_status") if item else None}
 
@@ -288,6 +294,8 @@ def evaluate_case(case: dict, contract: dict) -> dict:
             payload["approval"]["correlation_id"] = "other-action"
         elif mutation == "execution_nonce":
             payload["approval"]["execution_nonce"] = "other-approval-nonce-0001"
+        elif mutation == "action_digest":
+            payload["approval"]["action_digest"] = "sha256:" + "0" * 64
         reference_time = _reference_time(data["reference_time"])
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
@@ -310,6 +318,9 @@ def evaluate_case(case: dict, contract: dict) -> dict:
         mutation = data["mutation"]
         if mutation == "action_digest":
             payload["action_digest"] = "sha256:" + "0" * 64
+        elif mutation == "expired":
+            payload["issued_at"] = "2029-12-31T23:00:00Z"
+            payload["expires_at"] = "2029-12-31T23:10:00Z"
         reference_time = _reference_time(data["reference_time"])
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
