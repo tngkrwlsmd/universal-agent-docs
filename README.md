@@ -4,6 +4,48 @@
 
 목표는 정책 파일을 많이 만드는 것이 아니라, 개발 에이전트가 **무엇을 신뢰하고, 어떤 정책을 적용하고, 어떤 위험을 확인하고, 무엇을 실제로 검증했는지** 일관되게 판단하도록 하는 것이다.
 
+## 5분 Quick Start
+
+처음 도입할 때는 "정책을 읽히는 것"과 "실제 tool 실행을 차단하는 것"을 같은 수준으로 보지 않는다. 필요한 보장에 따라 다음 세 profile 중 하나를 목표로 한다.
+
+| Profile | 선택 기준 | 제공 | 제공하지 않음 |
+|---|---|---|---|
+| **A — Guidance** | 에이전트에게 저장소 규칙과 project facts를 일관되게 읽히고 싶다 | root `AGENTS.md`, human policy, PROJECT facts | runtime/tool 실행 차단, approval enforcement |
+| **B — Validated** | CI에서 policy/readiness/routing/risk/integrity를 검증하고 싶다 | A + validator, canonical routing, Effect/Exposure/gate 계산, distribution validation | trusted runtime assertion이 없으면 실제 side-effect 차단 보장 없음 |
+| **C — Enforced Runtime** | 실제 tool/API/action 직전에 allow/block/approval/override를 강제해야 한다 | B + trusted runtime adapter, actual-vs-planned check, digest, replay, protected override | adapter가 intercept하지 못하는 surface까지 자동 통제한다는 보장 없음 |
+
+**선택법:** 지침만 필요하면 A, 자동 validation이 필요하면 B, 실제 실행을 기술적으로 막아야 하면 C다. production/customer data/privileged credential/external-public side effect를 자동 실행하는 환경은 C를 목표로 한다.
+
+### Consumer bundle로 시작
+
+source bundle을 프로젝트 root에 그대로 overlay하지 않는다. 먼저 consumer bundle을 staging 위치에 만든다.
+
+```bash
+python -m pip install --require-hashes --requirement requirements.lock
+python scripts/package_consumer.py --output-dir dist
+python -m zipfile -e dist/universal-agent-docs-consumer.zip /tmp/uad-consumer
+```
+
+staging의 `universal-agent-docs-consumer/.agent-policy/`를 소비 프로젝트에 적용한다. root `AGENTS.md`가 없으면 generated router를 사용할 수 있다. **이미 root `AGENTS.md`가 있으면 덮어쓰지 말고 기존 instruction hierarchy와 generated router를 사람이 검토해 병합한다.**
+
+설치 직후 vendored `.agent-policy/PROJECT.md`는 의도적으로 template 상태다. 소비 프로젝트 root에서 bootstrap candidate를 만든다.
+
+```bash
+python .agent-policy/scripts/validate.py \
+  --bootstrap-project . \
+  --bootstrap-output ./PROJECT.candidate.md
+```
+
+candidate를 실제 source/config와 대조해 필요한 fact만 `Confirmed` 또는 근거 있는 `N/A`로 반영한 뒤 readiness를 실행한다.
+
+```bash
+python .agent-policy/scripts/validate.py --project-root . --readiness development
+```
+
+여기까지는 A/B 도입 흐름이다. **B의 validator가 gate를 계산해도 trusted runtime/tool interception이 없으면 execution enforcement라고 부르지 않는다.** 실제 tool boundary에서 차단하려면 C의 runtime adapter, trusted actual operation, action digest, atomic approval/override replay protection이 필요하다.
+
+세 profile의 보장/비보장, upgrade path, production checklist, 최소 layout은 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)에 정리되어 있다.
+
 ## 구성
 
 ```text
