@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {16}
+SUPPORTED_SCHEMA_VERSIONS = {17}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -148,6 +148,7 @@ CANONICAL_REQUIRED_FILES = [
     "AGENTS.md",
     "POLICIES.md",
     "PROJECT.md",
+    "PROJECT.template.md",
     "POLICY_CONTRACT.json",
     "POLICY_CONTRACT.schema.json",
     "ROUTING_ALIASES.json",
@@ -173,6 +174,24 @@ CANONICAL_REQUIRED_FILES = [
     "conformance/invalid.json",
     "tests/test_conformance.py",
 ]
+
+CONSUMER_RUNTIME_FILES = [
+    "AGENTS.md",
+    "POLICIES.md",
+    "PROJECT.md",
+    "POLICY_CONTRACT.json",
+    "POLICY_CONTRACT.schema.json",
+    "ROUTING_ALIASES.json",
+    "ROUTING_ALIASES.schema.json",
+    "RUNTIME_ACTION.schema.json",
+    "APPROVAL_ASSERTION.schema.json",
+    "PROTECTED_OVERRIDE.schema.json",
+    "LICENSE",
+    "requirements.txt",
+    "requirements.lock",
+    "scripts/validate.py",
+]
+CONSUMER_INSTALL_MARKER = "CONSUMER_INSTALL.json"
 
 
 @dataclass
@@ -1844,8 +1863,13 @@ def compile_python_sources(root: Path) -> list[Check]:
 
 def bundle_checks(root: Path = ROOT) -> list[Check]:
     checks: list[Check] = []
+    consumer_install = (root / CONSUMER_INSTALL_MARKER).is_file()
+    required_files = (
+        CONSUMER_RUNTIME_FILES + [CONSUMER_INSTALL_MARKER]
+        if consumer_install else CANONICAL_REQUIRED_FILES
+    )
     missing = []
-    for rel in CANONICAL_REQUIRED_FILES:
+    for rel in required_files:
         ok = (root / rel).is_file()
         checks.append(Check(f"file:{rel}", "PASS" if ok else "FAIL", ""))
         if not ok:
@@ -1886,6 +1910,24 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
         protected_override_schema = load_json(root / "PROTECTED_OVERRIDE.schema.json")
     except Exception as exc:
         checks.append(Check("protected_override_schema_json", "FAIL", str(exc)))
+
+    if consumer_install and contract is not None:
+        try:
+            marker = load_json(root / CONSUMER_INSTALL_MARKER)
+        except Exception as exc:
+            checks.append(Check("consumer_install_marker", "FAIL", str(exc)))
+        else:
+            expected_marker = {
+                "format": "universal-agent-docs-consumer-install-v1",
+                "policy_schema_version": contract.get("schema_version"),
+                "policy_contract_digest": canonical_policy_contract_digest(contract),
+                "vendored_files": CONSUMER_RUNTIME_FILES,
+            }
+            checks.append(Check(
+                "consumer_install_marker",
+                "PASS" if marker == expected_marker else "FAIL",
+                json.dumps(marker, ensure_ascii=False),
+            ))
 
     if contract is not None and schema is not None:
         if jsonschema is None:
@@ -2083,13 +2125,13 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             contract_digest,
         ))
         readme_path = root / "README.md"
-        canonical_artifact_documented = False
+        canonical_artifact_documented = consumer_install
         if readme_path.is_file():
             canonical_artifact_documented = "`universal-agent-docs.zip`" in readme_path.read_text(encoding="utf-8")
         checks.append(Check(
             "canonical_artifact_name_documented",
             "PASS" if canonical_artifact_documented else "FAIL",
-            "universal-agent-docs.zip",
+            "consumer install: not applicable" if consumer_install else "universal-agent-docs.zip",
         ))
 
         checks.append(Check("canonical_name", "PASS" if contract.get("project_name") == CANONICAL_ROOT else "FAIL", str(contract.get("project_name"))))
@@ -2111,7 +2153,14 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             consumer.get("canonical_root") == "universal-agent-docs-consumer"
             and consumer.get("policy_root") == ".agent-policy"
             and consumer.get("root_agents_path") == "AGENTS.md"
-            and consumer.get("vendored_files_source") == "distribution.required_files"
+            and consumer.get("vendored_files_source") == "consumer_distribution.vendored_files"
+            and consumer.get("vendored_files") == CONSUMER_RUNTIME_FILES
+            and consumer.get("vendored_file_source_overrides") == {"PROJECT.md": "PROJECT.template.md"}
+            and consumer.get("install_marker_path") == CONSUMER_INSTALL_MARKER
+            and consumer.get("archive_hardening_source") == "distribution"
+            and consumer.get("consumer_project_facts_path") == "PROJECT.md"
+            and consumer.get("vendored_project_template_path") == ".agent-policy/PROJECT.md"
+            and consumer.get("readiness_requires_explicit_project_root") is True
             and consumer.get("release_manifest_format") == "universal-agent-docs-consumer-release-manifest-v1"
             and consumer.get("overwrite_existing_root_agents") is False
             and consumer.get("extraction_requires_collision_check") is True
