@@ -1,5 +1,5 @@
 {
-  "schema_version": 10,
+  "schema_version": 11,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -933,6 +933,7 @@
       "requirements.lock",
       "scripts/validate.py",
       "scripts/package.py",
+      "scripts/package_consumer.py",
       "tests/__init__.py",
       "tests/test_policy.py",
       "tests/test_fuzz.py",
@@ -961,6 +962,7 @@
       "requirements.lock",
       "scripts/validate.py",
       "scripts/package.py",
+      "scripts/package_consumer.py",
       "tests/__init__.py",
       "tests/test_policy.py",
       "tests/test_fuzz.py",
@@ -1191,6 +1193,7 @@
       "PROTECTED_OVERRIDE.schema.json",
       "scripts/validate.py",
       "scripts/package.py",
+      "scripts/package_consumer.py",
       "requirements.txt",
       "requirements.lock"
     ],
@@ -1219,5 +1222,14 @@
     "alias_only_change_requires_schema_version_bump": false,
     "deprecated_operation_requires_replacement": true,
     "adapter_must_reject_unknown_operation_ids": true
+  },
+  "consumer_distribution": {
+    "canonical_root": "universal-agent-docs-consumer",
+    "policy_root": ".agent-policy",
+    "root_agents_path": "AGENTS.md",
+    "vendored_files_source": "distribution.required_files",
+    "release_manifest_format": "universal-agent-docs-consumer-release-manifest-v1",
+    "overwrite_existing_root_agents": false,
+    "extraction_requires_collision_check": true
   }
 }

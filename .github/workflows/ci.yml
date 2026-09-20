@@ -38,3 +38,10 @@ jobs:
           --distribution dist/universal-agent-docs.zip
           --trusted-manifest dist/universal-agent-docs.trust.json
           --release-manifest dist/universal-agent-docs.release.json
+      - name: Build consumer distribution
+        run: python scripts/package_consumer.py --output-dir dist
+      - name: Verify consumer distribution
+        run: >-
+          python scripts/package_consumer.py
+          --verify dist/universal-agent-docs-consumer.zip
+          --release-manifest dist/universal-agent-docs-consumer.release.json

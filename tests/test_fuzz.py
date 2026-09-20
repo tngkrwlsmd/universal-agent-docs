@@ -4,6 +4,7 @@ import importlib.util
 import random
 import sys
 import tempfile
+import zipfile
 import unicodedata
 import unittest
 from pathlib import Path
@@ -22,6 +23,7 @@ def load_module(name: str, path: Path):
 
 validate = load_module("uad_validate_fuzz", ROOT / "scripts" / "validate.py")
 package_mod = load_module("uad_package_fuzz", ROOT / "scripts" / "package.py")
+consumer_package_mod = load_module("uad_consumer_package_fuzz", ROOT / "scripts" / "package_consumer.py")
 
 
 class RoutingPropertyTests(unittest.TestCase):
@@ -122,6 +124,27 @@ class ArchivePropertyTests(unittest.TestCase):
 
 
 class PackagingPropertyTests(unittest.TestCase):
+    def test_consumer_package_is_collision_safe_and_self_verifying(self):
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            result = consumer_package_mod.package_consumer(out)
+            self.assertEqual("PASS", result["status"], result)
+            zip_path = Path(result["zip"])
+            release = Path(result["release_manifest"])
+            checked = consumer_package_mod.validate_consumer_zip(
+                zip_path, validate.load_json(ROOT / "POLICY_CONTRACT.json"), release
+            )
+            self.assertEqual("PASS", checked["status"], checked)
+            with zipfile.ZipFile(zip_path) as zf:
+                names = [x.filename for x in zf.infolist() if not x.is_dir()]
+            self.assertIn("universal-agent-docs-consumer/AGENTS.md", names)
+            self.assertIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
+            self.assertNotIn("universal-agent-docs-consumer/README.md", names)
+            self.assertNotIn("universal-agent-docs-consumer/LICENSE", names)
+            self.assertNotIn("universal-agent-docs-consumer/requirements.txt", names)
+            self.assertFalse(any(x.startswith("universal-agent-docs-consumer/tests/") for x in names))
+            self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.github/") for x in names))
+
     def test_packager_is_deterministic_and_outputs_detached_files(self):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
             first = package_mod.package(Path(a))

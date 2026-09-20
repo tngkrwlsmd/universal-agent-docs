@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {10}
+SUPPORTED_SCHEMA_VERSIONS = {11}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -113,7 +113,7 @@ ACTION_DIGEST_FORMAT = "universal-agent-docs-action-digest-v3"
 TRUSTED_CORE_FILES = [
     "AGENTS.md", "POLICIES.md", "POLICY_CONTRACT.json", "POLICY_CONTRACT.schema.json",
     "ROUTING_ALIASES.json", "ROUTING_ALIASES.schema.json", "RUNTIME_ACTION.schema.json",
-    "APPROVAL_ASSERTION.schema.json", "PROTECTED_OVERRIDE.schema.json", "scripts/validate.py", "scripts/package.py", "requirements.txt", "requirements.lock",
+    "APPROVAL_ASSERTION.schema.json", "PROTECTED_OVERRIDE.schema.json", "scripts/validate.py", "scripts/package.py", "scripts/package_consumer.py", "requirements.txt", "requirements.lock",
 ]
 REVIEW_FRESHNESS_DAYS = 90
 PROJECT_FACT_KEYS = (
@@ -138,6 +138,7 @@ CANONICAL_REQUIRED_FILES = [
     "requirements.lock",
     "scripts/validate.py",
     "scripts/package.py",
+    "scripts/package_consumer.py",
     "tests/__init__.py",
     "tests/test_policy.py",
     "tests/test_fuzz.py",
@@ -2047,6 +2048,22 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             "distribution_allowed_manifest_parity",
             "PASS" if declared_allowed == CANONICAL_REQUIRED_FILES else "FAIL",
             "canonical allowed file manifest" if declared_allowed == CANONICAL_REQUIRED_FILES else json.dumps(declared_allowed, ensure_ascii=False),
+        ))
+
+        consumer = contract.get("consumer_distribution") if isinstance(contract.get("consumer_distribution"), dict) else {}
+        consumer_ok = (
+            consumer.get("canonical_root") == "universal-agent-docs-consumer"
+            and consumer.get("policy_root") == ".agent-policy"
+            and consumer.get("root_agents_path") == "AGENTS.md"
+            and consumer.get("vendored_files_source") == "distribution.required_files"
+            and consumer.get("release_manifest_format") == "universal-agent-docs-consumer-release-manifest-v1"
+            and consumer.get("overwrite_existing_root_agents") is False
+            and consumer.get("extraction_requires_collision_check") is True
+        )
+        checks.append(Check(
+            "consumer_distribution_contract",
+            "PASS" if consumer_ok else "FAIL",
+            json.dumps(consumer, ensure_ascii=False),
         ))
 
     if (root / "AGENTS.md").is_file():

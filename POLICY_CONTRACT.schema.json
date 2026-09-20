@@ -14,12 +14,13 @@
     "operation_lifecycle",
     "protected_override",
     "distribution",
+    "consumer_distribution",
     "execution_boundary",
     "integrity"
   ],
   "properties": {
     "schema_version": {
-      "const": 10
+      "const": 11
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -1072,6 +1073,42 @@
           "const": true
         },
         "adapter_must_reject_unknown_operation_ids": {
+          "const": true
+        }
+      }
+    },
+    "consumer_distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_root",
+        "policy_root",
+        "root_agents_path",
+        "vendored_files_source",
+        "release_manifest_format",
+        "overwrite_existing_root_agents",
+        "extraction_requires_collision_check"
+      ],
+      "properties": {
+        "canonical_root": {
+          "const": "universal-agent-docs-consumer"
+        },
+        "policy_root": {
+          "const": ".agent-policy"
+        },
+        "root_agents_path": {
+          "const": "AGENTS.md"
+        },
+        "vendored_files_source": {
+          "const": "distribution.required_files"
+        },
+        "release_manifest_format": {
+          "const": "universal-agent-docs-consumer-release-manifest-v1"
+        },
+        "overwrite_existing_root_agents": {
+          "const": false
+        },
+        "extraction_requires_collision_check": {
           "const": true
         }
       }
