@@ -59,7 +59,7 @@ universal-agent-docs/
 - `scripts/validate.py`: 기존 CLI/import 호환성을 유지하는 얇은 orchestration facade. 실제 policy logic은 `scripts/validation/`의 `contract`, `routing`, `risk`, `runtime`, `integrity`, `readiness`, `bundle`, `distribution`, `approval`, `override` 모듈로 분리되어 있다.
 - `scripts/package.py`: canonical ZIP, detached core trust manifest, detached full release manifest, ZIP SHA-256을 일관되게 생성하고 다시 검증하는 release packager
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
-- `conformance/`: runtime/tool adapter가 canonical operation과 exposure fact를 정확히 보고하는지 검증하는 golden/invalid vector kit
+- `conformance/`: JSON Schema로 정의된 language-neutral conformance suite, result protocol, Python reference runner. 외부 TypeScript/Go/Rust/Java 구현체도 Python 코드를 import하지 않고 동일 corpus를 소비할 수 있다.
 - `.github/workflows/ci.yml`: Linux/macOS/Windows에서 bundle validation과 전체 테스트를 실행하는 CI
 - `.github/workflows/release.yml`: `vMAJOR.MINOR.PATCH` SemVer tag push를 release identity로 사용해 canonical artifact를 만들고 build attestation을 생성한 뒤 immutable GitHub Release로 publish하는 workflow
 - `.github/workflows/verify-release.yml`: trusted release tag + source SHA를 기준으로 immutable release attestation, build provenance, detached checksum, trust/release manifest를 소비자 관점에서 다시 검증하는 workflow
