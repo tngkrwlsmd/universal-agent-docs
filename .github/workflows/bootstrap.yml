@@ -76,4 +76,5 @@ jobs:
           git add -A
           git diff --cached --check
           git commit -m "Publish universal-agent-docs"
+          git pull --rebase origin main
           git push origin HEAD:main
