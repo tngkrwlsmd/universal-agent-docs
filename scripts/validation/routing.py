@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import fnmatch
+import json
 import re
 import unicodedata
 from pathlib import Path
+from typing import Iterable
 
 from .contract import ENFORCEMENT_REQUIRES_RESOLVED_PLAN, ROOT, load_json
 
