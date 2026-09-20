@@ -6,84 +6,97 @@ import sys
 import unittest
 from pathlib import Path
 
+import jsonschema
+
 ROOT = Path(__file__).resolve().parents[1]
-VALIDATOR = ROOT / "scripts" / "validate.py"
-spec = importlib.util.spec_from_file_location("policy_validate_conformance", VALIDATOR)
-mod = importlib.util.module_from_spec(spec)
-assert spec.loader is not None
-sys.modules[spec.name] = mod
-spec.loader.exec_module(mod)
+RUNNER = ROOT / "conformance" / "reference_runner.py"
+SPEC = importlib.util.spec_from_file_location("uad_conformance_runner", RUNNER)
+runner = importlib.util.module_from_spec(SPEC)
+assert SPEC and SPEC.loader
+sys.modules[SPEC.name] = runner
+SPEC.loader.exec_module(runner)
 
 
-class AdapterConformanceTests(unittest.TestCase):
+class LanguageNeutralConformanceTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        cls.contract = json.loads((ROOT / "POLICY_CONTRACT.json").read_text(encoding="utf-8"))
+        cls.suite = json.loads((ROOT / "conformance" / "suite.json").read_text(encoding="utf-8"))
+        cls.schema = json.loads((ROOT / "conformance" / "schema.json").read_text(encoding="utf-8"))
+        cls.result_schema = json.loads((ROOT / "conformance" / "result.schema.json").read_text(encoding="utf-8"))
 
-    def evaluate(self, vector):
-        return mod.evaluate_execution_boundary(
-            self.contract,
-            vector["planned_operations"],
-            vector["actual_operations"],
-            vector.get("affected_resources", []),
-            vector.get("targets", []),
-            vector["environment"],
-            None,
-            vector.get("runtime_effect"),
-            vector.get("actual_action", ""),
-            exposure_facts=vector["exposure_facts"],
-            correlation_id=f"conformance-{vector['id']}",
-            execution_nonce=f"nonce-{vector['id']}-00000001",
-            adapter={
-                "id": "conformance-adapter",
-                "surface": "adapter-conformance-kit",
-                "assertion_source": "human_reviewed",
-                "version": "1",
-            },
-            semantic_details=vector.get("semantic_details", {}),
-        )
+    def test_suite_schema_and_stable_unique_ids(self):
+        jsonschema.validate(self.suite, self.schema)
+        ids = [case["id"] for case in self.suite["cases"]]
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertEqual(2, self.suite["conformance_version"])
+        self.assertEqual(self.contract["schema_version"], self.suite["contract_schema_version"])
 
-    def test_golden_vectors(self):
-        doc = json.loads((ROOT / "conformance" / "golden.json").read_text(encoding="utf-8"))
-        self.assertEqual(1, doc["schema_version"])
-        for vector in doc["vectors"]:
-            with self.subTest(vector=vector["id"]):
-                result = self.evaluate(vector)
-                for key, expected in vector["expected"].items():
-                    self.assertEqual(expected, result.get(key), result)
+    def test_reference_runner_passes_entire_suite(self):
+        result = runner.run_suite()
+        jsonschema.validate(result, self.result_schema)
+        self.assertEqual(result["summary"]["total"], result["summary"]["passed"], result)
+        self.assertEqual(0, result["summary"]["failed"], result)
 
-    def test_invalid_vectors_fail_closed(self):
-        doc = json.loads((ROOT / "conformance" / "invalid.json").read_text(encoding="utf-8"))
-        self.assertEqual(1, doc["schema_version"])
-        for vector in doc["vectors"]:
-            with self.subTest(vector=vector["id"]):
-                result = self.evaluate(vector)
-                self.assertEqual("FAIL", result["status"], result)
-                joined = "\n".join(result["errors"])
-                self.assertIn(vector["expected_error_contains"], joined, result)
+    def test_legacy_vector_ids_are_preserved(self):
+        legacy = set()
+        for name in ["golden.json", "invalid.json"]:
+            doc = json.loads((ROOT / "conformance" / name).read_text(encoding="utf-8"))
+            legacy.update(vector["id"] for vector in doc["vectors"])
+        current = {case["id"] for case in self.suite["cases"]}
+        self.assertEqual(set(), legacy - current)
 
-    def test_minimum_cross_family_operation_coverage(self):
-        doc = json.loads((ROOT / "conformance" / "golden.json").read_text(encoding="utf-8"))
-        covered = {
-            operation
-            for vector in doc["vectors"]
-            for operation in vector.get("actual_operations", [])
-        }
+    def test_normative_expectations_do_not_match_diagnostic_text(self):
+        for case in self.suite["cases"]:
+            with self.subTest(case=case["id"]):
+                self.assertNotIn("errors", case["normative_fields"])
+                self.assertNotIn("warnings", case["normative_fields"])
+                self.assertNotIn("expected_error_contains", case["expected"])
+
+    def test_required_semantic_categories_are_covered(self):
+        categories = {case["category"] for case in self.suite["cases"]}
         required = {
-            "build.execute", "lint.execute", "typecheck.execute", "format.execute",
-            "filesystem.generated_delete", "filesystem.tracked_delete", "filesystem.delete",
-            "dependency.install", "database.write", "permission.change", "credential.use",
-            "file.import", "file.export", "external.upload", "git.push",
-            "cloud.resource_delete", "deploy.execute", "rollback.execute",
-            "observability.inspect", "package.publish", "release.publish",
-            "git.destructive_change", "secret.read",
+            "routing", "operation_lifecycle", "execution_boundary",
+            "execution_boundary_invalid", "exposure", "target_requirements",
+            "action_signature", "plan_binding", "action_digest",
+            "approval", "approval_replay", "override", "override_replay",
+            "readiness", "distribution", "integrity",
         }
-        self.assertEqual(set(), required - covered)
+        self.assertEqual(set(), required - categories)
 
-    def test_policy_contract_digest_is_stable_for_key_order(self):
-        a = self.contract
-        b = {k: a[k] for k in reversed(list(a.keys()))}
-        self.assertEqual(mod.canonical_policy_contract_digest(a), mod.canonical_policy_contract_digest(b))
+    def test_operation_catalog_has_explicit_coverage_or_exemption(self):
+        catalog = {item["id"] for item in self.contract["routing"]["operation_catalog"]}
+        covered = {
+            op
+            for case in self.suite["cases"]
+            for key in ("planned_operations", "actual_operations")
+            for op in case["input"].get(key, [])
+            if op in catalog
+        }
+        exemptions = set(self.suite["operation_coverage_exemptions"])
+        self.assertEqual(set(), covered & exemptions)
+        self.assertEqual(catalog, covered | exemptions)
+        deprecated = {
+            item["id"] for item in self.contract["routing"]["operation_catalog"]
+            if item.get("lifecycle_status") == "deprecated"
+        }
+        self.assertEqual(set(), deprecated - covered, "deprecated operations require dedicated conformance coverage")
+
+    def test_coverage_exemptions_have_rationales(self):
+        for operation, reason in self.suite["operation_coverage_exemptions"].items():
+            with self.subTest(operation=operation):
+                self.assertTrue(reason.strip())
+                self.assertGreaterEqual(len(reason.strip()), 20)
+
+    def test_result_protocol_contains_only_normative_observations(self):
+        result = runner.run_suite()
+        cases = {case["id"]: case for case in self.suite["cases"]}
+        for item in result["results"]:
+            with self.subTest(case=item["id"]):
+                self.assertEqual(
+                    set(cases[item["id"]]["normative_fields"]),
+                    set(item["observed"]),
+                )
 
 
 if __name__ == "__main__":
