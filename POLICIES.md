@@ -101,9 +101,10 @@ Effect 계산은 `max(operation effect_floor, runtime/context escalation)`이다
 - **core trust manifest**는 `AGENTS.md`, `POLICIES.md`, contract/schema, routing/runtime/approval/protected-override schema, validator/packager 등 정책 의미와 enforcement를 소유하는 core bytes를 SHA-256으로 고정한다. 소비 프로젝트가 수정하는 `PROJECT.md`는 제외한다.
 - **full release manifest**는 canonical distribution의 모든 파일과 ZIP artifact 자체를 SHA-256으로 고정한다. README/test 변조나 ZIP 재조립도 이 층에서 탐지한다.
 - 두 manifest는 검증 대상 ZIP 내부가 아니라 protected CI/release artifact, 조직 정책 저장소, 외부 서명 등 독립된 신뢰 경로에서 획득한다.
-- manifest hash 일치는 bytes integrity를 증명하지만 publisher identity나 조직 승인 자체를 증명하지 않는다. GitHub release workflow는 full commit SHA로 pin한 `actions/attest`의 OIDC/Sigstore Artifact Attestation으로 provenance 서명을 추가할 수 있으며, 다른 배포 채널에서는 동등한 trusted channel 또는 cryptographic signature가 필요하다.
-- release verifier는 검증 대상 run에서 읽은 `head_sha`를 스스로 trust expectation으로 재사용하지 않는다. 별도 trusted channel의 expected source SHA와 일치시키고, release workflow path, `main` source ref, 성공 상태를 함께 확인한다.
-- branch protection/ruleset, required review/CI는 repository-level governance이며 artifact attestation이 이를 대신하지 않는다.
+- manifest hash 일치는 bytes integrity를 증명하지만 publisher identity나 조직 승인 자체를 증명하지 않는다. GitHub release workflow는 사전에 push된 strict SemVer tag를 release identity로 사용하고, full commit SHA로 pin한 `actions/attest`의 OIDC/Sigstore build provenance와 GitHub immutable release attestation을 함께 사용한다. 다른 배포 채널에서는 동등한 trusted channel 또는 cryptographic signature가 필요하다.
+- release verifier는 release나 workflow에서 읽은 SHA를 스스로 trust expectation으로 재사용하지 않는다. 별도 trusted channel의 expected release tag + source SHA와 일치시키고, tag가 해당 SHA로 resolve되는지, source commit이 `main` history에 포함되는지, published release가 immutable인지, build attestation의 source ref가 정확한 `refs/tags/<tag>`인지 함께 확인한다.
+- 동일 release tag의 asset 교체나 tag 이동을 rollback 수단으로 사용하지 않는다. rollback/recovery는 새 SemVer release로 발행한다. `schema_version`과 release SemVer는 서로 다른 compatibility axis이며 자동으로 같은 숫자를 강제하지 않는다.
+- branch protection/ruleset, release tag 생성 권한, required review/CI, repository release immutability 설정은 repository-level governance이며 artifact attestation이 이를 대신하지 않는다.
 - validator 자신이 교체될 수 있는 위협 모델에서는 higher-authority verifier가 hash/signature 확인을 수행해야 한다.
 
 ### Explicit approval assertion
