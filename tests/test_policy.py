@@ -28,20 +28,30 @@ class BundleTests(unittest.TestCase):
 
     def test_release_attestation_verifier_is_part_of_canonical_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
-        path = ".github/workflows/verify-release.yml"
-        workflow = (ROOT / path).read_text(encoding="utf-8")
-        self.assertIn(path, contract["distribution"]["required_files"])
-        self.assertIn(path, contract["distribution"]["allowed_files"])
-        self.assertIn(path, mod.CANONICAL_REQUIRED_FILES)
-        self.assertIn("expected_source_sha", workflow)
-        self.assertIn('test "$source_sha" = "$EXPECTED_SOURCE_SHA"', workflow)
-        self.assertIn('test "$workflow_path" = ".github/workflows/release.yml"', workflow)
-        self.assertIn('test "$source_branch" = "main"', workflow)
-        self.assertIn("gh attestation verify", workflow)
-        self.assertIn("--signer-workflow", workflow)
-        self.assertIn("--source-ref refs/heads/main", workflow)
-        self.assertIn("--source-digest", workflow)
-        self.assertIn("sha256sum --check", workflow)
+        verify_path = ".github/workflows/verify-release.yml"
+        release_path = ".github/workflows/release.yml"
+        verify = (ROOT / verify_path).read_text(encoding="utf-8")
+        release = (ROOT / release_path).read_text(encoding="utf-8")
+        self.assertIn(verify_path, contract["distribution"]["required_files"])
+        self.assertIn(verify_path, contract["distribution"]["allowed_files"])
+        self.assertIn(verify_path, mod.CANONICAL_REQUIRED_FILES)
+        for artifact in contract["integrity"]["release_provenance"]["subject_artifacts"]:
+            self.assertIn(artifact, release)
+            self.assertIn(artifact, verify)
+        self.assertTrue(contract["integrity"]["release_provenance"]["artifacts_uploaded_before_attestation"])
+        self.assertLess(release.index("Upload release artifacts"), release.index("Generate signed build provenance"))
+        self.assertIn("python scripts/package_consumer.py --output-dir dist", release)
+        self.assertIn("--verify downloaded/universal-agent-docs-consumer.zip", verify)
+        self.assertIn("expected_source_sha", verify)
+        self.assertIn('test "$source_sha" = "$EXPECTED_SOURCE_SHA"', verify)
+        self.assertIn('test "$workflow_path" = ".github/workflows/release.yml"', verify)
+        self.assertIn('test "$source_branch" = "main"', verify)
+        self.assertIn("gh attestation verify", verify)
+        self.assertIn("--signer-workflow", verify)
+        self.assertIn("--source-ref refs/heads/main", verify)
+        self.assertIn("--source-digest", verify)
+        self.assertIn("sha256sum --check universal-agent-docs.sha256", verify)
+        self.assertIn("sha256sum --check universal-agent-docs-consumer.sha256", verify)
 
     def test_release_workflow_requires_main_source(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
