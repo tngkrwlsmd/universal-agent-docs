@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {15}
+SUPPORTED_SCHEMA_VERSIONS = {16}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -132,21 +132,31 @@ TRUST_MANIFEST_FORMAT = "universal-agent-docs-trust-manifest-v2"
 RELEASE_MANIFEST_FORMAT = "universal-agent-docs-release-manifest-v2"
 ACTION_DIGEST_FORMAT = "universal-agent-docs-action-digest-v3"
 RELEASE_PROVENANCE = {
-    "mechanism": "github_artifact_attestation",
+    "mechanism": "github_immutable_release_and_artifact_attestation",
     "workflow": ".github/workflows/release.yml",
+    "trigger": "semver_tag_push",
+    "release_identity": "git_tag",
+    "semver_tag_prefix": "v",
     "attestation_action": "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
     "signature_model": "sigstore_oidc",
-    "required_source_ref": "refs/heads/main",
+    "required_source_ref_kind": "tag",
+    "require_tag_commit_reachable_from_main": True,
+    "require_preexisting_tag": True,
+    "immutable_release_required": True,
+    "github_release_attestation_required": True,
+    "verifier_requires_expected_tag": True,
     "verifier_requires_expected_source_digest": True,
+    "tag_reuse_forbidden": True,
+    "release_version_independent_of_schema_version": True,
     "attested_artifacts": [
-    "universal-agent-docs.zip",
-    "universal-agent-docs.sha256",
-    "universal-agent-docs.trust.json",
-    "universal-agent-docs.release.json",
-    "universal-agent-docs-consumer.zip",
-    "universal-agent-docs-consumer.sha256",
-    "universal-agent-docs-consumer.release.json"
-],
+        "universal-agent-docs.zip",
+        "universal-agent-docs.sha256",
+        "universal-agent-docs.trust.json",
+        "universal-agent-docs.release.json",
+        "universal-agent-docs-consumer.zip",
+        "universal-agent-docs-consumer.sha256",
+        "universal-agent-docs-consumer.release.json",
+    ],
     "consumer_verification_required": True,
 }
 TRUSTED_CORE_FILES = [
