@@ -5,6 +5,9 @@ from typing import Iterable
 
 from .contract import ENVIRONMENT_EXPOSURE_FLOORS, EXPOSURE_DERIVATION
 
+_EFFECT_RANK = {"L1": 1, "L2": 2, "L3": 3, "L4": 4}
+_EXPOSURE_RANK = {"X0": 0, "X1": 1, "X2": 2, "X3": 3}
+
 def _max_level(values: Iterable[str], ranks: dict[str, int]) -> str | None:
     valid = [value for value in values if value in ranks]
     return max(valid, key=ranks.__getitem__) if valid else None
