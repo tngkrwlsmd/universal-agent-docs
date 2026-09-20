@@ -344,11 +344,13 @@ consumer verifier는 root router가 canonical source에서 생성되었는지, `
 
 ## Release packaging
 
-배포 ZIP, detached manifests, ZIP checksum을 수작업으로 조립하지 않는다. 공식 packager는 먼저 bundle validation을 실행하고 canonical manifest에 있는 파일만 deterministic ZIP에 넣은 뒤, **core trust manifest와 full release manifest를 각각 생성**하고 새 ZIP에 대해 distribution + 두 manifest 검증을 다시 수행한다. manifest와 checksum은 **ZIP 바깥**에 생성된다.
+배포 ZIP, detached manifests, ZIP checksum을 수작업으로 조립하지 않는다. 공식 packager는 먼저 bundle validation을 실행하고 canonical manifest에 있는 파일만 **fixed timestamp + ZIP_STORED** 방식의 deterministic ZIP에 넣은 뒤, **core trust manifest와 full release manifest를 각각 생성**하고 새 ZIP에 대해 distribution + 두 manifest 검증을 다시 수행한다. manifest와 checksum은 **ZIP 바깥**에 생성된다.
 
 ```bash
 python scripts/package.py --output-dir ./dist
 ```
+
+`.gitattributes`는 canonical text checkout을 LF로 고정하고, packager는 압축기/zlib 버전에 따른 DEFLATE byte 차이를 피하기 위해 `ZIP_STORED`를 사용한다. 따라서 같은 Git revision의 canonical source bytes는 지원 OS/Python에서 동일한 ZIP SHA-256을 생성해야 한다.
 
 source packager 출력은 항상 `universal-agent-docs.zip`, `universal-agent-docs.trust.json`, `universal-agent-docs.release.json`, `universal-agent-docs.sha256` 네 파일이다. consumer packager는 `universal-agent-docs-consumer.zip`, `universal-agent-docs-consumer.release.json`, `universal-agent-docs-consumer.sha256`을 별도로 만든다. 날짜나 버전 suffix를 파일명에 넣지 않는다. trust/release manifest에는 `POLICY_CONTRACT.json`의 SHA-256이 포함되어 정책 계약 bytes와 함께 검증된다. manifest를 실제 trust anchor로 사용할 때는 ZIP과 같은 비신뢰 채널에만 두지 말고 독립된 protected release/CI/organization channel 또는 검증 가능한 서명과 함께 보관한다.
 

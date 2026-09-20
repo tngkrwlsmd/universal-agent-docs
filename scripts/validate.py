@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {13}
+SUPPORTED_SCHEMA_VERSIONS = {14}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -143,6 +143,7 @@ PROJECT_FACT_KEYS = (
 )
 PROJECT_FACT_STATUSES = {"Confirmed", "Inferred", "Unknown", "N/A"}
 CANONICAL_REQUIRED_FILES = [
+    ".gitattributes",
     "AGENTS.md",
     "POLICIES.md",
     "PROJECT.md",

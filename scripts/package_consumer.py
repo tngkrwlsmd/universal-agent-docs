@@ -63,7 +63,7 @@ def _consumer_expected(contract: dict) -> tuple[str, str, list[str]]:
 
 def _write_entry(zf: zipfile.ZipFile, arcname: str, data: bytes, executable: bool = False) -> None:
     info = zipfile.ZipInfo(arcname, FIXED_ZIP_TIMESTAMP)
-    info.compress_type = zipfile.ZIP_DEFLATED
+    info.compress_type = zipfile.ZIP_STORED
     info.create_system = 3
     mode = 0o755 if executable else 0o644
     info.external_attr = (0o100000 | mode) << 16
@@ -181,7 +181,7 @@ def package_consumer(output_dir: Path) -> dict:
     release_path = output_dir / "universal-agent-docs-consumer.release.json"
     sha_path = output_dir / "universal-agent-docs-consumer.sha256"
 
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_STORED) as zf:
         _write_entry(zf, f"{root}/AGENTS.md", render_consumer_agents(policy_root))
         for rel in contract["distribution"]["required_files"]:
             data = (ROOT / rel).read_bytes()

@@ -1,5 +1,5 @@
 {
-  "schema_version": 13,
+  "schema_version": 14,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -974,6 +974,7 @@
   "distribution": {
     "canonical_root": "universal-agent-docs",
     "required_files": [
+      ".gitattributes",
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",
@@ -1003,6 +1004,7 @@
       "tests/test_conformance.py"
     ],
     "allowed_files": [
+      ".gitattributes",
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",

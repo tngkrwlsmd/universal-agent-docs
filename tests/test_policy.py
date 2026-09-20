@@ -78,6 +78,14 @@ class BundleTests(unittest.TestCase):
         self.assertIn("jsonschema==4.26.0", lock)
         self.assertIn("rpds-py==0.30.0", lock)
 
+    def test_cross_platform_packaging_contract_is_canonical(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn(".gitattributes", contract["distribution"]["required_files"])
+        self.assertIn(".gitattributes", contract["distribution"]["allowed_files"])
+        self.assertIn(".gitattributes", mod.CANONICAL_REQUIRED_FILES)
+        self.assertIn("eol=lf", attrs)
+
     def test_license_is_part_of_canonical_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         self.assertTrue((ROOT / "LICENSE").is_file())
