@@ -48,10 +48,22 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--source-ref refs/heads/main", workflow)
         self.assertIn("--source-digest", workflow)
         self.assertIn("sha256sum --check", workflow)
+        self.assertIn("universal-agent-docs-consumer.zip", workflow)
+        self.assertIn("universal-agent-docs-consumer.release.json", workflow)
+        self.assertIn("scripts/package_consumer.py", workflow)
 
     def test_release_workflow_requires_main_source(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn('test "$GITHUB_REF" = "refs/heads/main"', workflow)
+
+    def test_release_workflow_attests_consumer_artifacts(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        subjects = contract["integrity"]["release_provenance"]["subject_artifacts"]
+        self.assertIn("python scripts/package_consumer.py --output-dir dist", workflow)
+        for name in subjects:
+            self.assertIn(f"dist/{name}", workflow)
+
 
     def test_github_actions_are_pinned_to_full_commit_shas(self):
         import re

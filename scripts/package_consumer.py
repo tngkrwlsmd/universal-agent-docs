@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import re
+import stat
 import sys
 import tempfile
 import zipfile
@@ -72,25 +73,63 @@ def _write_entry(zf: zipfile.ZipFile, arcname: str, data: bytes, executable: boo
 
 def validate_consumer_zip(path: Path, contract: dict, release_manifest: Path | None = None) -> dict:
     root, policy_root, expected = _consumer_expected(contract)
+    cfg = contract["distribution"]
     if not path.is_file() or not zipfile.is_zipfile(path):
-        return {"status":"FAIL","errors":["consumer distribution must be a ZIP archive"]}
+        return {"status":"FAIL","errors":["consumer distribution must be a ZIP archive"],"checked_files":0}
+
     errors: list[str] = []
     prefix = root + "/"
     with zipfile.ZipFile(path) as zf:
-        infos = [i for i in zf.infolist() if not i.is_dir()]
-        names = [i.filename for i in infos]
-        if len(names) != len(set(names)):
-            errors.append("consumer ZIP contains duplicate entries")
         rels: list[str] = []
-        for name in names:
-            normalized, error = policy_validate.normalize_archive_entry(name)
+        normalized_seen: set[str] = set()
+        all_normalized_files: list[str] = []
+        resource_entries: list[tuple[str, int, int]] = []
+        duplicate_entries: list[str] = []
+        symlinks: list[str] = []
+        outside_root: list[str] = []
+
+        for info in zf.infolist():
+            normalized, error = policy_validate.normalize_archive_entry(info.filename)
             if error or normalized is None:
-                errors.append(f"unsafe consumer ZIP entry: {name}")
+                errors.append(f"unsafe consumer ZIP entry: {info.filename}: {error}")
                 continue
+            if normalized in normalized_seen and not info.is_dir():
+                duplicate_entries.append(normalized)
+            normalized_seen.add(normalized)
+
+            mode = info.external_attr >> 16
+            if stat.S_ISLNK(mode):
+                symlinks.append(normalized)
+                continue
+
+            resource_entries.append((normalized, 0 if info.is_dir() else info.file_size, -1 if info.is_dir() else info.compress_size))
+            if info.is_dir():
+                continue
+
+            all_normalized_files.append(normalized)
             if not normalized.startswith(prefix):
-                errors.append(f"consumer ZIP entry is outside canonical root: {name}")
+                outside_root.append(normalized)
                 continue
-            rels.append(normalized[len(prefix):])
+            rel = normalized[len(prefix):]
+            if not rel or rel.startswith("../"):
+                errors.append(f"unsafe consumer relative entry: {info.filename}")
+                continue
+            rels.append(rel)
+
+        if cfg.get("reject_duplicate_entries") and duplicate_entries:
+            errors.append("consumer ZIP duplicate entries: " + ", ".join(sorted(set(duplicate_entries))))
+        if cfg.get("reject_symlinks") and symlinks:
+            errors.append("consumer ZIP symlinks are forbidden: " + ", ".join(sorted(symlinks)))
+        if outside_root:
+            errors.append("consumer ZIP entries outside canonical root: " + ", ".join(sorted(outside_root)))
+
+        collisions = policy_validate._name_collision_checks(all_normalized_files, cfg)
+        if collisions:
+            errors.append("consumer ZIP name collisions: " + "; ".join(collisions))
+        resource_violations = policy_validate._resource_limit_checks(resource_entries, cfg)
+        if resource_violations:
+            errors.append("consumer ZIP resource limits: " + "; ".join(resource_violations))
+
         if sorted(rels) != sorted(expected):
             missing = sorted(set(expected) - set(rels))
             extra = sorted(set(rels) - set(expected))
@@ -100,7 +139,9 @@ def validate_consumer_zip(path: Path, contract: dict, release_manifest: Path | N
                 errors.append("consumer ZIP has unexpected files: " + ", ".join(extra))
 
         root_agents_name = prefix + contract["consumer_distribution"]["root_agents_path"]
-        if root_agents_name in names and zf.read(root_agents_name) != render_consumer_agents(policy_root, contract["consumer_distribution"]["project_file_default"]):
+        if not errors and zf.read(root_agents_name) != render_consumer_agents(
+            policy_root, contract["consumer_distribution"]["project_file_default"]
+        ):
             errors.append("consumer root AGENTS.md does not match canonical generated router")
 
         if not errors:
@@ -108,11 +149,17 @@ def validate_consumer_zip(path: Path, contract: dict, release_manifest: Path | N
                 nested = Path(td) / "policy"
                 nested.mkdir()
                 for rel in contract["distribution"]["required_files"]:
+                    archive_name = prefix + policy_root + "/" + rel
+                    data = zf.read(archive_name)
+                    if len(data) > cfg["max_file_uncompressed_bytes"]:
+                        errors.append(f"consumer extracted file exceeded limit: {rel}")
+                        break
                     target = nested / rel
                     target.parent.mkdir(parents=True, exist_ok=True)
-                    target.write_bytes(zf.read(prefix + policy_root + "/" + rel))
-                failures = [c for c in policy_validate.bundle_checks(nested) if c.status != "PASS"]
-                errors.extend(f"nested bundle {c.name}: {c.detail}" for c in failures)
+                    target.write_bytes(data)
+                if not errors:
+                    failures = [c for c in policy_validate.bundle_checks(nested) if c.status != "PASS"]
+                    errors.extend(f"nested bundle {c.name}: {c.detail}" for c in failures)
 
         if release_manifest is not None and not errors:
             try:

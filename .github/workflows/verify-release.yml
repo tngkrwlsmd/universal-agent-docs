@@ -75,7 +75,10 @@ jobs:
             universal-agent-docs.zip \
             universal-agent-docs.sha256 \
             universal-agent-docs.trust.json \
-            universal-agent-docs.release.json
+            universal-agent-docs.release.json \
+            universal-agent-docs-consumer.zip \
+            universal-agent-docs-consumer.sha256 \
+            universal-agent-docs-consumer.release.json
           do
             gh attestation verify "downloaded/$file" \
               --repo "$GITHUB_REPOSITORY" \
@@ -84,9 +87,11 @@ jobs:
               --source-digest "$SOURCE_SHA"
           done
 
-      - name: Verify detached ZIP checksum
+      - name: Verify detached ZIP checksums
         working-directory: downloaded
-        run: sha256sum --check universal-agent-docs.sha256
+        run: |
+          sha256sum --check universal-agent-docs.sha256
+          sha256sum --check universal-agent-docs-consumer.sha256
 
       - name: Verify canonical distribution and manifests
         run: >-
@@ -94,3 +99,9 @@ jobs:
           --distribution downloaded/universal-agent-docs.zip
           --trusted-manifest downloaded/universal-agent-docs.trust.json
           --release-manifest downloaded/universal-agent-docs.release.json
+
+      - name: Verify consumer distribution and manifest
+        run: >-
+          python scripts/package_consumer.py
+          --verify downloaded/universal-agent-docs-consumer.zip
+          --release-manifest downloaded/universal-agent-docs-consumer.release.json

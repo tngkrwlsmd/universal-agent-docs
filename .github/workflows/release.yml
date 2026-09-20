@@ -29,8 +29,10 @@ jobs:
         run: |
           python scripts/validate.py
           python -m unittest discover -s tests -v
-      - name: Build canonical artifacts
+      - name: Build canonical source artifacts
         run: python scripts/package.py --output-dir dist
+      - name: Build consumer artifacts
+        run: python scripts/package_consumer.py --output-dir dist
       - name: Generate signed build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
         with:
@@ -39,6 +41,9 @@ jobs:
             dist/universal-agent-docs.sha256
             dist/universal-agent-docs.trust.json
             dist/universal-agent-docs.release.json
+            dist/universal-agent-docs-consumer.zip
+            dist/universal-agent-docs-consumer.sha256
+            dist/universal-agent-docs-consumer.release.json
       - name: Upload canonical artifacts
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
@@ -48,4 +53,7 @@ jobs:
             dist/universal-agent-docs.sha256
             dist/universal-agent-docs.trust.json
             dist/universal-agent-docs.release.json
+            dist/universal-agent-docs-consumer.zip
+            dist/universal-agent-docs-consumer.sha256
+            dist/universal-agent-docs-consumer.release.json
           if-no-files-found: error

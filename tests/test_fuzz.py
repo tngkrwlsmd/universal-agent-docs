@@ -150,6 +150,25 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/tests/") for x in names))
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.github/") for x in names))
 
+    def test_consumer_verifier_rejects_symlink_entries(self):
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td)
+            result = consumer_package_mod.package_consumer(out)
+            source = Path(result["zip"])
+            tampered = out / "tampered-consumer.zip"
+            with zipfile.ZipFile(source) as src, zipfile.ZipFile(tampered, "w", compression=zipfile.ZIP_STORED) as dst:
+                for info in src.infolist():
+                    dst.writestr(info, src.read(info.filename))
+                link = zipfile.ZipInfo("universal-agent-docs-consumer/.agent-policy/link")
+                link.create_system = 3
+                link.external_attr = (0o120777 << 16)
+                dst.writestr(link, b"README.md")
+            checked = consumer_package_mod.validate_consumer_zip(
+                tampered, validate.load_json(ROOT / "POLICY_CONTRACT.json")
+            )
+            self.assertEqual("FAIL", checked["status"], checked)
+            self.assertTrue(any("symlinks are forbidden" in x for x in checked["errors"]), checked)
+
     def test_packager_is_deterministic_and_outputs_detached_files(self):
         with tempfile.TemporaryDirectory() as a, tempfile.TemporaryDirectory() as b:
             first = package_mod.package(Path(a))
