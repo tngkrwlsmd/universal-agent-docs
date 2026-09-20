@@ -1,5 +1,5 @@
 {
-  "schema_version": 9,
+  "schema_version": 10,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -395,12 +395,22 @@
         "lifecycle_status": "active"
       },
       {
-        "id": "filesystem.delete",
+        "id": "filesystem.generated_delete",
         "policies": [
           "execution",
           "file_handling"
         ],
         "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "filesystem.delete",
+        "policies": [
+          "execution",
+          "file_handling"
+        ],
+        "effect_floor": "L4",
         "requires_execution_policy": true,
         "lifecycle_status": "active"
       },

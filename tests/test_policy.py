@@ -278,9 +278,13 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(["do mysterious thing"], r["unresolved_operations"])
         self.assertTrue(r["warnings"])
 
-    def test_rm_rf_routes_execution_and_file_handling(self):
+    def test_rm_rf_routes_execution_and_file_handling_conservatively(self):
         r = self.assertExactPolicies("", ["execution", "file_handling"], operations=["rm -rf build"])
         self.assertIn("filesystem.delete", r["canonical_operations"])
+
+    def test_generated_delete_has_separate_l2_operation(self):
+        r = self.assertExactPolicies("", ["execution", "file_handling"], operations=["filesystem.generated_delete"])
+        self.assertIn("filesystem.generated_delete", r["canonical_operations"])
 
     def test_git_reset_hard_routes_git_and_execution(self):
         r = self.assertExactPolicies("", ["git", "execution"], operations=["git reset --hard HEAD~1"])
@@ -603,6 +607,14 @@ class ExecutionBoundaryTests(unittest.TestCase):
         )
         self.assertEqual("FAIL", r["status"], r)
         self.assertIn("cloud.resource_delete", r["hard_action_hint_gaps"])
+
+    def test_hard_rm_rf_generated_output_is_classified_separately(self):
+        self.assertEqual(["filesystem.generated_delete"], mod.infer_hard_action_operations("rm -rf ./build"))
+        self.assertEqual(["filesystem.delete"], mod.infer_hard_action_operations("rm -rf ./user-work"))
+
+    def test_hard_kubectl_delete_distinguishes_pod_from_namespace(self):
+        self.assertEqual(["cloud.resource_change"], mod.infer_hard_action_operations("kubectl delete pod api-123"))
+        self.assertEqual(["cloud.resource_delete"], mod.infer_hard_action_operations("kubectl delete namespace demo"))
 
     def test_production_deploy_escalates_to_l4_and_x2(self):
         r = self.evaluate(

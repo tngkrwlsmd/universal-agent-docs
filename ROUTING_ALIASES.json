@@ -361,7 +361,8 @@
         "쿠버네티스 리소스 변경"
       ],
       "patterns": [
-        "\\bkubectl\\s+(?:delete|patch|scale|rollout)\\b",
+        "\\bkubectl\\s+(?:patch|scale|rollout)\\b",
+        "\\bkubectl\\s+delete\\s+pods?\\b",
         "\\bterraform\\s+apply\\b"
       ]
     },
@@ -371,13 +372,15 @@
         "destroy cloud resources",
         "delete cloud resources",
         "클라우드 리소스 삭제",
-        "테라폼 destroy"
+        "테라폼 destroy",
+        "kubectl delete namespace"
       ],
       "stems": [
         "클라우드 리소스 삭제"
       ],
       "patterns": [
-        "\\bterraform\\s+destroy\\b"
+        "\\bterraform\\s+destroy\\b",
+        "\\bkubectl\\s+delete\\s+(?!pods?\\b)"
       ]
     },
     "storage.object_delete": {
@@ -982,6 +985,19 @@
         "성능 진단"
       ],
       "stems": [],
+      "patterns": []
+    },
+    "filesystem.generated_delete": {
+      "phrases": [
+        "delete generated build output",
+        "delete build output",
+        "remove generated artifacts",
+        "생성된 빌드 산출물 삭제",
+        "빌드 산출물 삭제"
+      ],
+      "stems": [
+        "빌드 산출물 삭제"
+      ],
       "patterns": []
     }
   }

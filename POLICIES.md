@@ -807,6 +807,7 @@ Export는 공식 외부 규격, encoding, delimiter/escaping/quoting, date, newl
 - portable artifact에서는 대소문자만 다른 경로와 Unicode normalization 후 충돌하는 경로를 거부해 플랫폼별 overwrite/alias를 막는다.
 - 임시 디렉터리를 안전하게 사용한다.
 - 생성 파일은 가능하면 실제 소비 프로그램/parser/schema validator로 다시 연다.
+- recursive local delete는 생성물이라는 이유가 확인된 conventional build/cache output에만 `filesystem.generated_delete`를 사용한다. 그 외 파일·디렉터리 삭제는 `filesystem.delete`로 분류해 복구 불가능한 사용자 작업물을 L2로 축소하지 않는다.
 - 사용자가 archive 전체를 분석하라고 요청했다면 재귀적으로 모든 파일을 확인하고 일부만 처리한 상태를 성공으로 보고하지 않는다.
 
 ---
@@ -911,6 +912,7 @@ compatible schema expansion → application deploy → data migration
 사전에 application rollback, DB backward compatibility, irreversible migration, feature flag off, artifact 보존 여부를 확인한다.
 
 production/public/external 실행 승인과 Effect/Exposure는 Execution이 소유한다.
+Kubernetes 삭제는 resource kind를 구분한다. controller가 재생성하는 pod 삭제는 bounded `cloud.resource_change`로 볼 수 있지만 pod 이외 resource 삭제는 기본적으로 `cloud.resource_delete`로 분류한다. adapter는 실제 복구 가능성과 blast radius를 더 보수적으로 보고할 수 있으나 operation을 낮춰 분류하는 근거로 사용하지 않는다.
 
 ---
 

@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {9}
+SUPPORTED_SCHEMA_VERSIONS = {10}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -431,19 +431,39 @@ def _concrete_targets(targets: Iterable[str]) -> tuple[list[str], list[str]]:
 
 
 HARD_ACTION_SIGNATURES = (
-    (re.compile(r"(?<!\w)rm\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\b", re.I), "filesystem.delete"),
-    (re.compile(r"\bgit\s+reset\s+--hard\b", re.I), "git.destructive_change"),
-    (re.compile(r"\bgit\s+push\b[^\n]*(?:--force(?:-with-lease)?|-f)(?:\s|$)", re.I), "git.destructive_change"),
-    (re.compile(r"\bterraform\s+destroy\b", re.I), "cloud.resource_delete"),
-    (re.compile(r"\bkubectl\s+delete\b", re.I), "cloud.resource_change"),
-    (re.compile(r"\baws\s+s3\s+rm\b[^\n]*\s--recursive\b", re.I), "storage.object_delete"),
-    (re.compile(r"\b(?:drop\s+(?:table|database)|truncate\s+table)\b", re.I), "database.destructive_change"),
+    (re.compile(r"\\bgit\\s+reset\\s+--hard\\b", re.I), "git.destructive_change"),
+    (re.compile(r"\\bgit\\s+push\\b[^\\n]*(?:--force(?:-with-lease)?|-f)(?:\\s|$)", re.I), "git.destructive_change"),
+    (re.compile(r"\\bterraform\\s+destroy\\b", re.I), "cloud.resource_delete"),
+    (re.compile(r"\\baws\\s+s3\\s+rm\\b[^\\n]*\\s--recursive\\b", re.I), "storage.object_delete"),
+    (re.compile(r"\\b(?:drop\\s+(?:table|database)|truncate\\s+table)\\b", re.I), "database.destructive_change"),
 )
+_RM_RF_SIGNATURE = re.compile(r"(?<!\\w)rm\\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\\s+([^;&|\\n]+)", re.I)
+_GENERATED_DELETE_TARGET = re.compile(r"^(?:\\./)?(?:build|dist|coverage|out|target|\\.cache)(?:/)?$", re.I)
+_KUBECTL_DELETE_SIGNATURE = re.compile(r"\\bkubectl\\s+delete\\s+([a-z0-9.-]+)\\b", re.I)
 
 
 def infer_hard_action_operations(text: str) -> list[str]:
-    """Return only high-confidence command signatures suitable for fail-closed checks."""
-    return [operation for pattern, operation in HARD_ACTION_SIGNATURES if pattern.search(text)]
+    """Return only high-confidence command signatures suitable for fail-closed checks.
+
+    Recursive local deletion is L2 only for a small allowlist of conventional generated
+    output directories. Other recursive deletion is treated as general filesystem.delete.
+    Kubernetes pod deletion is treated as a bounded resource change; deleting any other
+    resource kind is classified as cloud.resource_delete.
+    """
+    operations = [operation for pattern, operation in HARD_ACTION_SIGNATURES if pattern.search(text)]
+
+    rm_match = _RM_RF_SIGNATURE.search(text)
+    if rm_match:
+        raw_target = rm_match.group(1).strip().strip("'\\\"")
+        operation = "filesystem.generated_delete" if _GENERATED_DELETE_TARGET.fullmatch(raw_target) else "filesystem.delete"
+        operations.append(operation)
+
+    kubectl_match = _KUBECTL_DELETE_SIGNATURE.search(text)
+    if kubectl_match:
+        kind = kubectl_match.group(1).casefold()
+        operations.append("cloud.resource_change" if kind in {"pod", "pods"} else "cloud.resource_delete")
+
+    return list(dict.fromkeys(operations))
 
 
 def derive_exposure_floor(

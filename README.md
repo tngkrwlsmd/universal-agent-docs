@@ -118,7 +118,7 @@ planned operations ────┼→ canonical operation IDs → policy mapping
 affected resources ────┘                         ↘ resource policy mapping
 ```
 
-대표 ID는 `code.modify`, `test.execute`, `database.schema_change`, `database.destructive_change`, `git.destructive_change`, `iam.change`, `external.message_send`, `deploy.execute` 등이다. 에이전트가 계획을 만들 수 있는 환경에서는 자연어 대신 canonical ID를 `planned_operations`에 넣는 것을 우선한다.
+대표 ID는 `code.modify`, `test.execute`, `filesystem.generated_delete`, `filesystem.delete`, `database.schema_change`, `database.destructive_change`, `git.destructive_change`, `iam.change`, `cloud.resource_change`, `cloud.resource_delete`, `external.message_send`, `deploy.execute` 등이다. 에이전트가 계획을 만들 수 있는 환경에서는 자연어 대신 canonical ID를 `planned_operations`에 넣는 것을 우선한다.
 
 위험 기반 테스트 시나리오는 `test.scenario.toctou`, `test.scenario.replay_idempotency`, `test.scenario.transaction_rollback`, `test.scenario.concurrency`, `test.scenario.security`, `test.scenario.file`, `test.scenario.external_system`으로 직접 계획할 수 있다. 이 ID들은 단순 문서 예시가 아니라 operation catalog에 등록되어 관련 Testing 및 primary-owner 정책으로 실제 routing된다.
 
