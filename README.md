@@ -64,6 +64,8 @@ universal-agent-docs/
 ├── LICENSE
 ├── requirements.txt
 ├── requirements.lock
+├── docs/
+│   └── adoption-profiles.md
 ├── conformance/
 │   ├── README.md
 │   ├── corpus.schema.json
@@ -107,15 +109,16 @@ universal-agent-docs/
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
 - `conformance/`: Python API와 독립된 JSON v2 corpus/schema/result protocol. TypeScript/Go/Rust/Java 구현체도 같은 normative fields를 비교할 수 있다.
 - `scripts/conformance.py`: language-neutral corpus를 실행하는 Python reference runner. policy semantics의 Source of Truth가 아니라 reference implementation이다.
+- [`docs/adoption-profiles.md`](docs/adoption-profiles.md): Guidance → Validated → Enforced Runtime 도입 단계, security boundary, consumer 설치, upgrade/production checklist
 - `.github/workflows/ci.yml`: Linux/macOS/Windows에서 bundle validation과 전체 테스트를 실행하는 CI
 - `.github/workflows/release.yml`: `vMAJOR.MINOR.PATCH` SemVer tag push를 release identity로 사용해 canonical artifact를 만들고 build attestation을 생성한 뒤 immutable GitHub Release로 publish하는 workflow
 - `.github/workflows/verify-release.yml`: trusted release tag + source SHA를 기준으로 immutable release attestation, build provenance, detached checksum, trust/release manifest를 소비자 관점에서 다시 검증하는 workflow
 
 프로젝트와 배포 산출물의 이름은 항상 **`universal-agent-docs`**로 유지한다. 날짜나 임의 suffix를 파일명에 붙이지 않는다. **Git release tag는 배포 bundle의 release identity**, `schema_version`은 machine contract compatibility를 담당하며 두 버전은 독립적이다. 실행 승인 binding은 release version 대신 `POLICY_CONTRACT.json`의 canonical JSON SHA-256인 `policy_contract_digest`를 사용하므로 정확한 정책 의미를 계속 고정할 수 있다.
 
-## 시작 방법
+## Source repository 개발/검증
 
-이 저장소 자체를 개발·검증할 때는 clone한 source tree에서 아래 validator/테스트를 직접 실행한다. **다른 개발 프로젝트에 도입할 때는 source bundle을 project root에 overlay하지 않는다.** 해당 경우에는 아래 `Consumer installation layout`의 `universal-agent-docs-consumer.zip`을 사용하고, 기존 root `AGENTS.md`가 있으면 자동 덮어쓰기 대신 사람이 instruction hierarchy를 검토해 통합한다.
+위 Quick Start는 다른 프로젝트가 consumer bundle을 도입하는 흐름이다. 이 저장소 자체를 개발·검증할 때는 clone한 source tree에서 아래 validator/테스트를 직접 실행한다. **다른 개발 프로젝트에 도입할 때는 source bundle을 project root에 overlay하지 않는다.** 해당 경우에는 아래 `Consumer installation layout`의 `universal-agent-docs-consumer.zip`을 사용하고, 기존 root `AGENTS.md`가 있으면 자동 덮어쓰기 대신 사람이 instruction hierarchy를 검토해 통합한다.
 
 1. source repository 자체를 검토하는 경우 현재 tree를 그대로 사용한다. 소비 프로젝트에 설치하는 경우 `.agent-policy/` 아래 vendored core와 root consumer router 구조를 사용한다.
 2. [`PROJECT.md`](PROJECT.md)의 machine-readable project facts와 사람이 읽는 구조 설명을 실제 프로젝트 근거로 채운다. consumer layout에서는 vendored template이 `.agent-policy/PROJECT.md`에 있으므로 이를 프로젝트 사실의 출발점으로 사용하되, 실제 프로젝트의 canonical fact 문서 위치는 해당 프로젝트 convention에 맞게 유지한다. 처음 도입하는 저장소라면 bootstrap candidate를 만들 수 있다. 자동 탐색 결과는 모두 `Inferred`이며 `Confirmed`로 자동 승격되지 않고, 기본 출력도 기존 `PROJECT.md`를 덮어쓰지 않는다.
@@ -366,6 +369,8 @@ python -m unittest tests.test_conformance -v
 다른 언어 구현체는 repository Python 코드를 import할 필요가 없다. `POLICY_CONTRACT.json`과 `conformance/` JSON 파일만 소비해 동일 vector ID와 normative result를 반환하면 된다. 상세 wire protocol과 stable vector lifecycle은 `conformance/README.md`를 따른다.
 
 ## Consumer installation layout
+
+5분 설치 순서는 위 Quick Start를, profile별 보장과 충돌 처리/upgrade 흐름은 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)를 따른다.
 
 이 저장소 자체의 source/release bundle과 다른 프로젝트에 설치하는 consumer policy bundle을 구분한다. **source bundle을 다른 프로젝트 root에 그대로 overlay하지 않는다.** source bundle에는 이 저장소의 README, LICENSE, Python requirements, tests, GitHub workflows가 포함되므로 소비 프로젝트의 동명 파일과 충돌할 수 있다.
 
