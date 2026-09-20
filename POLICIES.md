@@ -736,6 +736,18 @@ Regression / Coverage:
 - commit은 의미 단위로 만들고 unrelated change를 섞지 않는다.
 - 테스트가 실패하거나 실행되지 않았다면 상태를 숨기지 않는다.
 
+### Long-running commit/push checkpoints
+
+작업 전체를 반드시 하나의 commit/push로 끝낼 필요는 없다. 작업이 길거나 변경 범위·위험·검증 지점이 분리되는 경우에는 **안전한 논리적 하위 작업 단위**로 commit하고 필요하면 각 checkpoint를 push할 수 있다. commit/push 분할은 단순 진행률 표시가 아니라 복구·검토·handoff가 가능한 검증 경계를 만드는 데 사용한다.
+
+- 각 중간 commit은 하나의 설명 가능한 목적을 가지며 unrelated change를 섞지 않는다.
+- 각 checkpoint는 그 단계의 변경에 적합한 좁은 검증을 통과해 **독립적으로 검토·재현 가능한 상태**여야 한다. 실행하지 못한 검증이나 알려진 제한은 숨기지 않는다.
+- 중간 push가 유용한 경우는 장기 작업의 복구 지점, 다른 작업자와의 handoff, 위험한 후속 단계 전의 안전한 기준점, CI처럼 remote에서만 가능한 검증 경계가 필요할 때다. 단순히 commit 수를 늘리기 위해 쪼개지 않는다.
+- 중간 checkpoint가 후속 단계까지 포함한 전체 완료를 의미하지는 않는다. narrow test의 PASS를 최종 전체 회귀 PASS로 표현하지 않는다.
+- 여러 commit/push로 나눈 작업은 최종 상태에서 **요청 전체 범위에 대한 회귀 테스트와 필요한 bundle/build/integration 검증을 다시 실행**한다. 최종 검증이 실패하면 완료로 보고하지 않는다.
+- checkpoint 분할을 approval, protected override, branch protection, required CI 같은 gate를 우회하는 수단으로 사용하지 않는다. 각 push는 해당 시점의 실제 Effect/Exposure와 repository policy를 그대로 따른다.
+- 다음 단계 시작 전에는 필요한 경우 remote 최신 상태와 현재 HEAD를 다시 확인해 이전 checkpoint 이후의 동시 변경을 stale context로 덮어쓰지 않는다.
+
 ### 위험한 Git 작업
 
 명확한 필요와 안전 확인 없이 `git reset --hard`, `git clean -fd`, 강제 checkout, history rewrite, force push, 대규모 자동 conflict resolution을 기본값으로 사용하지 않는다.

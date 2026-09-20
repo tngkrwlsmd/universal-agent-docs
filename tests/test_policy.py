@@ -51,6 +51,18 @@ class BundleTests(unittest.TestCase):
     def test_default_unittest_discovery_package_exists(self):
         self.assertTrue((ROOT / "tests" / "__init__.py").is_file())
 
+    def test_long_running_git_checkpoint_policy_is_preserved(self):
+        text = (ROOT / "POLICIES.md").read_text(encoding="utf-8")
+        required = [
+            "### Long-running commit/push checkpoints",
+            "작업 전체를 반드시 하나의 commit/push로 끝낼 필요는 없다",
+            "안전한 논리적 하위 작업 단위",
+            "독립적으로 검토·재현 가능한 상태",
+            "요청 전체 범위에 대한 회귀 테스트",
+            "최종 검증이 실패하면 완료로 보고하지 않는다",
+        ]
+        self.assertTrue(all(item in text for item in required), text)
+
     def test_implementation_policy_is_primary_owner(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         policy = next(p for p in contract["policies"] if p["id"] == "implementation")
