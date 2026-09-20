@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "conformance/schema.json",
+  "title": "universal-agent-docs language-neutral conformance suite",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "conformance_version",
+    "contract_schema_version",
+    "cases"
+  ],
+  "properties": {
+    "conformance_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "contract_schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "description",
+          "category",
+          "kind",
+          "input",
+          "expected",
+          "normative_fields"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9._-]*$"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "enum": [
+              "routing",
+              "execution_boundary",
+              "digest_relation",
+              "approval",
+              "override",
+              "readiness",
+              "distribution",
+              "integrity",
+              "lifecycle"
+            ]
+          },
+          "input": {
+            "type": "object"
+          },
+          "expected": {
+            "type": "object"
+          },
+          "normative_fields": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
