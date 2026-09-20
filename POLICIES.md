@@ -21,6 +21,26 @@
 
 변경 결과 해석에 영향을 주는 baseline만 기록한다. 예: 시작 revision, 관련 schema/API contract, dependency/lockfile, test environment.
 
+### Tool opt-out / explicit tool consent
+
+사용자가 특정 도구나 connector를 금지하거나 명시적 opt-in으로 제한했다면 그 제한을 현재 작업의 tool-selection contract로 취급한다.
+
+- 일반적인 개발 요청은 특정 도구의 사용 허가로 확대 해석하지 않는다.
+- 사용자가 명시적으로 금지한 도구는 해당 작업을 수행하기 편리하다는 이유로 자동 호출하지 않는다.
+- 대체 가능한 도구나 방법이 있으면 제한된 도구 없이 진행한다.
+- 제한된 도구가 정말 필요하면 사용자에게 그 도구의 사용을 별도로 명시해 달라고 요청한다.
+- 도구 금지 범위를 다른 도구에 임의로 확장하지 않는다. 제한 대상은 사용자가 지목한 도구·connector 범위 그대로 해석한다.
+
+범용 기본값으로 `chatgpt-codex-connector`는 명시적 opt-in 도구로 취급한다.
+
+```text
+chatgpt-codex-connector = DISABLED UNLESS EXPLICITLY REQUESTED
+```
+
+따라서 "구현해", "수정해", "코드 리뷰해", "PR 확인해", "테스트해", "다음 작업 진행해" 같은 일반 개발 지시는 `chatgpt-codex-connector` 사용 허가가 아니다. 반대로 이 기본 제한은 일반 GitHub tooling이나 다른 connector를 자동으로 금지하지 않는다.
+
+이 절은 human-facing tool-selection guidance다. 실제 runtime에서 강제된다고 주장하려면 canonical contract, adapter/routing, enforcement test 등 별도의 machine evidence가 필요하다.
+
 ### Command operational contract
 
 명령 실행 전 위험에 비례해 확인한다.
