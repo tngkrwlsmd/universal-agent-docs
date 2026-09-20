@@ -1,0 +1,230 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "RUNTIME_ACTION.schema.json",
+  "title": "universal-agent-docs runtime adapter action assertion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "adapter",
+    "action"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 3
+    },
+    "adapter": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "surface",
+        "assertion_source"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "surface": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "assertion_source": {
+          "enum": [
+            "tool_adapter",
+            "runtime_guard",
+            "human_reviewed"
+          ]
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        }
+      }
+    },
+    "action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "correlation_id",
+        "execution_nonce",
+        "planned_operations",
+        "actual_operations",
+        "affected_resources",
+        "targets",
+        "environment",
+        "exposure_facts"
+      ],
+      "properties": {
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "planned_operations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          }
+        },
+        "actual_operations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          }
+        },
+        "affected_resources": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "targets": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "test",
+            "staging",
+            "production",
+            "public",
+            "external",
+            "unknown"
+          ]
+        },
+        "exposure_facts": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "data_classification",
+            "credential_class",
+            "tenant_scope",
+            "public_visibility",
+            "estimated_blast_radius",
+            "estimated_financial_impact"
+          ],
+          "properties": {
+            "data_classification": {
+              "enum": [
+                "public",
+                "internal",
+                "confidential",
+                "restricted",
+                "regulated",
+                "unknown"
+              ]
+            },
+            "credential_class": {
+              "enum": [
+                "none",
+                "user_secret",
+                "service_credential",
+                "privileged_credential",
+                "break_glass",
+                "unknown"
+              ]
+            },
+            "tenant_scope": {
+              "enum": [
+                "single_user",
+                "single_tenant",
+                "multi_tenant",
+                "organization_wide",
+                "global",
+                "unknown"
+              ]
+            },
+            "public_visibility": {
+              "enum": [
+                "none",
+                "public_source",
+                "public_destination",
+                "bidirectional",
+                "unknown"
+              ]
+            },
+            "estimated_blast_radius": {
+              "enum": [
+                "single_resource",
+                "bounded_set",
+                "service",
+                "organization",
+                "global",
+                "unknown"
+              ]
+            },
+            "estimated_financial_impact": {
+              "enum": [
+                "none",
+                "negligible",
+                "bounded",
+                "material",
+                "critical",
+                "unknown"
+              ]
+            }
+          }
+        },
+        "declared_exposure": {
+          "enum": [
+            "X0",
+            "X1",
+            "X2",
+            "X3"
+          ]
+        },
+        "runtime_effect": {
+          "enum": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ]
+        },
+        "actual_action": {
+          "type": "string",
+          "maxLength": 20000
+        },
+        "semantic_details": {
+          "type": "object",
+          "maxProperties": 64,
+          "additionalProperties": {
+            "type": [
+              "string",
+              "number",
+              "integer",
+              "boolean",
+              "null"
+            ]
+          }
+        },
+        "execution_nonce": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        }
+      }
+    }
+  }
+}

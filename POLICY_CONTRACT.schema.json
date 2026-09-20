@@ -1,0 +1,1080 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/universal-agent-docs/POLICY_CONTRACT.schema.json",
+  "title": "universal-agent-docs policy contract",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "project_name",
+    "authority",
+    "policies",
+    "routing",
+    "risk_model",
+    "operation_lifecycle",
+    "protected_override",
+    "distribution",
+    "execution_boundary",
+    "integrity"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 9
+    },
+    "project_name": {
+      "const": "universal-agent-docs"
+    },
+    "authority": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "root_router",
+        "human_policy_source",
+        "project_facts_source",
+        "conflict_rule",
+        "machine_policy_source",
+        "enforcement_conflict_behavior"
+      ],
+      "properties": {
+        "root_router": {
+          "type": "string",
+          "minLength": 1
+        },
+        "human_policy_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "project_facts_source": {
+          "type": "string",
+          "minLength": 1
+        },
+        "conflict_rule": {
+          "type": "string",
+          "minLength": 1
+        },
+        "machine_policy_source": {
+          "const": "POLICY_CONTRACT.json"
+        },
+        "enforcement_conflict_behavior": {
+          "const": "FAIL_CLOSED"
+        }
+      }
+    },
+    "policies": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "anchor",
+          "resource_globs"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_]*$"
+          },
+          "anchor": {
+            "type": "string",
+            "pattern": "^policy-[a-z0-9-]+$"
+          },
+          "resource_globs": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "normalization",
+        "inputs",
+        "alias_source",
+        "modes",
+        "operation_catalog",
+        "task_hint_authority",
+        "enforcement_requires_resolved_plan"
+      ],
+      "properties": {
+        "normalization": {
+          "const": "nfkc_casefold_token_boundary_v3"
+        },
+        "inputs": {
+          "const": [
+            "task_text",
+            "planned_operations",
+            "affected_resources"
+          ]
+        },
+        "operation_catalog": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "policies",
+              "effect_floor",
+              "requires_execution_policy",
+              "lifecycle_status"
+            ],
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]*$"
+              },
+              "policies": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]*$"
+                }
+              },
+              "effect_floor": {
+                "enum": [
+                  "L1",
+                  "L2",
+                  "L3",
+                  "L4"
+                ]
+              },
+              "requires_execution_policy": {
+                "type": "boolean"
+              },
+              "lifecycle_status": {
+                "enum": [
+                  "active",
+                  "deprecated"
+                ]
+              },
+              "replacement_operation": {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9_.-]*$"
+              },
+              "deprecated_since_schema": {
+                "type": "integer",
+                "minimum": 1,
+                "description": "Machine policy schema_version where deprecation began."
+              }
+            },
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "lifecycle_status": {
+                      "const": "deprecated"
+                    }
+                  },
+                  "required": [
+                    "lifecycle_status"
+                  ]
+                },
+                "then": {
+                  "required": [
+                    "replacement_operation",
+                    "deprecated_since_schema"
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        "alias_source": {
+          "const": "ROUTING_ALIASES.json"
+        },
+        "modes": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "advisory",
+            "enforcement"
+          ],
+          "properties": {
+            "advisory": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "unresolved_operation_behavior",
+                "unclassified_task_behavior",
+                "task_plan_mismatch_behavior"
+              ],
+              "properties": {
+                "unresolved_operation_behavior": {
+                  "const": "WARN"
+                },
+                "unclassified_task_behavior": {
+                  "const": "WARN"
+                },
+                "task_plan_mismatch_behavior": {
+                  "const": "WARN"
+                }
+              }
+            },
+            "enforcement": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "unresolved_operation_behavior",
+                "unclassified_task_behavior",
+                "task_plan_mismatch_behavior"
+              ],
+              "properties": {
+                "unresolved_operation_behavior": {
+                  "const": "FAIL"
+                },
+                "unclassified_task_behavior": {
+                  "const": "WARN"
+                },
+                "task_plan_mismatch_behavior": {
+                  "const": "WARN"
+                }
+              }
+            }
+          }
+        },
+        "task_hint_authority": {
+          "const": "advisory_only"
+        },
+        "enforcement_requires_resolved_plan": {
+          "const": true
+        }
+      }
+    },
+    "risk_model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "effect_levels",
+        "exposure_levels",
+        "action_gates",
+        "decision_matrix"
+      ],
+      "properties": {
+        "effect_levels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ],
+          "properties": {
+            "L1": {
+              "type": "string",
+              "minLength": 1
+            },
+            "L2": {
+              "type": "string",
+              "minLength": 1
+            },
+            "L3": {
+              "type": "string",
+              "minLength": 1
+            },
+            "L4": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "exposure_levels": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "X0",
+            "X1",
+            "X2",
+            "X3"
+          ],
+          "properties": {
+            "X0": {
+              "type": "string",
+              "minLength": 1
+            },
+            "X1": {
+              "type": "string",
+              "minLength": 1
+            },
+            "X2": {
+              "type": "string",
+              "minLength": 1
+            },
+            "X3": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "action_gates": {
+          "type": "array",
+          "minItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "AUTO",
+              "AUTO_WITH_GUARDS",
+              "REQUIRE_EXPLICIT_APPROVAL",
+              "PROHIBITED_WITHOUT_OVERRIDE"
+            ]
+          }
+        },
+        "decision_matrix": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "L1",
+            "L2",
+            "L3",
+            "L4"
+          ],
+          "properties": {
+            "L1": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ],
+              "properties": {
+                "X0": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X1": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X2": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X3": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                }
+              }
+            },
+            "L2": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ],
+              "properties": {
+                "X0": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X1": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X2": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X3": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                }
+              }
+            },
+            "L3": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ],
+              "properties": {
+                "X0": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X1": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X2": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X3": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                }
+              }
+            },
+            "L4": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ],
+              "properties": {
+                "X0": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X1": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X2": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                },
+                "X3": {
+                  "enum": [
+                    "AUTO",
+                    "AUTO_WITH_GUARDS",
+                    "REQUIRE_EXPLICIT_APPROVAL",
+                    "PROHIBITED_WITHOUT_OVERRIDE"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "protected_override": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema",
+        "binding_required_for_gate",
+        "issuer_must_be_higher_authority",
+        "task_approval_required",
+        "static_project_configuration_is_sufficient",
+        "validator_can_establish_authorization",
+        "exact_action_binding_required",
+        "max_ttl_seconds"
+      ],
+      "properties": {
+        "schema": {
+          "const": "PROTECTED_OVERRIDE.schema.json"
+        },
+        "binding_required_for_gate": {
+          "const": "PROHIBITED_WITHOUT_OVERRIDE"
+        },
+        "issuer_must_be_higher_authority": {
+          "const": true
+        },
+        "task_approval_required": {
+          "const": true
+        },
+        "static_project_configuration_is_sufficient": {
+          "const": false
+        },
+        "validator_can_establish_authorization": {
+          "const": false
+        },
+        "exact_action_binding_required": {
+          "const": true
+        },
+        "max_ttl_seconds": {
+          "const": 900
+        }
+      }
+    },
+    "distribution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_root",
+        "required_files",
+        "allowed_files",
+        "allow_unlisted_files",
+        "reject_symlinks",
+        "reject_duplicate_entries",
+        "reject_unsafe_archive_paths",
+        "run_bundle_checks",
+        "forbidden_patterns",
+        "validate_explicit_artifact_only",
+        "reject_casefold_collisions",
+        "reject_unicode_normalization_collisions",
+        "max_archive_entries",
+        "max_file_uncompressed_bytes",
+        "max_total_uncompressed_bytes",
+        "max_compression_ratio"
+      ],
+      "properties": {
+        "canonical_root": {
+          "const": "universal-agent-docs"
+        },
+        "required_files": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allowed_files": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "allow_unlisted_files": {
+          "type": "boolean"
+        },
+        "reject_symlinks": {
+          "const": true
+        },
+        "reject_duplicate_entries": {
+          "const": true
+        },
+        "reject_unsafe_archive_paths": {
+          "const": true
+        },
+        "run_bundle_checks": {
+          "const": true
+        },
+        "forbidden_patterns": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "validate_explicit_artifact_only": {
+          "const": true
+        },
+        "reject_casefold_collisions": {
+          "const": true
+        },
+        "reject_unicode_normalization_collisions": {
+          "const": true
+        },
+        "max_archive_entries": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 10000
+        },
+        "max_file_uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_total_uncompressed_bytes": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "max_compression_ratio": {
+          "type": "number",
+          "exclusiveMinimum": 1
+        }
+      }
+    },
+    "execution_boundary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "required_inputs",
+        "actual_operations_must_be_canonical",
+        "actual_operations_must_be_covered_by_plan",
+        "known_environments",
+        "environment_exposure_floors",
+        "production_effect_escalation_operations",
+        "target_required_effect_levels",
+        "known_action_hint_mismatch_behavior",
+        "validator_establishes_approval",
+        "target_required_exposure_levels",
+        "runtime_action_schema",
+        "structured_adapter_assertion_required",
+        "trusted_assertion_sources",
+        "hard_action_signature_mismatch_behavior",
+        "exposure_derivation",
+        "approval_assertion_schema",
+        "approval_binding_required_for_gate",
+        "action_digest_format",
+        "runtime_forbidden_operations",
+        "runtime_forbidden_operation_behavior",
+        "opaque_operation_guidance",
+        "action_digest_binds",
+        "approval_replay_protection",
+        "context_effect_escalation_rules",
+        "approval_max_ttl_seconds"
+      ],
+      "properties": {
+        "required_inputs": {
+          "const": [
+            "planned_operations",
+            "actual_operations",
+            "affected_resources",
+            "targets",
+            "environment",
+            "exposure_facts",
+            "correlation_id",
+            "execution_nonce"
+          ]
+        },
+        "actual_operations_must_be_canonical": {
+          "const": true
+        },
+        "actual_operations_must_be_covered_by_plan": {
+          "const": true
+        },
+        "known_environments": {
+          "const": [
+            "local",
+            "test",
+            "staging",
+            "production",
+            "public",
+            "external",
+            "unknown"
+          ]
+        },
+        "environment_exposure_floors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "local",
+            "test",
+            "staging",
+            "production",
+            "public",
+            "external",
+            "unknown"
+          ],
+          "properties": {
+            "local": {
+              "enum": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ]
+            },
+            "test": {
+              "enum": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ]
+            },
+            "staging": {
+              "enum": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ]
+            },
+            "production": {
+              "enum": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ]
+            },
+            "public": {
+              "enum": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ]
+            },
+            "external": {
+              "enum": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ]
+            },
+            "unknown": {
+              "enum": [
+                "X0",
+                "X1",
+                "X2",
+                "X3"
+              ]
+            }
+          }
+        },
+        "production_effect_escalation_operations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          }
+        },
+        "target_required_effect_levels": {
+          "const": [
+            "L3",
+            "L4"
+          ]
+        },
+        "known_action_hint_mismatch_behavior": {
+          "const": "WARN"
+        },
+        "validator_establishes_approval": {
+          "const": false
+        },
+        "target_required_exposure_levels": {
+          "const": [
+            "X2",
+            "X3"
+          ]
+        },
+        "runtime_action_schema": {
+          "const": "RUNTIME_ACTION.schema.json"
+        },
+        "structured_adapter_assertion_required": {
+          "const": true
+        },
+        "trusted_assertion_sources": {
+          "const": [
+            "tool_adapter",
+            "runtime_guard",
+            "human_reviewed"
+          ]
+        },
+        "hard_action_signature_mismatch_behavior": {
+          "const": "FAIL"
+        },
+        "exposure_derivation": {
+          "const": {
+            "algorithm": "max_floor_v1",
+            "declared_exposure_authority": "advisory_raise_only",
+            "required_fact_keys": [
+              "data_classification",
+              "credential_class",
+              "tenant_scope",
+              "public_visibility",
+              "estimated_blast_radius",
+              "estimated_financial_impact"
+            ],
+            "fact_floors": {
+              "data_classification": {
+                "public": "X0",
+                "internal": "X1",
+                "confidential": "X2",
+                "restricted": "X2",
+                "regulated": "X3",
+                "unknown": "X2"
+              },
+              "credential_class": {
+                "none": "X0",
+                "user_secret": "X1",
+                "service_credential": "X2",
+                "privileged_credential": "X3",
+                "break_glass": "X3",
+                "unknown": "X2"
+              },
+              "tenant_scope": {
+                "single_user": "X0",
+                "single_tenant": "X1",
+                "multi_tenant": "X2",
+                "organization_wide": "X3",
+                "global": "X3",
+                "unknown": "X2"
+              },
+              "public_visibility": {
+                "none": "X0",
+                "public_source": "X0",
+                "public_destination": "X2",
+                "bidirectional": "X2",
+                "unknown": "X2"
+              },
+              "estimated_blast_radius": {
+                "single_resource": "X0",
+                "bounded_set": "X1",
+                "service": "X2",
+                "organization": "X3",
+                "global": "X3",
+                "unknown": "X2"
+              },
+              "estimated_financial_impact": {
+                "none": "X0",
+                "negligible": "X0",
+                "bounded": "X1",
+                "material": "X2",
+                "critical": "X3",
+                "unknown": "X2"
+              }
+            }
+          }
+        },
+        "approval_assertion_schema": {
+          "const": "APPROVAL_ASSERTION.schema.json"
+        },
+        "approval_binding_required_for_gate": {
+          "const": "REQUIRE_EXPLICIT_APPROVAL"
+        },
+        "action_digest_format": {
+          "const": "universal-agent-docs-action-digest-v3"
+        },
+        "runtime_forbidden_operations": {
+          "const": [
+            "command.execute"
+          ]
+        },
+        "runtime_forbidden_operation_behavior": {
+          "const": "FAIL"
+        },
+        "opaque_operation_guidance": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action_digest_binds": {
+          "const": [
+            "policy_schema_version",
+            "policy_contract_digest",
+            "adapter",
+            "correlation_id",
+            "execution_nonce",
+            "planned_operations",
+            "actual_operations",
+            "affected_resources",
+            "targets",
+            "environment",
+            "exposure_facts",
+            "declared_exposure",
+            "runtime_effect",
+            "actual_action",
+            "semantic_details"
+          ]
+        },
+        "approval_replay_protection": {
+          "const": {
+            "single_use_required": true,
+            "execution_nonce_required": true,
+            "consumption_registry_authority": "higher_authority_runtime",
+            "validator_local_registry_supported": true,
+            "authorization_requires_atomic_consumption": true
+          }
+        },
+        "context_effect_escalation_rules": {
+          "const": [
+            {
+              "id": "public_distribution_publish",
+              "operations": [
+                "artifact.publish",
+                "package.publish"
+              ],
+              "match_any": [
+                {
+                  "source": "environment",
+                  "values": [
+                    "public"
+                  ]
+                },
+                {
+                  "source": "exposure_facts.public_visibility",
+                  "values": [
+                    "public_destination",
+                    "bidirectional"
+                  ]
+                }
+              ],
+              "effect": "L4"
+            }
+          ]
+        },
+        "approval_max_ttl_seconds": {
+          "const": 1800
+        }
+      }
+    },
+    "integrity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "manifest_format",
+        "algorithm",
+        "trusted_core_files",
+        "manifest_must_be_out_of_band",
+        "self_attestation_is_sufficient",
+        "release_manifest_format",
+        "release_manifest_covers",
+        "release_manifest_must_be_out_of_band",
+        "publisher_authenticity_requires_trusted_channel_or_signature",
+        "release_provenance"
+      ],
+      "properties": {
+        "manifest_format": {
+          "const": "universal-agent-docs-trust-manifest-v2"
+        },
+        "algorithm": {
+          "const": "sha256"
+        },
+        "trusted_core_files": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "manifest_must_be_out_of_band": {
+          "const": true
+        },
+        "self_attestation_is_sufficient": {
+          "const": false
+        },
+        "release_manifest_format": {
+          "const": "universal-agent-docs-release-manifest-v2"
+        },
+        "release_manifest_covers": {
+          "const": "full_distribution_and_archive"
+        },
+        "release_manifest_must_be_out_of_band": {
+          "const": true
+        },
+        "publisher_authenticity_requires_trusted_channel_or_signature": {
+          "const": true
+        },
+        "release_provenance": {
+          "const": {
+            "mechanism": "github_artifact_attestation",
+            "workflow": ".github/workflows/release.yml",
+            "attestation_action": "actions/attest@v4",
+            "signature_model": "sigstore_oidc"
+          }
+        }
+      }
+    },
+    "operation_lifecycle": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "canonical_id_is_stable_api",
+        "allowed_statuses",
+        "rename_strategy",
+        "removal_requires_schema_version_bump",
+        "semantic_change_requires_schema_version_bump",
+        "alias_only_change_requires_schema_version_bump",
+        "deprecated_operation_requires_replacement",
+        "adapter_must_reject_unknown_operation_ids"
+      ],
+      "properties": {
+        "canonical_id_is_stable_api": {
+          "const": true
+        },
+        "allowed_statuses": {
+          "const": [
+            "active",
+            "deprecated"
+          ]
+        },
+        "rename_strategy": {
+          "const": "ADD_NEW_DEPRECATE_OLD"
+        },
+        "removal_requires_schema_version_bump": {
+          "const": true
+        },
+        "semantic_change_requires_schema_version_bump": {
+          "const": true
+        },
+        "alias_only_change_requires_schema_version_bump": {
+          "const": false
+        },
+        "deprecated_operation_requires_replacement": {
+          "const": true
+        },
+        "adapter_must_reject_unknown_operation_ids": {
+          "const": true
+        }
+      }
+    }
+  }
+}

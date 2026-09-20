@@ -1,0 +1,119 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "APPROVAL_ASSERTION.schema.json",
+  "title": "universal-agent-docs explicit approval assertion",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "approval"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "approval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "approval_id",
+        "issuer",
+        "decision",
+        "scope",
+        "issued_at",
+        "expires_at",
+        "operations",
+        "targets",
+        "environment",
+        "correlation_id",
+        "execution_nonce",
+        "single_use",
+        "action_digest",
+        "authorization_reference"
+      ],
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "issuer": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "decision": {
+          "const": "APPROVE"
+        },
+        "scope": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1000
+        },
+        "issued_at": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "expires_at": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "operations": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          }
+        },
+        "targets": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        },
+        "environment": {
+          "enum": [
+            "local",
+            "test",
+            "staging",
+            "production",
+            "public",
+            "external",
+            "unknown"
+          ]
+        },
+        "correlation_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "action_digest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "authorization_reference": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000
+        },
+        "execution_nonce": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9._:-]+$"
+        },
+        "single_use": {
+          "const": true
+        }
+      }
+    }
+  }
+}

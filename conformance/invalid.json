@@ -1,0 +1,72 @@
+{
+  "schema_version": 1,
+  "vectors": [
+    {
+      "id": "terraform-destroy-underreported-as-change",
+      "planned_operations": ["cloud.resource_change"],
+      "actual_operations": ["cloud.resource_change"],
+      "actual_action": "terraform destroy -auto-approve",
+      "affected_resources": ["infra/main.tf"],
+      "targets": ["cloud/project-demo"],
+      "environment": "test",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected_error_contains": "high-confidence action signature"
+    },
+    {
+      "id": "opaque-command-runtime-operation",
+      "planned_operations": ["command.execute"],
+      "actual_operations": ["command.execute"],
+      "actual_action": "python script.py",
+      "affected_resources": ["script.py"],
+      "targets": ["workspace"],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected_error_contains": "opaque/forbidden operation"
+    },
+    {
+      "id": "actual-write-not-covered-by-plan",
+      "planned_operations": ["code.modify"],
+      "actual_operations": ["external.api_write"],
+      "actual_action": "POST /admin/tenants/123",
+      "affected_resources": ["api/admin"],
+      "targets": ["tenant/123"],
+      "environment": "external",
+      "exposure_facts": {
+        "data_classification": "internal",
+        "credential_class": "service_credential",
+        "tenant_scope": "single_tenant",
+        "public_visibility": "none",
+        "estimated_blast_radius": "bounded_set",
+        "estimated_financial_impact": "none"
+      },
+      "expected_error_contains": "not covered by the plan"
+    },
+    {
+      "id": "missing-raw-exposure-facts",
+      "planned_operations": ["external.api_write"],
+      "actual_operations": ["external.api_write"],
+      "actual_action": "POST /internal/update",
+      "affected_resources": ["api/internal"],
+      "targets": ["tenant/123"],
+      "environment": "external",
+      "exposure_facts": {
+        "data_classification": "internal"
+      },
+      "expected_error_contains": "missing required key"
+    }
+  ]
+}

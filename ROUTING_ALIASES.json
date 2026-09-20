@@ -1,0 +1,988 @@
+{
+  "schema_version": 1,
+  "normalization": "nfkc_casefold_token_boundary_v3",
+  "operations": {
+    "code.modify": {
+      "phrases": [
+        "bug",
+        "bug fix",
+        "fix bug",
+        "implement feature",
+        "add feature",
+        "code change",
+        "code modification",
+        "modify code",
+        "edit code",
+        "rename this function",
+        "rename function",
+        "코드 수정",
+        "기능 구현",
+        "함수 수정",
+        "파일 수정",
+        "문구 변경",
+        "문구 바꿔",
+        "코드 변경",
+        "api endpoint",
+        "add api endpoint",
+        "create api endpoint",
+        "endpoint implementation",
+        "react component",
+        "add react component",
+        "create component",
+        "modify component",
+        "rename variable",
+        "rename method",
+        "rename class",
+        "null pointer exception",
+        "api 엔드포인트",
+        "엔드포인트 추가",
+        "컴포넌트 추가",
+        "변수 이름 변경",
+        "변수명 변경"
+      ],
+      "stems": [
+        "버그",
+        "리팩터링",
+        "고쳐",
+        "고치",
+        "함수 수정",
+        "코드 수정",
+        "파일 수정",
+        "문구 변경",
+        "문구 바꿔",
+        "코드 변경",
+        "엔드포인트 추가",
+        "컴포넌트 추가",
+        "변수 이름 변경",
+        "변수명 변경"
+      ],
+      "patterns": [
+        "\\b(?:add|create|implement|modify|edit|update|fix|rename)\\s+(?:(?:a|an|the|this)\\s+)?(?:api\\s+endpoint|endpoint|react\\s+component|component|function|method|class|variable|module|handler|service)\\b",
+        "\\bfix\\s+(?:[a-z0-9_.-]+\\s+){0,4}(?:exception|error|bug)\\b"
+      ]
+    },
+    "code.refactor": {
+      "phrases": [
+        "refactor",
+        "refactor function",
+        "리팩터",
+        "리팩터링"
+      ],
+      "stems": [
+        "리팩터"
+      ],
+      "patterns": []
+    },
+    "documentation.modify": {
+      "phrases": [
+        "update readme",
+        "edit readme",
+        "modify readme",
+        "documentation change",
+        "documentation update",
+        "docs update",
+        "edit documentation",
+        "문서 수정",
+        "문서 업데이트",
+        "readme 수정",
+        "readme 업데이트",
+        "fix readme",
+        "readme 고쳐",
+        "readme 고쳐줘"
+      ],
+      "stems": [
+        "문서 수정",
+        "문서 업데이트",
+        "readme 고쳐"
+      ],
+      "patterns": [
+        "\\b(?:update|edit|modify)\\s+(?:the\\s+)?(?:readme|documentation|docs)\\b"
+      ]
+    },
+    "test.design": {
+      "phrases": [
+        "add test",
+        "add tests",
+        "unit test",
+        "integration test",
+        "regression test",
+        "테스트 추가",
+        "단위 테스트",
+        "통합 테스트",
+        "회귀 테스트",
+        "검증 근거"
+      ],
+      "stems": [
+        "테스트 추가"
+      ],
+      "patterns": []
+    },
+    "test.execute": {
+      "phrases": [
+        "run test",
+        "run tests",
+        "test command",
+        "execute tests",
+        "테스트 실행",
+        "테스트 돌려",
+        "npm test",
+        "pnpm test",
+        "yarn test",
+        "pytest",
+        "go test",
+        "cargo test",
+        "mvn test",
+        "gradle test"
+      ],
+      "stems": [
+        "테스트 돌",
+        "테스트 실행"
+      ],
+      "patterns": [
+        "\\b(?:run|execute)\\s+(?:(?:npm|pnpm|yarn|pytest|go|cargo|mvn|gradle)\\s+)?tests?\\b"
+      ]
+    },
+    "test.scenario.toctou": {
+      "phrases": [
+        "toctou test",
+        "stale state test",
+        "time of check time of use",
+        "stale write test",
+        "toctou 테스트",
+        "stale state 테스트",
+        "오래된 상태 테스트",
+        "경합 상태 검증"
+      ],
+      "stems": [
+        "toctou"
+      ],
+      "patterns": []
+    },
+    "test.scenario.replay_idempotency": {
+      "phrases": [
+        "idempotency test",
+        "replay test",
+        "duplicate request test",
+        "retry idempotency",
+        "멱등성 테스트",
+        "재전송 테스트",
+        "중복 요청 테스트",
+        "재시도 멱등성"
+      ],
+      "stems": [
+        "멱등성"
+      ],
+      "patterns": []
+    },
+    "test.scenario.transaction_rollback": {
+      "phrases": [
+        "transaction rollback test",
+        "rollback test",
+        "transaction failure test",
+        "트랜잭션 롤백 테스트",
+        "롤백 테스트",
+        "중간 실패 테스트"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "test.scenario.concurrency": {
+      "phrases": [
+        "concurrency test",
+        "race condition test",
+        "lost update test",
+        "동시성 테스트",
+        "경쟁 조건 테스트",
+        "동시 실행 테스트"
+      ],
+      "stems": [
+        "동시성"
+      ],
+      "patterns": []
+    },
+    "test.scenario.security": {
+      "phrases": [
+        "security test",
+        "authorization test",
+        "permission boundary test",
+        "보안 테스트",
+        "권한 경계 테스트",
+        "인증 권한 테스트"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "test.scenario.file": {
+      "phrases": [
+        "file test scenario",
+        "file parser test",
+        "archive security test",
+        "파일 테스트 시나리오",
+        "파일 파서 테스트",
+        "아카이브 보안 테스트"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "test.scenario.external_system": {
+      "phrases": [
+        "external system test",
+        "integration failure test",
+        "external api failure test",
+        "외부 시스템 테스트",
+        "외부 연동 테스트",
+        "외부 api 장애 테스트"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "command.execute": {
+      "phrases": [
+        "run command",
+        "execute command",
+        "run script",
+        "execute script",
+        "명령 실행",
+        "명령어 실행",
+        "스크립트 실행"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "filesystem.delete": {
+      "phrases": [
+        "rm -rf",
+        "delete files",
+        "delete directory",
+        "remove directory",
+        "파일 삭제",
+        "디렉터리 삭제"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "external.message_send": {
+      "phrases": [
+        "send message",
+        "send email",
+        "post message",
+        "메시지 전송",
+        "메시지 보내",
+        "이메일 전송",
+        "이메일 보내",
+        "slack message",
+        "send a slack message",
+        "send slack message",
+        "teams message",
+        "send a teams message"
+      ],
+      "stems": [
+        "메시지 보내",
+        "이메일 보내"
+      ],
+      "patterns": [
+        "\\bsend\\s+(?:a\\s+|an\\s+|the\\s+)?(?:slack|teams|discord)?\\s*message\\b"
+      ]
+    },
+    "external.api_write": {
+      "phrases": [
+        "external write",
+        "external side effect",
+        "api write",
+        "write to api",
+        "외부 상태 변경",
+        "외부 전송"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "process.control": {
+      "phrases": [
+        "stop process",
+        "start process",
+        "kill process",
+        "terminate process",
+        "프로세스 종료",
+        "프로세스 시작"
+      ],
+      "stems": [
+        "프로세스 종료",
+        "프로세스 시작"
+      ],
+      "patterns": [
+        "\\b(?:pkill|killall)\\b"
+      ]
+    },
+    "service.restart": {
+      "phrases": [
+        "restart service",
+        "restart the service",
+        "service restart",
+        "restart production service",
+        "서비스 재시작",
+        "서비스를 재시작",
+        "restart the production service",
+        "restart the staging service"
+      ],
+      "stems": [
+        "서비스 재시작"
+      ],
+      "patterns": [
+        "\\b(?:systemctl|service)\\s+restart\\b"
+      ]
+    },
+    "filesystem.permission_change": {
+      "phrases": [
+        "change file permissions",
+        "change permissions",
+        "chmod",
+        "chown",
+        "파일 권한 변경",
+        "권한 비트 변경"
+      ],
+      "stems": [
+        "파일 권한 변경"
+      ],
+      "patterns": [
+        "\\b(?:chmod|chown)\\b"
+      ]
+    },
+    "cloud.resource_change": {
+      "phrases": [
+        "change cloud resource",
+        "update cloud resource",
+        "kubectl delete pod",
+        "cloud infrastructure change",
+        "클라우드 리소스 변경",
+        "쿠버네티스 리소스 변경"
+      ],
+      "stems": [
+        "클라우드 리소스 변경",
+        "쿠버네티스 리소스 변경"
+      ],
+      "patterns": [
+        "\\bkubectl\\s+(?:delete|patch|scale|rollout)\\b",
+        "\\bterraform\\s+apply\\b"
+      ]
+    },
+    "cloud.resource_delete": {
+      "phrases": [
+        "terraform destroy",
+        "destroy cloud resources",
+        "delete cloud resources",
+        "클라우드 리소스 삭제",
+        "테라폼 destroy"
+      ],
+      "stems": [
+        "클라우드 리소스 삭제"
+      ],
+      "patterns": [
+        "\\bterraform\\s+destroy\\b"
+      ]
+    },
+    "storage.object_delete": {
+      "phrases": [
+        "delete s3 objects",
+        "delete s3 files",
+        "empty s3 bucket",
+        "delete bucket files",
+        "스토리지 객체 삭제",
+        "s3 버킷 파일 삭제",
+        "버킷 파일 전부 삭제",
+        "s3 버킷 파일 전부 삭제해",
+        "프로덕션 s3 버킷 파일 전부 삭제해",
+        "운영 s3 버킷 파일 전부 삭제해"
+      ],
+      "stems": [
+        "스토리지 객체 삭제",
+        "s3 버킷 파일 삭제"
+      ],
+      "patterns": [
+        "\\baws\\s+s3\\s+rm\\b.*\\s--recursive\\b"
+      ]
+    },
+    "network.configuration_change": {
+      "phrases": [
+        "change firewall rules",
+        "update firewall rules",
+        "change network rules",
+        "firewall configuration",
+        "방화벽 규칙 변경",
+        "네트워크 설정 변경"
+      ],
+      "stems": [
+        "방화벽 규칙 변경",
+        "네트워크 설정 변경"
+      ],
+      "patterns": [
+        "\\b(?:iptables|nft)\\b"
+      ]
+    },
+    "data.export": {
+      "phrases": [
+        "export customer data",
+        "export all customer data",
+        "export user data",
+        "customer data export",
+        "고객 데이터 내보내기",
+        "고객 데이터 전체 내보내기",
+        "사용자 데이터 export"
+      ],
+      "stems": [
+        "고객 데이터 내보내",
+        "사용자 데이터 내보내"
+      ],
+      "patterns": [
+        "\\bexport\\b.{0,40}\\b(?:customer|user)\\s+data\\b"
+      ]
+    },
+    "external.upload": {
+      "phrases": [
+        "upload externally",
+        "upload to external service",
+        "send file to third party",
+        "외부 서비스에 업로드",
+        "외부로 파일 업로드",
+        "제3자에게 파일 전송"
+      ],
+      "stems": [
+        "외부 서비스에 업로드",
+        "외부로 파일 업로드"
+      ],
+      "patterns": [
+        "\\b(?:curl|wget)\\b.*\\b(?:--upload-file|-t)\\b"
+      ]
+    },
+    "secret.read": {
+      "phrases": [
+        "read secret",
+        "read secrets",
+        "fetch secret",
+        "get secret value",
+        "secret manager read",
+        "시크릿 조회",
+        "비밀값 조회",
+        "secret 값 읽기"
+      ],
+      "stems": [
+        "시크릿 조회",
+        "비밀값 조회"
+      ],
+      "patterns": []
+    },
+    "database.read": {
+      "phrases": [
+        "database read",
+        "db read",
+        "select from",
+        "데이터베이스 조회",
+        "db 조회",
+        "production db query",
+        "prod db query",
+        "프로덕션 db 조회",
+        "운영 db 조회",
+        "고객 데이터 조회",
+        "운영 데이터 조회"
+      ],
+      "stems": [],
+      "patterns": [
+        "\\b(?:query|read|select|inspect)\\s+(?:the\\s+)?(?:production|prod)\\s+(?:db|database)\\b",
+        "(?:프로덕션|운영)\\s+db[가-힣]*\\s+(?:[가-힣0-9_]+\\s+){0,4}조회[가-힣]*"
+      ]
+    },
+    "database.write": {
+      "phrases": [
+        "database write",
+        "db write",
+        "insert into",
+        "update table",
+        "delete from",
+        "데이터베이스 쓰기",
+        "데이터 수정"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "database.schema_change": {
+      "phrases": [
+        "database migration",
+        "schema change",
+        "migration",
+        "migrations",
+        "alter table",
+        "create table",
+        "마이그레이션",
+        "스키마 변경",
+        "add index",
+        "create index",
+        "drop index",
+        "database index",
+        "db index",
+        "인덱스 추가",
+        "인덱스 생성",
+        "인덱스 삭제"
+      ],
+      "stems": [
+        "마이그레이션"
+      ],
+      "patterns": [
+        "\\b(?:add|create|drop)\\s+(?:an?\\s+)?index\\b"
+      ]
+    },
+    "database.destructive_change": {
+      "phrases": [
+        "drop table",
+        "truncate table",
+        "database reset",
+        "db reset",
+        "테이블 삭제",
+        "데이터베이스 초기화",
+        "delete all rows",
+        "delete all records",
+        "remove all records",
+        "empty table",
+        "clear table",
+        "테이블 비우기",
+        "전체 행 삭제",
+        "모든 행 삭제",
+        "remove all rows",
+        "테이블 모든 행 삭제",
+        "purge tenant records",
+        "purge customer data",
+        "purge all records",
+        "tenant data purge",
+        "테넌트 데이터 삭제",
+        "고객 데이터 전체 삭제",
+        "테넌트 레코드 삭제"
+      ],
+      "stems": [
+        "테이블 비워",
+        "모든 행 비워",
+        "사용자 테이블 모든 행 비워",
+        "전체 행 삭제",
+        "모든 행 삭제"
+      ],
+      "patterns": [
+        "\\b(?:delete|remove)\\s+all(?:\\s+[a-z0-9_]+){0,4}\\s+(?:records|rows)\\b",
+        "(?:사용자\\s+)?테이블(?:은|는|이|가|을|를|의|에서)?\\s+모든\\s+행(?:은|는|이|가|을|를)?\\s+비워[가-힣a-z0-9_-]*",
+        "\\bdelete\\s+(?:all\\s+)?rows?\\s+from\\b"
+      ]
+    },
+    "auth.change": {
+      "phrases": [
+        "auth",
+        "authentication",
+        "authorization",
+        "login",
+        "sign in",
+        "access control",
+        "인증",
+        "로그인",
+        "접근 제어"
+      ],
+      "stems": [
+        "로그인",
+        "인증"
+      ],
+      "patterns": []
+    },
+    "security.configuration_change": {
+      "phrases": [
+        "change cors policy",
+        "cors policy change",
+        "cors configuration change",
+        "security header change",
+        "csp change",
+        "cors 정책 변경",
+        "cors 설정 변경",
+        "보안 헤더 변경"
+      ],
+      "stems": [],
+      "patterns": [
+        "\\b(?:change|modify|update|edit)\\s+(?:the\\s+)?(?:cors|csp|security\\s+headers?)\\b"
+      ]
+    },
+    "permission.change": {
+      "phrases": [
+        "permission change",
+        "access permission",
+        "권한 변경",
+        "권한 수정",
+        "change permission to read only",
+        "make permission read only",
+        "권한을 읽기 전용으로 변경",
+        "권한을 읽기 전용으로 바꿔"
+      ],
+      "stems": [
+        "권한을 읽기 전용"
+      ],
+      "patterns": []
+    },
+    "credential.use": {
+      "phrases": [
+        "credential",
+        "credentials",
+        "secret",
+        "secrets",
+        "api key",
+        "token",
+        "자격 증명",
+        "시크릿",
+        "인증정보",
+        "비밀정보"
+      ],
+      "stems": [
+        "시크릿"
+      ],
+      "patterns": []
+    },
+    "credential.rotate": {
+      "phrases": [
+        "rotate credential",
+        "credential rotation",
+        "rotate secret",
+        "secret rotation",
+        "자격 증명 회전",
+        "시크릿 회전",
+        "change root password",
+        "reset root password",
+        "rotate root password",
+        "운영 root 비밀번호 변경",
+        "root 비밀번호 변경"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "iam.change": {
+      "phrases": [
+        "iam role",
+        "iam policy",
+        "aws iam",
+        "gcp iam",
+        "azure role",
+        "identity and access management",
+        "cloud admin role",
+        "admin role",
+        "create cloud admin role",
+        "create a new cloud admin role"
+      ],
+      "stems": [],
+      "patterns": [
+        "\\b(?:create|delete|update|change)\\b.{0,40}\\b(?:cloud\\s+admin|admin|iam)\\s+role\\b"
+      ]
+    },
+    "prompt_injection.inspect": {
+      "phrases": [
+        "prompt injection",
+        "프롬프트 인젝션"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "git.branch_change": {
+      "phrases": [
+        "git branch",
+        "create git branch",
+        "switch git branch",
+        "checkout branch",
+        "브랜치 생성",
+        "브랜치 변경",
+        "브랜치 전환"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "git.commit": {
+      "phrases": [
+        "git commit",
+        "commit changes",
+        "create commit",
+        "변경사항 커밋",
+        "git 커밋",
+        "커밋 생성"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "git.push": {
+      "phrases": [
+        "git push",
+        "force push",
+        "push branch",
+        "push to remote",
+        "git 푸시",
+        "브랜치 푸시",
+        "원격에 푸시",
+        "강제 푸시",
+        "push branch to remote",
+        "push this branch to remote",
+        "이 브랜치 원격에 올려",
+        "브랜치를 원격에 올려",
+        "원격 저장소에 push"
+      ],
+      "stems": [
+        "브랜치를 원격에 올려",
+        "이 브랜치 원격에 올려"
+      ],
+      "patterns": []
+    },
+    "git.merge": {
+      "phrases": [
+        "git merge",
+        "merge branch",
+        "merge pull request",
+        "브랜치 병합",
+        "git 병합"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "git.rebase": {
+      "phrases": [
+        "git rebase",
+        "rebase",
+        "리베이스"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "git.destructive_change": {
+      "phrases": [
+        "git reset --hard",
+        "git clean -fd",
+        "git clean -xdf",
+        "history rewrite",
+        "force checkout",
+        "히스토리 재작성"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "file.parse": {
+      "phrases": [
+        "parser",
+        "parsing",
+        "encoding",
+        "file format",
+        "파일 형식",
+        "파일 포맷",
+        "파서",
+        "파싱",
+        "인코딩"
+      ],
+      "stems": [
+        "인코딩",
+        "파싱"
+      ],
+      "patterns": []
+    },
+    "archive.inspect": {
+      "phrases": [
+        "archive",
+        "zip",
+        "tar",
+        "압축 파일",
+        "아카이브"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "file.import": {
+      "phrases": [
+        "import file",
+        "file import",
+        "파일 가져오기"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "file.export": {
+      "phrases": [
+        "export file",
+        "file export",
+        "파일 내보내기"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "dependency.change": {
+      "phrases": [
+        "dependency",
+        "dependencies",
+        "lockfile",
+        "package manager",
+        "의존성",
+        "락파일",
+        "패키지 매니저",
+        "패키지 관리자"
+      ],
+      "stems": [
+        "의존성"
+      ],
+      "patterns": []
+    },
+    "dependency.install": {
+      "phrases": [
+        "install dependency",
+        "install dependencies",
+        "package install",
+        "npm install",
+        "pip install",
+        "dependency install",
+        "의존성 설치",
+        "패키지 설치"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "code.generate": {
+      "phrases": [
+        "codegen",
+        "code generation",
+        "generated code",
+        "코드 생성"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "deploy.execute": {
+      "phrases": [
+        "deploy",
+        "deployment",
+        "rollout",
+        "배포",
+        "롤아웃",
+        "kubectl apply",
+        "helm upgrade",
+        "helm install",
+        "terraform apply",
+        "production deploy",
+        "deploy to production",
+        "운영 배포",
+        "운영 서버 배포",
+        "프로덕션 배포"
+      ],
+      "stems": [
+        "배포",
+        "운영 서버 올려",
+        "운영에 올려",
+        "프로덕션에 올려",
+        "프로덕션 올려"
+      ],
+      "patterns": [
+        "\\b(?:kubectl\\s+apply|helm\\s+(?:upgrade|install)|terraform\\s+apply)\\b"
+      ]
+    },
+    "release.publish": {
+      "phrases": [
+        "publish release",
+        "create release",
+        "publish a release",
+        "software release",
+        "릴리스 게시",
+        "릴리스 배포",
+        "릴리스 생성"
+      ],
+      "stems": [],
+      "patterns": []
+    },
+    "artifact.publish": {
+      "phrases": [
+        "publish docker image",
+        "push docker image",
+        "publish container image",
+        "push container image",
+        "docker image publish",
+        "container image publish",
+        "도커 이미지 게시",
+        "도커 이미지 푸시",
+        "컨테이너 이미지 게시",
+        "컨테이너 이미지 푸시"
+      ],
+      "stems": [],
+      "patterns": [
+        "\\b(?:publish|push)\\s+(?:(?:a|the)\\s+)?(?:docker|container)\\s+image\\b"
+      ]
+    },
+    "package.publish": {
+      "phrases": [
+        "publish package",
+        "package publish",
+        "패키지 게시",
+        "패키지 배포",
+        "npm publish",
+        "pnpm publish",
+        "yarn npm publish",
+        "cargo publish",
+        "twine upload",
+        "publish to pypi",
+        "gem push"
+      ],
+      "stems": [],
+      "patterns": [
+        "\\b(?:npm|pnpm|cargo)\\s+publish\\b",
+        "\\btwine\\s+upload\\b"
+      ]
+    },
+    "rollback.execute": {
+      "phrases": [
+        "deployment rollback",
+        "deploy rollback",
+        "release rollback",
+        "rollback deployment",
+        "배포 롤백",
+        "릴리스 롤백"
+      ],
+      "stems": [
+        "배포 롤백"
+      ],
+      "patterns": []
+    },
+    "observability.inspect": {
+      "phrases": [
+        "logs",
+        "logging",
+        "log analysis",
+        "metric",
+        "metrics",
+        "trace",
+        "tracing",
+        "로그 확인",
+        "로그 분석",
+        "로깅",
+        "메트릭",
+        "트레이스",
+        "추적"
+      ],
+      "stems": [
+        "로깅",
+        "로그 확인",
+        "로그 분석"
+      ],
+      "patterns": []
+    },
+    "incident.diagnose": {
+      "phrases": [
+        "incident",
+        "outage",
+        "장애",
+        "인시던트"
+      ],
+      "stems": [
+        "장애"
+      ],
+      "patterns": []
+    },
+    "performance.diagnose": {
+      "phrases": [
+        "performance issue",
+        "performance diagnosis",
+        "profiling",
+        "성능 문제",
+        "성능 진단"
+      ],
+      "stems": [],
+      "patterns": []
+    }
+  }
+}

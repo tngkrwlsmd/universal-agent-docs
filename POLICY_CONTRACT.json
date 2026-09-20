@@ -1,0 +1,1206 @@
+{
+  "schema_version": 9,
+  "project_name": "universal-agent-docs",
+  "authority": {
+    "root_router": "AGENTS.md",
+    "human_policy_source": "POLICIES.md",
+    "project_facts_source": "PROJECT.md",
+    "conflict_rule": "Machine-enforceable rules are normative in POLICY_CONTRACT.json; POLICIES.md owns human procedures, rationale, and guidance. Any disagreement affecting enforcement is a bundle validation failure and must fail closed until reconciled.",
+    "machine_policy_source": "POLICY_CONTRACT.json",
+    "enforcement_conflict_behavior": "FAIL_CLOSED"
+  },
+  "policies": [
+    {
+      "id": "execution",
+      "anchor": "policy-execution",
+      "resource_globs": [
+        "Makefile",
+        "makefile",
+        "Taskfile*",
+        "justfile",
+        "**/*.sh",
+        "**/*.ps1",
+        "**/*.bat",
+        "Dockerfile*",
+        "docker-compose*.yml",
+        "docker-compose*.yaml"
+      ]
+    },
+    {
+      "id": "implementation",
+      "anchor": "policy-implementation",
+      "resource_globs": [
+        "src/**",
+        "lib/**",
+        "app/**",
+        "packages/**",
+        "services/**",
+        "cmd/**",
+        "internal/**",
+        "**/*.py",
+        "**/*.js",
+        "**/*.jsx",
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.java",
+        "**/*.kt",
+        "**/*.kts",
+        "**/*.go",
+        "**/*.rs",
+        "**/*.rb",
+        "**/*.php",
+        "**/*.cs",
+        "**/*.cpp",
+        "**/*.cc",
+        "**/*.c",
+        "**/*.h",
+        "**/*.hpp",
+        "**/*.swift"
+      ]
+    },
+    {
+      "id": "testing",
+      "anchor": "policy-testing",
+      "resource_globs": [
+        "tests/**",
+        "test/**",
+        "spec/**",
+        "**/*_test.*",
+        "**/*.test.*",
+        "**/*.spec.*"
+      ]
+    },
+    {
+      "id": "data_safety",
+      "anchor": "policy-data-safety",
+      "resource_globs": [
+        "**/migrations/**",
+        "**/migration/**",
+        "**/*.sql",
+        "**/*schema*.*",
+        "**/seeds/**",
+        "**/seed/**"
+      ]
+    },
+    {
+      "id": "security",
+      "anchor": "policy-security",
+      "resource_globs": [
+        ".env*",
+        "**/.env*",
+        "**/auth/**",
+        "**/security/**",
+        "**/*credential*",
+        "**/*secret*",
+        "**/*permission*",
+        "**/*access_control*"
+      ]
+    },
+    {
+      "id": "git",
+      "anchor": "policy-git",
+      "resource_globs": [
+        ".git/**",
+        ".gitignore",
+        ".gitattributes"
+      ]
+    },
+    {
+      "id": "file_handling",
+      "anchor": "policy-file-handling",
+      "resource_globs": [
+        "**/parser/**",
+        "**/parsers/**",
+        "**/import/**",
+        "**/export/**",
+        "**/*.zip",
+        "**/*.tar",
+        "**/*.tar.gz",
+        "**/*.csv",
+        "**/*.xlsx"
+      ]
+    },
+    {
+      "id": "dependencies",
+      "anchor": "policy-dependencies",
+      "resource_globs": [
+        "package.json",
+        "package-lock.json",
+        "pnpm-lock.yaml",
+        "yarn.lock",
+        "pyproject.toml",
+        "requirements*.txt",
+        "poetry.lock",
+        "Pipfile*",
+        "Cargo.toml",
+        "Cargo.lock",
+        "go.mod",
+        "go.sum",
+        "Gemfile*",
+        "composer.json",
+        "composer.lock",
+        "uv.lock",
+        "Pipfile.lock",
+        "setup.py",
+        "setup.cfg",
+        "tox.ini",
+        "poetry.toml",
+        "pom.xml",
+        "**/pom.xml",
+        "build.gradle",
+        "build.gradle.kts",
+        "settings.gradle",
+        "settings.gradle.kts",
+        "gradle.properties",
+        "gradle/libs.versions.toml",
+        "**/*.csproj",
+        "**/*.fsproj",
+        "**/*.vbproj",
+        "Directory.Packages.props",
+        "Directory.Packages.targets",
+        "packages.lock.json",
+        "Package.swift",
+        "Package.resolved",
+        "pubspec.yaml",
+        "pubspec.lock",
+        "bun.lock",
+        "bun.lockb",
+        "deno.json",
+        "deno.jsonc",
+        "go.work",
+        "go.work.sum",
+        "vcpkg.json",
+        "conanfile.txt",
+        "conanfile.py",
+        "**/build.gradle",
+        "**/build.gradle.kts",
+        "**/settings.gradle",
+        "**/settings.gradle.kts",
+        "**/gradle.properties",
+        "**/gradle/libs.versions.toml",
+        "**/Package.swift",
+        "**/Package.resolved",
+        "**/pubspec.yaml",
+        "**/pubspec.lock",
+        "**/deno.json",
+        "**/deno.jsonc",
+        "**/vcpkg.json",
+        "**/conanfile.txt",
+        "**/conanfile.py"
+      ]
+    },
+    {
+      "id": "deployment",
+      "anchor": "policy-deployment",
+      "resource_globs": [
+        ".github/workflows/**",
+        "deploy/**",
+        "deployment/**",
+        "k8s/**",
+        "helm/**",
+        "charts/**",
+        "terraform/**",
+        "**/*.tf",
+        "Dockerfile*",
+        "docker-compose*.yml",
+        "docker-compose*.yaml",
+        ".gitlab-ci.yml",
+        ".gitlab-ci.yaml",
+        "azure-pipelines.yml",
+        "azure-pipelines.yaml",
+        ".circleci/**",
+        "Jenkinsfile",
+        "Jenkinsfile.*",
+        ".buildkite/**",
+        "pulumi/**",
+        "Pulumi*.yaml",
+        "Pulumi*.yml",
+        "cloudformation/**",
+        "**/*.template.yaml",
+        "**/*.template.yml",
+        "serverless.yml",
+        "serverless.yaml",
+        "fly.toml",
+        "vercel.json",
+        "netlify.toml"
+      ]
+    },
+    {
+      "id": "observability",
+      "anchor": "policy-observability",
+      "resource_globs": [
+        "**/observability/**",
+        "**/logging/**",
+        "**/*metric*",
+        "**/*trace*",
+        "**/*telemetry*"
+      ]
+    }
+  ],
+  "routing": {
+    "normalization": "nfkc_casefold_token_boundary_v3",
+    "inputs": [
+      "task_text",
+      "planned_operations",
+      "affected_resources"
+    ],
+    "alias_source": "ROUTING_ALIASES.json",
+    "modes": {
+      "advisory": {
+        "unresolved_operation_behavior": "WARN",
+        "unclassified_task_behavior": "WARN",
+        "task_plan_mismatch_behavior": "WARN"
+      },
+      "enforcement": {
+        "unresolved_operation_behavior": "FAIL",
+        "unclassified_task_behavior": "WARN",
+        "task_plan_mismatch_behavior": "WARN"
+      }
+    },
+    "operation_catalog": [
+      {
+        "id": "code.modify",
+        "policies": [
+          "implementation",
+          "testing"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "code.refactor",
+        "policies": [
+          "implementation",
+          "testing"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "documentation.modify",
+        "policies": [
+          "implementation"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.design",
+        "policies": [
+          "testing"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.execute",
+        "policies": [
+          "testing",
+          "execution"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.scenario.toctou",
+        "policies": [
+          "testing",
+          "implementation",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.scenario.replay_idempotency",
+        "policies": [
+          "testing",
+          "implementation",
+          "data_safety",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.scenario.transaction_rollback",
+        "policies": [
+          "testing",
+          "data_safety",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.scenario.concurrency",
+        "policies": [
+          "testing",
+          "implementation",
+          "data_safety",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.scenario.security",
+        "policies": [
+          "testing",
+          "security",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.scenario.file",
+        "policies": [
+          "testing",
+          "file_handling",
+          "security",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "test.scenario.external_system",
+        "policies": [
+          "testing",
+          "execution"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "command.execute",
+        "policies": [
+          "execution"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "filesystem.delete",
+        "policies": [
+          "execution",
+          "file_handling"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "external.message_send",
+        "policies": [
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "external.api_write",
+        "policies": [
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "process.control",
+        "policies": [
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "service.restart",
+        "policies": [
+          "execution",
+          "deployment"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "filesystem.permission_change",
+        "policies": [
+          "security",
+          "file_handling",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "cloud.resource_change",
+        "policies": [
+          "deployment",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "cloud.resource_delete",
+        "policies": [
+          "deployment",
+          "execution"
+        ],
+        "effect_floor": "L4",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "storage.object_delete",
+        "policies": [
+          "file_handling",
+          "data_safety",
+          "execution"
+        ],
+        "effect_floor": "L4",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "network.configuration_change",
+        "policies": [
+          "security",
+          "deployment",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "data.export",
+        "policies": [
+          "data_safety",
+          "file_handling",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "external.upload",
+        "policies": [
+          "security",
+          "file_handling",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "secret.read",
+        "policies": [
+          "security",
+          "execution"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "database.read",
+        "policies": [
+          "data_safety"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "database.write",
+        "policies": [
+          "data_safety",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "database.schema_change",
+        "policies": [
+          "data_safety",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "database.destructive_change",
+        "policies": [
+          "data_safety",
+          "execution"
+        ],
+        "effect_floor": "L4",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "auth.change",
+        "policies": [
+          "security",
+          "implementation",
+          "testing"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "security.configuration_change",
+        "policies": [
+          "security",
+          "implementation",
+          "testing"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "permission.change",
+        "policies": [
+          "security",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "credential.use",
+        "policies": [
+          "security",
+          "execution"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "credential.rotate",
+        "policies": [
+          "security",
+          "execution"
+        ],
+        "effect_floor": "L4",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "iam.change",
+        "policies": [
+          "security",
+          "execution"
+        ],
+        "effect_floor": "L4",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "prompt_injection.inspect",
+        "policies": [
+          "security"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "git.branch_change",
+        "policies": [
+          "git"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "git.commit",
+        "policies": [
+          "git"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "git.push",
+        "policies": [
+          "git",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "git.merge",
+        "policies": [
+          "git",
+          "testing"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "git.rebase",
+        "policies": [
+          "git",
+          "testing"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "git.destructive_change",
+        "policies": [
+          "git",
+          "execution"
+        ],
+        "effect_floor": "L4",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "file.parse",
+        "policies": [
+          "file_handling"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "archive.inspect",
+        "policies": [
+          "file_handling",
+          "security"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "file.import",
+        "policies": [
+          "file_handling",
+          "data_safety"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "file.export",
+        "policies": [
+          "file_handling"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "dependency.change",
+        "policies": [
+          "dependencies",
+          "implementation"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "dependency.install",
+        "policies": [
+          "dependencies",
+          "execution",
+          "security"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "code.generate",
+        "policies": [
+          "dependencies",
+          "implementation"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": false,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "deploy.execute",
+        "policies": [
+          "deployment",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "release.publish",
+        "policies": [
+          "deployment",
+          "execution"
+        ],
+        "effect_floor": "L4",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "artifact.publish",
+        "policies": [
+          "deployment",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "package.publish",
+        "policies": [
+          "dependencies",
+          "deployment",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "rollback.execute",
+        "policies": [
+          "deployment",
+          "testing",
+          "execution"
+        ],
+        "effect_floor": "L3",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "observability.inspect",
+        "policies": [
+          "observability"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "incident.diagnose",
+        "policies": [
+          "observability",
+          "testing"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "performance.diagnose",
+        "policies": [
+          "observability",
+          "testing"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      }
+    ],
+    "task_hint_authority": "advisory_only",
+    "enforcement_requires_resolved_plan": true
+  },
+  "risk_model": {
+    "effect_levels": {
+      "L1": "Read-only",
+      "L2": "Reversible local change",
+      "L3": "Bounded external side effect",
+      "L4": "Production, security, public distribution, or effectively irreversible"
+    },
+    "exposure_levels": {
+      "X0": "Ordinary / Local / Public",
+      "X1": "Internal / Limited-sensitive",
+      "X2": "Restricted / Production / Credential-bearing",
+      "X3": "Critical / Privileged / Regulated / Broad-scale"
+    },
+    "action_gates": [
+      "AUTO",
+      "AUTO_WITH_GUARDS",
+      "REQUIRE_EXPLICIT_APPROVAL",
+      "PROHIBITED_WITHOUT_OVERRIDE"
+    ],
+    "decision_matrix": {
+      "L1": {
+        "X0": "AUTO",
+        "X1": "AUTO",
+        "X2": "AUTO_WITH_GUARDS",
+        "X3": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "L2": {
+        "X0": "AUTO",
+        "X1": "AUTO_WITH_GUARDS",
+        "X2": "REQUIRE_EXPLICIT_APPROVAL",
+        "X3": "PROHIBITED_WITHOUT_OVERRIDE"
+      },
+      "L3": {
+        "X0": "REQUIRE_EXPLICIT_APPROVAL",
+        "X1": "REQUIRE_EXPLICIT_APPROVAL",
+        "X2": "REQUIRE_EXPLICIT_APPROVAL",
+        "X3": "PROHIBITED_WITHOUT_OVERRIDE"
+      },
+      "L4": {
+        "X0": "REQUIRE_EXPLICIT_APPROVAL",
+        "X1": "REQUIRE_EXPLICIT_APPROVAL",
+        "X2": "REQUIRE_EXPLICIT_APPROVAL",
+        "X3": "PROHIBITED_WITHOUT_OVERRIDE"
+      }
+    }
+  },
+  "protected_override": {
+    "schema": "PROTECTED_OVERRIDE.schema.json",
+    "binding_required_for_gate": "PROHIBITED_WITHOUT_OVERRIDE",
+    "issuer_must_be_higher_authority": true,
+    "task_approval_required": true,
+    "static_project_configuration_is_sufficient": false,
+    "validator_can_establish_authorization": false,
+    "exact_action_binding_required": true,
+    "max_ttl_seconds": 900
+  },
+  "distribution": {
+    "canonical_root": "universal-agent-docs",
+    "required_files": [
+      "AGENTS.md",
+      "POLICIES.md",
+      "PROJECT.md",
+      "POLICY_CONTRACT.json",
+      "POLICY_CONTRACT.schema.json",
+      "ROUTING_ALIASES.json",
+      "ROUTING_ALIASES.schema.json",
+      "RUNTIME_ACTION.schema.json",
+      "APPROVAL_ASSERTION.schema.json",
+      "PROTECTED_OVERRIDE.schema.json",
+      "README.md",
+      "requirements.txt",
+      "scripts/validate.py",
+      "scripts/package.py",
+      "tests/__init__.py",
+      "tests/test_policy.py",
+      "tests/test_fuzz.py",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      "conformance/README.md",
+      "conformance/golden.json",
+      "conformance/invalid.json",
+      "tests/test_conformance.py"
+    ],
+    "allowed_files": [
+      "AGENTS.md",
+      "POLICIES.md",
+      "PROJECT.md",
+      "POLICY_CONTRACT.json",
+      "POLICY_CONTRACT.schema.json",
+      "ROUTING_ALIASES.json",
+      "ROUTING_ALIASES.schema.json",
+      "RUNTIME_ACTION.schema.json",
+      "APPROVAL_ASSERTION.schema.json",
+      "PROTECTED_OVERRIDE.schema.json",
+      "README.md",
+      "requirements.txt",
+      "scripts/validate.py",
+      "scripts/package.py",
+      "tests/__init__.py",
+      "tests/test_policy.py",
+      "tests/test_fuzz.py",
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml",
+      "conformance/README.md",
+      "conformance/golden.json",
+      "conformance/invalid.json",
+      "tests/test_conformance.py"
+    ],
+    "allow_unlisted_files": false,
+    "reject_symlinks": true,
+    "reject_duplicate_entries": true,
+    "reject_unsafe_archive_paths": true,
+    "run_bundle_checks": true,
+    "forbidden_patterns": [
+      "__pycache__/",
+      ".pytest_cache/",
+      "*.pyc",
+      "*.pyo",
+      ".DS_Store"
+    ],
+    "validate_explicit_artifact_only": true,
+    "reject_casefold_collisions": true,
+    "reject_unicode_normalization_collisions": true,
+    "max_archive_entries": 256,
+    "max_file_uncompressed_bytes": 2000000,
+    "max_total_uncompressed_bytes": 10000000,
+    "max_compression_ratio": 200.0
+  },
+  "execution_boundary": {
+    "required_inputs": [
+      "planned_operations",
+      "actual_operations",
+      "affected_resources",
+      "targets",
+      "environment",
+      "exposure_facts",
+      "correlation_id",
+      "execution_nonce"
+    ],
+    "actual_operations_must_be_canonical": true,
+    "actual_operations_must_be_covered_by_plan": true,
+    "known_environments": [
+      "local",
+      "test",
+      "staging",
+      "production",
+      "public",
+      "external",
+      "unknown"
+    ],
+    "environment_exposure_floors": {
+      "local": "X0",
+      "test": "X0",
+      "staging": "X1",
+      "production": "X2",
+      "public": "X0",
+      "external": "X0",
+      "unknown": "X2"
+    },
+    "production_effect_escalation_operations": [
+      "database.write",
+      "database.schema_change",
+      "database.destructive_change",
+      "deploy.execute",
+      "rollback.execute",
+      "permission.change",
+      "credential.rotate",
+      "iam.change",
+      "service.restart",
+      "cloud.resource_change",
+      "cloud.resource_delete",
+      "storage.object_delete",
+      "network.configuration_change"
+    ],
+    "target_required_effect_levels": [
+      "L3",
+      "L4"
+    ],
+    "known_action_hint_mismatch_behavior": "WARN",
+    "validator_establishes_approval": false,
+    "target_required_exposure_levels": [
+      "X2",
+      "X3"
+    ],
+    "runtime_action_schema": "RUNTIME_ACTION.schema.json",
+    "structured_adapter_assertion_required": true,
+    "trusted_assertion_sources": [
+      "tool_adapter",
+      "runtime_guard",
+      "human_reviewed"
+    ],
+    "hard_action_signature_mismatch_behavior": "FAIL",
+    "exposure_derivation": {
+      "algorithm": "max_floor_v1",
+      "declared_exposure_authority": "advisory_raise_only",
+      "required_fact_keys": [
+        "data_classification",
+        "credential_class",
+        "tenant_scope",
+        "public_visibility",
+        "estimated_blast_radius",
+        "estimated_financial_impact"
+      ],
+      "fact_floors": {
+        "data_classification": {
+          "public": "X0",
+          "internal": "X1",
+          "confidential": "X2",
+          "restricted": "X2",
+          "regulated": "X3",
+          "unknown": "X2"
+        },
+        "credential_class": {
+          "none": "X0",
+          "user_secret": "X1",
+          "service_credential": "X2",
+          "privileged_credential": "X3",
+          "break_glass": "X3",
+          "unknown": "X2"
+        },
+        "tenant_scope": {
+          "single_user": "X0",
+          "single_tenant": "X1",
+          "multi_tenant": "X2",
+          "organization_wide": "X3",
+          "global": "X3",
+          "unknown": "X2"
+        },
+        "public_visibility": {
+          "none": "X0",
+          "public_source": "X0",
+          "public_destination": "X2",
+          "bidirectional": "X2",
+          "unknown": "X2"
+        },
+        "estimated_blast_radius": {
+          "single_resource": "X0",
+          "bounded_set": "X1",
+          "service": "X2",
+          "organization": "X3",
+          "global": "X3",
+          "unknown": "X2"
+        },
+        "estimated_financial_impact": {
+          "none": "X0",
+          "negligible": "X0",
+          "bounded": "X1",
+          "material": "X2",
+          "critical": "X3",
+          "unknown": "X2"
+        }
+      }
+    },
+    "approval_assertion_schema": "APPROVAL_ASSERTION.schema.json",
+    "approval_binding_required_for_gate": "REQUIRE_EXPLICIT_APPROVAL",
+    "action_digest_format": "universal-agent-docs-action-digest-v3",
+    "runtime_forbidden_operations": [
+      "command.execute"
+    ],
+    "runtime_forbidden_operation_behavior": "FAIL",
+    "opaque_operation_guidance": "command.execute may be a planning hint only; runtime actual_operations must use semantically specific canonical operation IDs.",
+    "action_digest_binds": [
+      "policy_schema_version",
+      "policy_contract_digest",
+      "adapter",
+      "correlation_id",
+      "execution_nonce",
+      "planned_operations",
+      "actual_operations",
+      "affected_resources",
+      "targets",
+      "environment",
+      "exposure_facts",
+      "declared_exposure",
+      "runtime_effect",
+      "actual_action",
+      "semantic_details"
+    ],
+    "approval_replay_protection": {
+      "single_use_required": true,
+      "execution_nonce_required": true,
+      "consumption_registry_authority": "higher_authority_runtime",
+      "validator_local_registry_supported": true,
+      "authorization_requires_atomic_consumption": true
+    },
+    "context_effect_escalation_rules": [
+      {
+        "id": "public_distribution_publish",
+        "operations": [
+          "artifact.publish",
+          "package.publish"
+        ],
+        "match_any": [
+          {
+            "source": "environment",
+            "values": [
+              "public"
+            ]
+          },
+          {
+            "source": "exposure_facts.public_visibility",
+            "values": [
+              "public_destination",
+              "bidirectional"
+            ]
+          }
+        ],
+        "effect": "L4"
+      }
+    ],
+    "approval_max_ttl_seconds": 1800
+  },
+  "integrity": {
+    "manifest_format": "universal-agent-docs-trust-manifest-v2",
+    "algorithm": "sha256",
+    "trusted_core_files": [
+      "AGENTS.md",
+      "POLICIES.md",
+      "POLICY_CONTRACT.json",
+      "POLICY_CONTRACT.schema.json",
+      "ROUTING_ALIASES.json",
+      "ROUTING_ALIASES.schema.json",
+      "RUNTIME_ACTION.schema.json",
+      "APPROVAL_ASSERTION.schema.json",
+      "PROTECTED_OVERRIDE.schema.json",
+      "scripts/validate.py",
+      "scripts/package.py",
+      "requirements.txt"
+    ],
+    "manifest_must_be_out_of_band": true,
+    "self_attestation_is_sufficient": false,
+    "release_manifest_format": "universal-agent-docs-release-manifest-v2",
+    "release_manifest_covers": "full_distribution_and_archive",
+    "release_manifest_must_be_out_of_band": true,
+    "publisher_authenticity_requires_trusted_channel_or_signature": true,
+    "release_provenance": {
+      "mechanism": "github_artifact_attestation",
+      "workflow": ".github/workflows/release.yml",
+      "attestation_action": "actions/attest@v4",
+      "signature_model": "sigstore_oidc"
+    }
+  },
+  "operation_lifecycle": {
+    "canonical_id_is_stable_api": true,
+    "allowed_statuses": [
+      "active",
+      "deprecated"
+    ],
+    "rename_strategy": "ADD_NEW_DEPRECATE_OLD",
+    "removal_requires_schema_version_bump": true,
+    "semantic_change_requires_schema_version_bump": true,
+    "alias_only_change_requires_schema_version_bump": false,
+    "deprecated_operation_requires_replacement": true,
+    "adapter_must_reject_unknown_operation_ids": true
+  }
+}

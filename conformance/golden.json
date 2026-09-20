@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "vectors": [
+    {
+      "id": "terraform-destroy-is-cloud-delete",
+      "planned_operations": ["cloud.resource_delete"],
+      "actual_operations": ["cloud.resource_delete"],
+      "actual_action": "terraform destroy -auto-approve",
+      "affected_resources": ["infra/main.tf"],
+      "targets": ["cloud/project-demo"],
+      "environment": "test",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {"status": "PASS", "effective_effect": "L4", "effective_exposure": "X0", "action_gate": "REQUIRE_EXPLICIT_APPROVAL"}
+    },
+    {
+      "id": "git-reset-hard-is-destructive",
+      "planned_operations": ["git.destructive_change"],
+      "actual_operations": ["git.destructive_change"],
+      "actual_action": "git reset --hard HEAD~1",
+      "affected_resources": [".git/refs/heads/main"],
+      "targets": ["repository/main"],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {"status": "PASS", "effective_effect": "L4", "effective_exposure": "X0", "action_gate": "REQUIRE_EXPLICIT_APPROVAL"}
+    },
+    {
+      "id": "public-package-publish-escalates-l4",
+      "planned_operations": ["package.publish"],
+      "actual_operations": ["package.publish"],
+      "actual_action": "npm publish --access public",
+      "affected_resources": ["package.json"],
+      "targets": ["registry.npmjs.org/example-package"],
+      "environment": "external",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "public_destination",
+        "estimated_blast_radius": "bounded_set",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {"status": "PASS", "effective_effect": "L4", "effective_exposure": "X2", "action_gate": "REQUIRE_EXPLICIT_APPROVAL"}
+    },
+    {
+      "id": "isolated-staging-package-publish-remains-l3",
+      "planned_operations": ["package.publish"],
+      "actual_operations": ["package.publish"],
+      "actual_action": "publish package to isolated staging registry",
+      "affected_resources": ["package.json"],
+      "targets": ["registry.staging.internal/example-package"],
+      "environment": "staging",
+      "exposure_facts": {
+        "data_classification": "internal",
+        "credential_class": "none",
+        "tenant_scope": "single_tenant",
+        "public_visibility": "none",
+        "estimated_blast_radius": "bounded_set",
+        "estimated_financial_impact": "negligible"
+      },
+      "expected": {"status": "PASS", "effective_effect": "L3", "effective_exposure": "X1", "action_gate": "REQUIRE_EXPLICIT_APPROVAL"}
+    },
+    {
+      "id": "production-deploy-escalates-l4-x2",
+      "planned_operations": ["deploy.execute"],
+      "actual_operations": ["deploy.execute"],
+      "actual_action": "deploy service api",
+      "affected_resources": ["deploy/service.yaml"],
+      "targets": ["cluster/prod/api"],
+      "environment": "production",
+      "exposure_facts": {
+        "data_classification": "internal",
+        "credential_class": "service_credential",
+        "tenant_scope": "single_tenant",
+        "public_visibility": "none",
+        "estimated_blast_radius": "service",
+        "estimated_financial_impact": "bounded"
+      },
+      "expected": {"status": "PASS", "effective_effect": "L4", "effective_exposure": "X2", "action_gate": "REQUIRE_EXPLICIT_APPROVAL"}
+    },
+    {
+      "id": "privileged-secret-read-is-x3",
+      "planned_operations": ["secret.read"],
+      "actual_operations": ["secret.read"],
+      "actual_action": "read production deployment secret",
+      "affected_resources": ["secret://prod/deploy"],
+      "targets": ["secret/prod/deploy"],
+      "environment": "production",
+      "exposure_facts": {
+        "data_classification": "restricted",
+        "credential_class": "privileged_credential",
+        "tenant_scope": "organization_wide",
+        "public_visibility": "none",
+        "estimated_blast_radius": "service",
+        "estimated_financial_impact": "bounded"
+      },
+      "expected": {"status": "PASS", "effective_effect": "L1", "effective_exposure": "X3", "action_gate": "REQUIRE_EXPLICIT_APPROVAL"}
+    },
+    {
+      "id": "recursive-local-delete-is-filesystem-delete",
+      "planned_operations": ["filesystem.delete"],
+      "actual_operations": ["filesystem.delete"],
+      "actual_action": "rm -rf ./build",
+      "affected_resources": ["build/"],
+      "targets": ["workspace/build"],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {"status": "PASS", "effective_effect": "L2", "effective_exposure": "X0", "action_gate": "AUTO"}
+    }
+  ]
+}
