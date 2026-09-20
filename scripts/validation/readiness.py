@@ -4,6 +4,7 @@ import json
 import re
 import subprocess
 import unicodedata
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
