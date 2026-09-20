@@ -1,5 +1,5 @@
 {
-  "schema_version": 15,
+  "schema_version": 16,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -974,6 +974,7 @@
   "distribution": {
     "canonical_root": "universal-agent-docs",
     "required_files": [
+      ".gitattributes",
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",
@@ -1003,6 +1004,7 @@
       "tests/test_conformance.py"
     ],
     "allowed_files": [
+      ".gitattributes",
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",
@@ -1049,7 +1051,12 @@
     "max_archive_entries": 256,
     "max_file_uncompressed_bytes": 2000000,
     "max_total_uncompressed_bytes": 10000000,
-    "max_compression_ratio": 200
+    "max_compression_ratio": 200,
+    "reproducible_archive": {
+      "entry_compression": "stored",
+      "text_checkout_eol": "lf",
+      "cross_platform_ci_required": true
+    }
   },
   "execution_boundary": {
     "required_inputs": [
@@ -1260,6 +1267,7 @@
     "manifest_format": "universal-agent-docs-trust-manifest-v2",
     "algorithm": "sha256",
     "trusted_core_files": [
+      ".gitattributes",
       "AGENTS.md",
       "POLICIES.md",
       "POLICY_CONTRACT.json",
