@@ -139,8 +139,8 @@ class PackagingPropertyTests(unittest.TestCase):
                 infos = [x for x in zf.infolist() if not x.is_dir()]
                 names = [x.filename for x in infos]
                 self.assertTrue(all(x.compress_type == zipfile.ZIP_STORED for x in infos))
+                root_agents = zf.read("universal-agent-docs-consumer/AGENTS.md").decode("utf-8")
             self.assertIn("universal-agent-docs-consumer/AGENTS.md", names)
-            root_agents = zf.read("universal-agent-docs-consumer/AGENTS.md").decode("utf-8")
             self.assertIn("[`PROJECT.md`](PROJECT.md)", root_agents)
             self.assertIn("--project-file/--project-root", root_agents)
             self.assertIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
