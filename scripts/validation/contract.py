@@ -186,6 +186,7 @@ CANONICAL_REQUIRED_FILES = [
     "APPROVAL_ASSERTION.schema.json",
     "PROTECTED_OVERRIDE.schema.json",
     "README.md",
+    "docs/adoption-profiles.md",
     "LICENSE",
     "requirements.txt",
     "requirements.lock",
