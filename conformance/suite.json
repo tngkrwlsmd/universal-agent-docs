@@ -1708,6 +1708,224 @@
         "decision",
         "unplanned_actual_operations"
       ]
+    },
+    {
+      "id": "digest-deterministic-for-key-order",
+      "description": "Digest is stable under JSON object key order changes.",
+      "category": "action_digest",
+      "kind": "digest_relation",
+      "input": {
+        "variant": "key_order"
+      },
+      "expected": {
+        "relation": "equal"
+      },
+      "normative_fields": [
+        "relation"
+      ]
+    },
+    {
+      "id": "digest-semantic-details-bound",
+      "description": "Changing semantic details changes the digest.",
+      "category": "action_digest",
+      "kind": "digest_relation",
+      "input": {
+        "variant": "semantic_details"
+      },
+      "expected": {
+        "relation": "not_equal"
+      },
+      "normative_fields": [
+        "relation"
+      ]
+    },
+    {
+      "id": "approval-exact-binding-valid",
+      "description": "Approval exact binding is valid.",
+      "category": "approval",
+      "kind": "approval",
+      "input": {
+        "mutation": "none",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "VALID",
+        "binding": "VALID",
+        "temporal": "VALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding",
+        "temporal"
+      ]
+    },
+    {
+      "id": "approval-expired-invalid",
+      "description": "Expired approval is temporally invalid.",
+      "category": "approval",
+      "kind": "approval",
+      "input": {
+        "mutation": "expired",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "temporal": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "temporal"
+      ]
+    },
+    {
+      "id": "approval-wrong-target-invalid",
+      "description": "Approval target mismatch invalidates binding.",
+      "category": "approval",
+      "kind": "approval",
+      "input": {
+        "mutation": "target",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding"
+      ]
+    },
+    {
+      "id": "approval-wrong-environment-invalid",
+      "description": "Approval environment mismatch invalidates binding.",
+      "category": "approval",
+      "kind": "approval",
+      "input": {
+        "mutation": "environment",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding"
+      ]
+    },
+    {
+      "id": "approval-wrong-correlation-invalid",
+      "description": "Approval correlation mismatch invalidates binding.",
+      "category": "approval",
+      "kind": "approval",
+      "input": {
+        "mutation": "correlation_id",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding"
+      ]
+    },
+    {
+      "id": "approval-wrong-nonce-invalid",
+      "description": "Approval nonce mismatch invalidates binding.",
+      "category": "approval",
+      "kind": "approval",
+      "input": {
+        "mutation": "execution_nonce",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding"
+      ]
+    },
+    {
+      "id": "approval-single-use-replay",
+      "description": "Consumed approval cannot be consumed again.",
+      "category": "approval_replay",
+      "kind": "approval",
+      "input": {
+        "mutation": "replay",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "first_replay_protection": "CONSUMED",
+        "second_replay_protection": "REPLAY_DETECTED",
+        "second_object_validity": "INVALID"
+      },
+      "normative_fields": [
+        "first_replay_protection",
+        "second_replay_protection",
+        "second_object_validity"
+      ]
+    },
+    {
+      "id": "override-exact-binding-valid",
+      "description": "Protected override exact binding is valid.",
+      "category": "override",
+      "kind": "override",
+      "input": {
+        "mutation": "none",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "VALID",
+        "binding": "VALID",
+        "temporal": "VALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding",
+        "temporal"
+      ]
+    },
+    {
+      "id": "override-wrong-digest-invalid",
+      "description": "Protected override digest mismatch invalidates binding.",
+      "category": "override",
+      "kind": "override",
+      "input": {
+        "mutation": "action_digest",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding"
+      ]
+    },
+    {
+      "id": "override-single-use-replay",
+      "description": "Consumed override cannot be consumed again.",
+      "category": "override_replay",
+      "kind": "override",
+      "input": {
+        "mutation": "replay",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "first_replay_protection": "CONSUMED",
+        "second_replay_protection": "REPLAY_DETECTED",
+        "second_object_validity": "INVALID"
+      },
+      "normative_fields": [
+        "first_replay_protection",
+        "second_replay_protection",
+        "second_object_validity"
+      ]
     }
   ]
 }
