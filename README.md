@@ -11,6 +11,7 @@ universal-agent-docs/
 ├── AGENTS.md
 ├── POLICIES.md
 ├── PROJECT.md
+├── PROJECT.template.md
 ├── POLICY_CONTRACT.json
 ├── POLICY_CONTRACT.schema.json
 ├── ROUTING_ALIASES.json
@@ -318,7 +319,7 @@ python -m unittest tests.test_conformance -v
 
 이 저장소 자체의 source/release bundle과 다른 프로젝트에 설치하는 consumer policy bundle을 구분한다. **source bundle을 다른 프로젝트 root에 그대로 overlay하지 않는다.** source bundle에는 이 저장소의 README, LICENSE, Python requirements, tests, GitHub workflows가 포함되므로 소비 프로젝트의 동명 파일과 충돌할 수 있다.
 
-소비 프로젝트에는 `scripts/package_consumer.py`가 만드는 `universal-agent-docs-consumer.zip`을 사용한다. 이 artifact는 top-level `universal-agent-docs-consumer/` 아래에 root `AGENTS.md`와 `.agent-policy/`를 둔다. canonical upstream bundle 전체는 `.agent-policy/` 아래에 vendor되므로 기존 `README.md`, `LICENSE`, `requirements.txt`, `tests/`, `.github/workflows/`와 이름이 충돌하지 않는다.
+소비 프로젝트에는 `scripts/package_consumer.py`가 만드는 `universal-agent-docs-consumer.zip`을 사용한다. 이 artifact는 top-level `universal-agent-docs-consumer/` 아래에 root `AGENTS.md`와 `.agent-policy/`를 둔다. `.agent-policy/`에는 source repository 전체가 아니라 runtime에 필요한 **명시적 slim policy core**만 vendor된다. source README, CI workflow, tests, source packager는 consumer artifact에서 제외되며 기존 프로젝트의 동명 파일과 충돌하지 않는다.
 
 ```text
 universal-agent-docs-consumer/
@@ -326,14 +327,15 @@ universal-agent-docs-consumer/
 └── .agent-policy/
     ├── AGENTS.md
     ├── POLICIES.md
-    ├── PROJECT.md
+    ├── PROJECT.md        # PROJECT.template.md의 설치 copy
+    ├── CONSUMER_INSTALL.json
     ├── POLICY_CONTRACT.json
     └── ...
 ```
 
 consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박한다. root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
 
-consumer project facts는 vendored `.agent-policy/PROJECT.md`를 실제 프로젝트 truth로 사용하지 않는다. 그 파일은 upstream template일 뿐이며, 기본 consumer facts 위치는 project root의 `PROJECT.md`다. validator는 정책 bundle 위치와 검증 대상 repository root를 분리할 수 있다.
+source repository의 `PROJECT.md`는 upstream 자체의 실제 facts를 기록하고, 빈 소비자 양식은 `PROJECT.template.md`가 소유한다. consumer package는 그 template을 `.agent-policy/PROJECT.md`로 설치한다. 따라서 vendored `.agent-policy/PROJECT.md`를 실제 프로젝트 truth로 사용하지 않으며, 기본 consumer facts 위치는 project root의 `PROJECT.md`다. validator는 정책 bundle 위치와 검증 대상 repository root를 분리할 수 있다.
 
 ```bash
 python .agent-policy/scripts/validate.py \
@@ -351,7 +353,7 @@ python scripts/package_consumer.py \
   --release-manifest ./dist/universal-agent-docs-consumer.release.json
 ```
 
-consumer verifier는 root router가 canonical source에서 생성되었는지, `.agent-policy/` 내부 upstream bundle이 자체 검증을 통과하는지, detached consumer release manifest가 ZIP과 모든 consumer path의 SHA-256에 정확히 결박되는지 확인한다.
+consumer verifier는 root router가 canonical source에서 생성되었는지, `.agent-policy/CONSUMER_INSTALL.json`이 exact policy contract digest와 slim vendored file set에 결박되는지, installed policy core가 자체 semantic validation을 통과하는지 확인한다. 또한 source distribution과 동일한 path traversal, symlink, duplicate, Unicode/casefold collision, file-count/size/compression-ratio 제한을 추출 전에 적용하고, detached consumer release manifest가 ZIP과 모든 consumer path의 SHA-256에 정확히 결박되는지 확인한다.
 
 ## Release packaging
 
