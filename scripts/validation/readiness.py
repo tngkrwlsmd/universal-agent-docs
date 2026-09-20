@@ -350,7 +350,12 @@ def verify_fact_evidence(project_root: Path, key: str, value: str, evidence: str
     return verify_evidence(project_root, evidence)
 
 
-def readiness(project_path: Path = PROJECT_PATH, mode: str = "development", project_root: Path | None = None) -> dict:
+def readiness(
+    project_path: Path = PROJECT_PATH,
+    mode: str = "development",
+    project_root: Path | None = None,
+    reference_time: datetime | None = None,
+) -> dict:
     try:
         facts_doc = parse_project_facts(project_path)
     except Exception as exc:
@@ -456,7 +461,7 @@ def readiness(project_path: Path = PROJECT_PATH, mode: str = "development", proj
     else:
         assert reviewed_at is not None
         documented.append(Check("reviewed_at", "PASS", reviewed_at_raw))
-        today = datetime.now(timezone.utc).date()
+        today = (reference_time or datetime.now(timezone.utc)).date()
         if reviewed_at.date() > today:
             verified.append(Check("reviewed_at", "FAIL", f"reviewed_at is in the future: {reviewed_at_raw}"))
         else:
