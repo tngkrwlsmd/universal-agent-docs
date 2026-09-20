@@ -1464,7 +1464,25 @@ def verify_fact_evidence(project_root: Path, key: str, value: str, evidence: str
     return verify_evidence(project_root, evidence)
 
 
-def readiness(project_path: Path = PROJECT_PATH, mode: str = "development") -> dict:
+def resolve_readiness_context(project_file: Path | None = None, project_root: Path | None = None) -> tuple[Path, Path]:
+    """Resolve project facts independently from the vendored policy bundle location."""
+    if ROOT.name == ".agent-policy":
+        default_root = ROOT.parent.resolve()
+        default_file = default_root / "PROJECT.md"
+    else:
+        default_root = ROOT.resolve()
+        default_file = PROJECT_PATH.resolve()
+
+    root = project_root.resolve() if project_root is not None else default_root
+    project_path = project_file.resolve() if project_file is not None else (root / "PROJECT.md" if project_root is not None else default_file)
+    try:
+        project_path.relative_to(root)
+    except ValueError as exc:
+        raise ValueError(f"project file must be inside project root: file={project_path}, root={root}") from exc
+    return project_path, root
+
+
+def readiness(project_path: Path = PROJECT_PATH, mode: str = "development", project_root: Path | None = None) -> dict:
     try:
         facts_doc = parse_project_facts(project_path)
     except Exception as exc:
@@ -1474,7 +1492,7 @@ def readiness(project_path: Path = PROJECT_PATH, mode: str = "development") -> d
     if shape_errors:
         return _readiness_structure_failure(mode, shape_errors)
 
-    project_root = project_path.parent
+    project_root = project_root.resolve() if project_root is not None else project_path.parent.resolve()
     facts = facts_doc["facts"]
     required = ["repository_root", "primary_source", "build_command", "test_command", "runtime"]
     if mode == "deployment":
@@ -2856,6 +2874,8 @@ def main() -> int:
     parser.add_argument("--effect", choices=["L1", "L2", "L3", "L4"], help="optional runtime-observed Effect escalation; never lowers operation floors")
     parser.add_argument("--policy", action="append", default=[], metavar="ID", help="print a primary-owner policy section by policy ID; repeatable")
     parser.add_argument("--readiness", choices=["development", "deployment"])
+    parser.add_argument("--project-file", type=Path, help="PROJECT.md to evaluate; consumer layout defaults to the consuming repository root")
+    parser.add_argument("--project-root", type=Path, help="repository root used to resolve readiness evidence; defaults to the consuming repository root")
     parser.add_argument("--distribution", type=Path, help="validate a complete explicit distribution directory or ZIP")
     parser.add_argument("--trusted-manifest", type=Path, help="verify core policy hashes against an out-of-band trusted manifest; with --distribution, verifies the artifact")
     parser.add_argument("--release-manifest", type=Path, help="verify full distributed-file and ZIP integrity against an out-of-band release manifest; requires --distribution ZIP")
@@ -2953,8 +2973,18 @@ def main() -> int:
         if approval_result["object_validity"] != "VALID":
             exit_code = 1
 
+    if (args.project_file is not None or args.project_root is not None) and not args.readiness:
+        result["readiness_error"] = "--project-file/--project-root require --readiness"
+        exit_code = 1
+
     if args.readiness:
-        r = readiness(PROJECT_PATH, args.readiness)
+        try:
+            project_file, project_root = resolve_readiness_context(args.project_file, args.project_root)
+            r = readiness(project_file, args.readiness, project_root)
+            r["project_file"] = str(project_file)
+            r["project_root"] = str(project_root)
+        except Exception as exc:
+            r = _readiness_structure_failure(args.readiness, [f"readiness context error: {exc}"])
         result["readiness"] = r
         if r["documented"] != "PASS" or r["verified"] == "FAIL":
             exit_code = 1

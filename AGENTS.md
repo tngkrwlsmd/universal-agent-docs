@@ -18,7 +18,7 @@
 - **Contract**: API/schema/protocol/공식 외부 규격이 요구함
 - **Evidence**: 테스트, 로그, diff, 측정 결과가 주장을 뒷받침함
 
-프로젝트 구조·명령·evidence index는 [`PROJECT.md`](PROJECT.md)를 사용한다. 문서 주장과 실제 검증 결과가 충돌하면 각각을 분리해 기록하고 추측으로 합치지 않는다.
+프로젝트 구조·명령·evidence index는 [`PROJECT.md`](PROJECT.md)를 사용한다. consumer layout에서는 이 링크가 **소비 프로젝트 root의 `PROJECT.md`**를 뜻하며 vendored policy 디렉터리 자체의 project facts와 혼동하지 않는다. 문서 주장과 실제 검증 결과가 충돌하면 각각을 분리해 기록하고 추측으로 합치지 않는다.
 
 ## 3. 공통 안전 불변조건
 

@@ -331,7 +331,20 @@ universal-agent-docs-consumer/
     └── ...
 ```
 
-consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박한다. root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
+consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박하되 **project facts 링크는 consuming repository root의 `PROJECT.md`를 가리킨다.** vendored validator도 `.agent-policy/` 아래에서 실행되는 것을 감지하면 readiness의 기본 project root를 상위 consuming repository로 잡는다. 필요하면 `--project-file`과 `--project-root`로 명시적으로 지정할 수 있다.
+
+root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
+
+```bash
+# consuming repository root에서
+python .agent-policy/scripts/validate.py --readiness development
+
+# 비표준 위치를 명시해야 할 때
+python .agent-policy/scripts/validate.py \
+  --readiness development \
+  --project-file ./PROJECT.md \
+  --project-root .
+```
 
 ```bash
 python scripts/package_consumer.py --output-dir ./dist

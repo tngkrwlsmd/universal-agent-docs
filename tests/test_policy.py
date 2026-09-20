@@ -1080,6 +1080,38 @@ class ReadinessTests(unittest.TestCase):
             "review": {"reviewed_revision": "manual-revision", "reviewed_at": "2026-09-19"},
         }
 
+    def test_readiness_can_use_project_file_with_independent_project_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            project_root = base / "consumer"
+            policy_root = project_root / ".agent-policy"
+            policy_root.mkdir(parents=True)
+            (project_root / "src").mkdir()
+            data = self.base_data()
+            path = self.write_project(project_root, data)
+            result = mod.readiness(path, "development", project_root)
+            primary = next(x for x in result["verified_checks"] if x["name"] == "primary_source")
+            self.assertEqual("PASS", primary["status"], result)
+
+    def test_resolve_readiness_context_accepts_explicit_consumer_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            project = root / "PROJECT.md"
+            project.write_text("# placeholder\n", encoding="utf-8")
+            resolved_file, resolved_root = mod.resolve_readiness_context(project, root)
+            self.assertEqual(project.resolve(), resolved_file)
+            self.assertEqual(root.resolve(), resolved_root)
+
+    def test_readiness_context_rejects_project_file_outside_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            root = base / "repo"
+            root.mkdir()
+            outside = base / "PROJECT.md"
+            outside.write_text("# placeholder\n", encoding="utf-8")
+            with self.assertRaises(ValueError):
+                mod.resolve_readiness_context(outside, root)
+
     def test_confirmed_fake_path_does_not_verify(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)

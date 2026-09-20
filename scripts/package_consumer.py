@@ -34,6 +34,8 @@ def render_consumer_agents(policy_root: str) -> bytes:
 
     def rewrite(match: re.Match[str]) -> str:
         label, dest = match.group(1), match.group(2)
+        if dest == "PROJECT.md":
+            return f"[{label}](PROJECT.md)"
         if dest.startswith(("http://", "https://", "#", policy_root + "/")):
             return match.group(0)
         return f"[{label}]({policy_root}/{dest})"
@@ -43,7 +45,8 @@ def render_consumer_agents(policy_root: str) -> bytes:
     banner = (
         "> Consumer layout: the canonical universal-agent-docs bundle is vendored under "
         f"`{policy_root}/`. Bare policy filenames mentioned below refer to that directory; "
-        f"project facts live at `{policy_root}/PROJECT.md`."
+        "project facts live in the consuming repository's root `PROJECT.md`. "
+        f"Run `python {policy_root}/scripts/validate.py --readiness development` from the repository root."
     )
     return (lines[0] + "\n\n" + banner + "\n\n" + "\n".join(lines[1:]) + "\n").encode("utf-8")
 
