@@ -1306,6 +1306,408 @@
         "status",
         "decision"
       ]
+    },
+    {
+      "id": "routing-canonical-operation-direct",
+      "description": "Canonical planned operation resolves directly.",
+      "category": "routing",
+      "kind": "routing",
+      "input": {
+        "task_text": "",
+        "planned_operations": [
+          "test.execute"
+        ],
+        "resources": [],
+        "routing_mode": "enforcement"
+      },
+      "expected": {
+        "routing_status": "PASS",
+        "planned_canonical_operations": [
+          "test.execute"
+        ]
+      },
+      "normative_fields": [
+        "routing_status",
+        "planned_canonical_operations"
+      ]
+    },
+    {
+      "id": "routing-natural-language-alias",
+      "description": "Documented alias resolves to canonical operation.",
+      "category": "routing",
+      "kind": "routing",
+      "input": {
+        "task_text": "run tests",
+        "planned_operations": [
+          "run tests"
+        ],
+        "resources": [],
+        "routing_mode": "enforcement"
+      },
+      "expected": {
+        "routing_status": "PASS",
+        "planned_canonical_operations": [
+          "test.execute"
+        ],
+        "task_hint_status": "CLASSIFIED"
+      },
+      "normative_fields": [
+        "routing_status",
+        "planned_canonical_operations",
+        "task_hint_status"
+      ]
+    },
+    {
+      "id": "routing-unknown-advisory-warns",
+      "description": "Unknown planned operation warns in advisory mode.",
+      "category": "routing",
+      "kind": "routing",
+      "input": {
+        "task_text": "",
+        "planned_operations": [
+          "future.unknown"
+        ],
+        "resources": [],
+        "routing_mode": "advisory"
+      },
+      "expected": {
+        "routing_status": "WARN",
+        "unresolved_operations": [
+          "future.unknown"
+        ]
+      },
+      "normative_fields": [
+        "routing_status",
+        "unresolved_operations"
+      ]
+    },
+    {
+      "id": "routing-unknown-enforcement-fails",
+      "description": "Unknown planned operation fails in enforcement mode.",
+      "category": "routing",
+      "kind": "routing",
+      "input": {
+        "task_text": "",
+        "planned_operations": [
+          "future.unknown"
+        ],
+        "resources": [],
+        "routing_mode": "enforcement"
+      },
+      "expected": {
+        "routing_status": "FAIL",
+        "unresolved_operations": [
+          "future.unknown"
+        ]
+      },
+      "normative_fields": [
+        "routing_status",
+        "unresolved_operations"
+      ]
+    },
+    {
+      "id": "routing-task-hint-does-not-outrank-plan",
+      "description": "Task hint exposes an under-declared plan without replacing it.",
+      "category": "routing",
+      "kind": "routing",
+      "input": {
+        "task_text": "drop table users",
+        "planned_operations": [
+          "database.read"
+        ],
+        "resources": [
+          "db/users"
+        ],
+        "routing_mode": "enforcement"
+      },
+      "expected": {
+        "routing_status": "WARN",
+        "planned_canonical_operations": [
+          "database.read"
+        ],
+        "task_plan_gaps": [
+          "database.destructive_change"
+        ]
+      },
+      "normative_fields": [
+        "routing_status",
+        "planned_canonical_operations",
+        "task_plan_gaps"
+      ]
+    },
+    {
+      "id": "lifecycle-unknown-operation-rejected",
+      "description": "Unknown canonical operation identifiers are rejected.",
+      "category": "operation_lifecycle",
+      "kind": "lifecycle",
+      "input": {
+        "operation": "future.unknown"
+      },
+      "expected": {
+        "known": false
+      },
+      "normative_fields": [
+        "known"
+      ]
+    },
+    {
+      "id": "lifecycle-active-operation-recognized",
+      "description": "Active canonical operation identifiers are recognized.",
+      "category": "operation_lifecycle",
+      "kind": "lifecycle",
+      "input": {
+        "operation": "build.execute"
+      },
+      "expected": {
+        "known": true,
+        "lifecycle_status": "active"
+      },
+      "normative_fields": [
+        "known",
+        "lifecycle_status"
+      ]
+    },
+    {
+      "id": "exposure-unknown-facts-conservative-x2",
+      "description": "Unknown exposure facts conservatively derive X2.",
+      "category": "exposure",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "observability.inspect"
+        ],
+        "actual_operations": [
+          "observability.inspect"
+        ],
+        "actual_action": "inspect logs",
+        "affected_resources": [
+          "logs/app"
+        ],
+        "targets": [
+          "logs/app"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "unknown",
+          "credential_class": "unknown",
+          "tenant_scope": "unknown",
+          "public_visibility": "unknown",
+          "estimated_blast_radius": "unknown",
+          "estimated_financial_impact": "unknown"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_exposure": "X2",
+        "action_gate": "AUTO_WITH_GUARDS"
+      },
+      "normative_fields": [
+        "status",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "declared-exposure-can-raise",
+      "description": "Declared exposure may raise the derived floor.",
+      "category": "exposure",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "build.execute"
+        ],
+        "actual_operations": [
+          "build.execute"
+        ],
+        "actual_action": "build",
+        "affected_resources": [
+          "src"
+        ],
+        "targets": [
+          "workspace/build"
+        ],
+        "environment": "local",
+        "declared_exposure": "X2",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "status",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "declared-exposure-cannot-lower",
+      "description": "Declared exposure cannot lower raw-fact-derived exposure.",
+      "category": "exposure",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "observability.inspect"
+        ],
+        "actual_operations": [
+          "observability.inspect"
+        ],
+        "actual_action": "inspect logs",
+        "affected_resources": [
+          "logs"
+        ],
+        "targets": [
+          "logs/prod"
+        ],
+        "environment": "production",
+        "declared_exposure": "X0",
+        "exposure_facts": {
+          "data_classification": "restricted",
+          "credential_class": "service_credential",
+          "tenant_scope": "multi_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_exposure": "X2",
+        "action_gate": "AUTO_WITH_GUARDS"
+      },
+      "normative_fields": [
+        "status",
+        "effective_exposure",
+        "action_gate"
+      ]
+    },
+    {
+      "id": "boundary-missing-target-for-l3-fails",
+      "description": "L3 actions require a concrete target.",
+      "category": "target_requirements",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "database.write"
+        ],
+        "actual_operations": [
+          "database.write"
+        ],
+        "actual_action": "update row",
+        "affected_resources": [
+          "users"
+        ],
+        "targets": [],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    },
+    {
+      "id": "boundary-high-confidence-signature-mismatch",
+      "description": "High-confidence destructive signature cannot be under-reported.",
+      "category": "action_signature",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_action": "terraform destroy -auto-approve",
+        "affected_resources": [
+          "infra/main.tf"
+        ],
+        "targets": [
+          "cloud/project-demo"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "hard_action_hint_gaps": [
+          "cloud.resource_delete"
+        ]
+      },
+      "normative_fields": [
+        "status",
+        "decision",
+        "hard_action_hint_gaps"
+      ]
+    },
+    {
+      "id": "boundary-actual-operation-plan-mismatch",
+      "description": "Runtime actual operation must be covered by the plan.",
+      "category": "plan_binding",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "database.read"
+        ],
+        "actual_operations": [
+          "database.write"
+        ],
+        "actual_action": "update row",
+        "affected_resources": [
+          "users"
+        ],
+        "targets": [
+          "db/test/users"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "unplanned_actual_operations": [
+          "database.write"
+        ]
+      },
+      "normative_fields": [
+        "status",
+        "decision",
+        "unplanned_actual_operations"
+      ]
     }
   ]
 }
