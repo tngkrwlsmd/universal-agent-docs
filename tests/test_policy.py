@@ -1202,6 +1202,20 @@ class ReadinessTests(unittest.TestCase):
         r = mod.readiness(ROOT / "PROJECT.md", "development")
         self.assertEqual("FAIL", r["documented"])
 
+    def test_vendored_project_facts_can_validate_against_consumer_repo_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td) / "consumer"
+            policy = repo / ".agent-policy"
+            policy.mkdir(parents=True)
+            (repo / "src").mkdir()
+            data = self.base_data()
+            path = self.write_project(policy, data)
+            result = mod.readiness(path, "development", project_root=repo)
+            repo_check = next(x for x in result["verified_checks"] if x["name"] == "repository_root")
+            source_check = next(x for x in result["verified_checks"] if x["name"] == "primary_source")
+            self.assertEqual("PASS", repo_check["status"], result)
+            self.assertEqual("PASS", source_check["status"], result)
+
     def test_readiness_distinguishes_evidence_from_command_execution(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
