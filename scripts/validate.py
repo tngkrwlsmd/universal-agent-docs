@@ -2023,7 +2023,7 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             and integrity.get("release_manifest_must_be_out_of_band") is True
             and integrity.get("publisher_authenticity_requires_trusted_channel_or_signature") is True
             and integrity.get("self_attestation_is_sufficient") is False
-            and integrity.get("release_provenance") == {"mechanism":"github_artifact_attestation","workflow":".github/workflows/release.yml","attestation_action":"actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6","signature_model":"sigstore_oidc","required_source_ref":"refs/heads/main","verifier_requires_expected_source_digest":true}
+            and integrity.get("release_provenance") == {"mechanism":"github_artifact_attestation","workflow":".github/workflows/release.yml","attestation_action":"actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6","signature_model":"sigstore_oidc","required_source_ref":"refs/heads/main","verifier_requires_expected_source_digest":True}
         )
         checks.append(Check(
             "integrity_contract_implementation_parity",
