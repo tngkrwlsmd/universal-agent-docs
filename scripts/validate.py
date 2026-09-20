@@ -431,15 +431,15 @@ def _concrete_targets(targets: Iterable[str]) -> tuple[list[str], list[str]]:
 
 
 HARD_ACTION_SIGNATURES = (
-    (re.compile(r"\\bgit\\s+reset\\s+--hard\\b", re.I), "git.destructive_change"),
-    (re.compile(r"\\bgit\\s+push\\b[^\\n]*(?:--force(?:-with-lease)?|-f)(?:\\s|$)", re.I), "git.destructive_change"),
-    (re.compile(r"\\bterraform\\s+destroy\\b", re.I), "cloud.resource_delete"),
-    (re.compile(r"\\baws\\s+s3\\s+rm\\b[^\\n]*\\s--recursive\\b", re.I), "storage.object_delete"),
-    (re.compile(r"\\b(?:drop\\s+(?:table|database)|truncate\\s+table)\\b", re.I), "database.destructive_change"),
+    (re.compile(r"\bgit\s+reset\s+--hard\b", re.I), "git.destructive_change"),
+    (re.compile(r"\bgit\s+push\b[^\n]*(?:--force(?:-with-lease)?|-f)(?:\s|$)", re.I), "git.destructive_change"),
+    (re.compile(r"\bterraform\s+destroy\b", re.I), "cloud.resource_delete"),
+    (re.compile(r"\baws\s+s3\s+rm\b[^\n]*\s--recursive\b", re.I), "storage.object_delete"),
+    (re.compile(r"\b(?:drop\s+(?:table|database)|truncate\s+table)\b", re.I), "database.destructive_change"),
 )
-_RM_RF_SIGNATURE = re.compile(r"(?<!\\w)rm\\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\\s+([^;&|\\n]+)", re.I)
-_GENERATED_DELETE_TARGET = re.compile(r"^(?:\\./)?(?:build|dist|coverage|out|target|\\.cache)(?:/)?$", re.I)
-_KUBECTL_DELETE_SIGNATURE = re.compile(r"\\bkubectl\\s+delete\\s+([a-z0-9.-]+)\\b", re.I)
+_RM_RF_SIGNATURE = re.compile(r"(?<!\w)rm\s+(?:-[a-z]*r[a-z]*f[a-z]*|-[a-z]*f[a-z]*r[a-z]*)\s+([^;&|\n]+)", re.I)
+_GENERATED_DELETE_TARGET = re.compile(r"^(?:\./)?(?:build|dist|coverage|out|target|\.cache)(?:/)?$", re.I)
+_KUBECTL_DELETE_SIGNATURE = re.compile(r"\bkubectl\s+delete\s+([a-z0-9.-]+)\b", re.I)
 
 
 def infer_hard_action_operations(text: str) -> list[str]:
@@ -454,7 +454,7 @@ def infer_hard_action_operations(text: str) -> list[str]:
 
     rm_match = _RM_RF_SIGNATURE.search(text)
     if rm_match:
-        raw_target = rm_match.group(1).strip().strip("'\\\"")
+        raw_target = rm_match.group(1).strip().strip("'\"")
         operation = "filesystem.generated_delete" if _GENERATED_DELETE_TARGET.fullmatch(raw_target) else "filesystem.delete"
         operations.append(operation)
 
