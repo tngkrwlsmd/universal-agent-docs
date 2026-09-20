@@ -88,6 +88,26 @@ class BundleTests(unittest.TestCase):
         self.assertIn("jsonschema==4.26.0", lock)
         self.assertIn("rpds-py==0.30.0", lock)
 
+    def test_reproducibility_controls_are_canonical(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        self.assertIn(".gitattributes", contract["distribution"]["required_files"])
+        self.assertIn(".gitattributes", contract["integrity"]["trusted_core_files"])
+        self.assertIn(".gitattributes", mod.CANONICAL_REQUIRED_FILES)
+        self.assertIn(".gitattributes", mod.TRUSTED_CORE_FILES)
+        attrs = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn("* text=auto eol=lf", attrs)
+        self.assertEqual(
+            {"entry_compression":"stored","text_checkout_eol":"lf","cross_platform_ci_required":True},
+            contract["distribution"]["reproducible_archive"],
+        )
+
+    def test_existing_required_check_name_hosts_reproducibility_gate(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        self.assertIn("name: ubuntu-latest / Python 3.14", workflow)
+        self.assertIn("Require bit-for-bit cross-platform reproducibility", workflow)
+        self.assertIn("expected 6 reproducibility records", workflow)
+        self.assertIn("actions/download-artifact@018cc2cf5baa6db3ef3c5f8a56943fffe632ef53", workflow)
+
     def test_license_is_part_of_canonical_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         self.assertTrue((ROOT / "LICENSE").is_file())
