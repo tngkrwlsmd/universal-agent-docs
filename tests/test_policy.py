@@ -60,6 +60,36 @@ class BundleTests(unittest.TestCase):
     def test_root_router_is_small(self):
         self.assertLessEqual(len((ROOT / "AGENTS.md").read_text(encoding="utf-8").splitlines()), 150)
 
+    def test_common_development_operation_vocabulary_is_present(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        ids = {x["id"] for x in contract["routing"]["operation_catalog"]}
+        for operation in [
+            "build.execute", "lint.execute", "typecheck.execute", "format.execute",
+            "filesystem.tracked_delete",
+        ]:
+            self.assertIn(operation, ids)
+
+    def test_tracked_delete_semantic_guard_is_machine_enforced(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        result = mod.evaluate_execution_boundary(
+            contract,
+            ["filesystem.tracked_delete"],
+            ["filesystem.tracked_delete"],
+            ["src/obsolete.py"],
+            [],
+            "local",
+            exposure_facts={
+                "data_classification":"public", "credential_class":"none",
+                "tenant_scope":"single_user", "public_visibility":"none",
+                "estimated_blast_radius":"single_resource", "estimated_financial_impact":"none",
+            },
+            correlation_id="tracked-delete-test",
+            execution_nonce="tracked-delete-nonce-0001",
+            semantic_details={},
+        )
+        self.assertEqual("FAIL", result["status"], result)
+        self.assertTrue(any("requires semantic_details.recoverability" in x for x in result["errors"]), result)
+
     def test_operation_lifecycle_rejects_unknown_status(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td) / "bundle"
@@ -247,6 +277,22 @@ class RoutingTests(unittest.TestCase):
         result = self.route(task, operations, resources)
         self.assertEqual(set(expected), set(result["policies"]), (task, result))
         return result
+
+    def test_common_development_commands_have_specific_operations(self):
+        cases = [
+            ("npm run build", "build.execute"),
+            ("ruff check .", "lint.execute"),
+            ("mypy src", "typecheck.execute"),
+            ("ruff format .", "format.execute"),
+        ]
+        for text, operation in cases:
+            with self.subTest(text=text):
+                routed = self.route(text)
+                self.assertIn(operation, routed["canonical_operations"], routed)
+
+    def test_tracked_delete_requires_specific_operation(self):
+        routed = self.route("delete clean git tracked file")
+        self.assertIn("filesystem.tracked_delete", routed["canonical_operations"], routed)
 
     def test_korean_bug_and_unit_test(self):
         r = self.assertExactPolicies("버그를 고치고 단위 테스트도 추가해줘", ["implementation", "testing"])

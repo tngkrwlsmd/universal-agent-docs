@@ -310,6 +310,187 @@
         "effective_exposure": "X1",
         "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
       }
+    },
+    {
+      "id": "local-build-is-l2",
+      "planned_operations": [
+        "build.execute"
+      ],
+      "actual_operations": [
+        "build.execute"
+      ],
+      "actual_action": "npm run build",
+      "affected_resources": [
+        "package.json"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
+    },
+    {
+      "id": "local-lint-is-l1",
+      "planned_operations": [
+        "lint.execute"
+      ],
+      "actual_operations": [
+        "lint.execute"
+      ],
+      "actual_action": "ruff check .",
+      "affected_resources": [
+        "src/"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
+    },
+    {
+      "id": "local-typecheck-is-l1",
+      "planned_operations": [
+        "typecheck.execute"
+      ],
+      "actual_operations": [
+        "typecheck.execute"
+      ],
+      "actual_action": "mypy src",
+      "affected_resources": [
+        "src/"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
+    },
+    {
+      "id": "local-format-is-l2",
+      "planned_operations": [
+        "format.execute"
+      ],
+      "actual_operations": [
+        "format.execute"
+      ],
+      "actual_action": "ruff format .",
+      "affected_resources": [
+        "src/"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
+    },
+    {
+      "id": "clean-tracked-file-delete-is-l2",
+      "planned_operations": [
+        "filesystem.tracked_delete"
+      ],
+      "actual_operations": [
+        "filesystem.tracked_delete"
+      ],
+      "actual_action": "remove obsolete tracked source file",
+      "affected_resources": [
+        "src/obsolete.py"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "semantic_details": {
+        "recoverability": "git_tracked_clean",
+        "recovery_revision": "abc123"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
+    },
+    {
+      "id": "dependency-install-and-build-multi-operation",
+      "planned_operations": [
+        "dependency.install",
+        "build.execute"
+      ],
+      "actual_operations": [
+        "dependency.install",
+        "build.execute"
+      ],
+      "actual_action": "install locked dependencies then build",
+      "affected_resources": [
+        "requirements.lock",
+        "src/"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
     }
   ]
 }

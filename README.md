@@ -124,7 +124,7 @@ planned operations ────┼→ canonical operation IDs → policy mapping
 affected resources ────┘                         ↘ resource policy mapping
 ```
 
-대표 ID는 `code.modify`, `test.execute`, `filesystem.generated_delete`, `filesystem.delete`, `database.schema_change`, `database.destructive_change`, `git.destructive_change`, `iam.change`, `cloud.resource_change`, `cloud.resource_delete`, `external.message_send`, `deploy.execute` 등이다. 에이전트가 계획을 만들 수 있는 환경에서는 자연어 대신 canonical ID를 `planned_operations`에 넣는 것을 우선한다.
+대표 ID는 `code.modify`, `build.execute`, `lint.execute`, `typecheck.execute`, `format.execute`, `test.execute`, `filesystem.generated_delete`, `filesystem.tracked_delete`, `filesystem.delete`, `database.schema_change`, `database.destructive_change`, `git.destructive_change`, `iam.change`, `cloud.resource_change`, `cloud.resource_delete`, `external.message_send`, `deploy.execute` 등이다. 에이전트가 계획을 만들 수 있는 환경에서는 자연어 대신 canonical ID를 `planned_operations`에 넣는 것을 우선한다.
 
 위험 기반 테스트 시나리오는 `test.scenario.toctou`, `test.scenario.replay_idempotency`, `test.scenario.transaction_rollback`, `test.scenario.concurrency`, `test.scenario.security`, `test.scenario.file`, `test.scenario.external_system`으로 직접 계획할 수 있다. 이 ID들은 단순 문서 예시가 아니라 operation catalog에 등록되어 관련 Testing 및 primary-owner 정책으로 실제 routing된다.
 
@@ -309,6 +309,8 @@ python -m unittest tests.test_conformance -v
 ```
 
 새 adapter를 붙일 때는 이 corpus를 그대로 실행하고, adapter 전용 사례가 필요하면 같은 wire shape의 vector를 추가한다. 특히 `terraform destroy`, `git reset --hard`, public package/artifact publish, privileged credential 사용처럼 Effect/Exposure가 크게 달라지는 action은 구조화된 semantics와 실제 operation ID가 함께 맞아야 한다.
+
+기본 corpus는 일반 개발 루프의 `build.execute`/`lint.execute`/`typecheck.execute`/`format.execute`, multi-operation build 흐름, generated/tracked/general delete 구분도 포함한다. `filesystem.tracked_delete`는 단순 파일명으로 L2가 되지 않으며 runtime adapter가 `recoverability=git_tracked_clean`과 `recovery_revision`을 제출해야 한다.
 
 ## Consumer installation layout
 

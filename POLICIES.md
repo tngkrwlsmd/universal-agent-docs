@@ -136,6 +136,7 @@ approval의 유효기간은 `issued_at`부터 최대 30분이며 이를 넘으�
 
 범용 shell/API surface를 `command.execute` 또는 `external.api_write` 하나로 축소하지 않는다. 특히 `command.execute`는 runtime actual operation으로 사용할 수 없으며 opaque 의미를 구체 operation으로 분류하지 못하면 fail-closed한다. adapter가 실행 의미를 알 수 있다면 최소한 다음과 같은 구체 operation을 우선한다.
 
+- common development execution: `build.execute`, `lint.execute`, `typecheck.execute`, `format.execute`
 - process lifecycle: `process.control`, `service.restart`
 - filesystem/security: `filesystem.permission_change`
 - cloud/infrastructure: `cloud.resource_change`, `cloud.resource_delete`, `network.configuration_change`
@@ -381,6 +382,7 @@ Bootstrap:
 - production을 테스트 편의에 맞추지 않는다.
 - 실패를 없애기 위해 assertion/validation/permission을 임의로 완화하거나 실패 테스트를 숨기지 않는다.
 - 기존 프로젝트의 공식 test framework와 command를 우선한다.
+- build/lint/typecheck/format은 opaque `command.execute`로 보고하지 않고 각각 `build.execute`, `lint.execute`, `typecheck.execute`, `format.execute`로 분류한다. command가 여러 의미를 가지면 actual operation을 모두 보고한다.
 - 좁고 빠른 검증부터 시작해 위험에 따라 넓힌다.
 - 기존 실패와 이번 변경으로 생긴 실패를 구분한다.
 - 중요한 bug fix는 가능하면 재현 가능한 regression test로 남긴다.
@@ -809,6 +811,7 @@ Export는 공식 외부 규격, encoding, delimiter/escaping/quoting, date, newl
 - 임시 디렉터리를 안전하게 사용한다.
 - 생성 파일은 가능하면 실제 소비 프로그램/parser/schema validator로 다시 연다.
 - recursive local delete는 생성물이라는 이유가 확인된 conventional build/cache output에만 `filesystem.generated_delete`를 사용한다. 그 외 파일·디렉터리 삭제는 `filesystem.delete`로 분류해 복구 불가능한 사용자 작업물을 L2로 축소하지 않는다.
+- version-control adapter가 대상이 현재 revision에 존재하는 **clean tracked file**이고 동일 bytes를 복구할 revision을 구조적으로 확인한 경우에만 `filesystem.tracked_delete`를 사용할 수 있다. runtime은 `semantic_details.recoverability=git_tracked_clean`과 non-empty `recovery_revision`을 함께 제출해야 하며 local/test 밖에서는 이 operation을 사용하지 않는다. 수정된 tracked file, untracked file, 복구 근거가 없는 경로는 일반 `filesystem.delete`로 유지한다.
 - 사용자가 archive 전체를 분석하라고 요청했다면 재귀적으로 모든 파일을 확인하고 일부만 처리한 상태를 성공으로 보고하지 않는다.
 
 ---

@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {11}
+SUPPORTED_SCHEMA_VERSIONS = {12}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -101,6 +101,27 @@ CONTEXT_EFFECT_ESCALATION_RULES = [
             {"source": "exposure_facts.public_visibility", "values": ["public_destination", "bidirectional"]},
         ],
         "effect": "L4",
+    }
+]
+OPERATION_SEMANTIC_REQUIREMENTS = [
+    {
+        "id": "tracked_delete_recoverability",
+        "operations": [
+            "filesystem.tracked_delete"
+        ],
+        "required_semantic_details": [
+            "recoverability",
+            "recovery_revision"
+        ],
+        "semantic_detail_allowed_values": {
+            "recoverability": [
+                "git_tracked_clean"
+            ]
+        },
+        "allowed_environments": [
+            "local",
+            "test"
+        ]
     }
 ]
 APPROVAL_MAX_TTL_SECONDS = 1800
@@ -711,6 +732,27 @@ def evaluate_execution_boundary(
         if effective_effect is None or _EFFECT_RANK[runtime_effect] > _EFFECT_RANK[effective_effect]:
             effective_effect = runtime_effect
             escalations.append(f"runtime_effect raised effective Effect to {runtime_effect}")
+
+    semantic_values = semantic_details if isinstance(semantic_details, dict) else {}
+    semantic_rules = cfg.get("operation_semantic_requirements", OPERATION_SEMANTIC_REQUIREMENTS)
+    for rule in semantic_rules:
+        if not set(rule.get("operations", [])).intersection(valid_actual):
+            continue
+        if env not in set(rule.get("allowed_environments", [])):
+            errors.append(
+                f"operation semantic requirement {rule.get('id')!r} does not allow environment {env!r}"
+            )
+        for key in rule.get("required_semantic_details", []):
+            value = semantic_values.get(key)
+            if value is None or (isinstance(value, str) and not value.strip()):
+                errors.append(
+                    f"operation semantic requirement {rule.get('id')!r} requires semantic_details.{key}"
+                )
+        for key, allowed in rule.get("semantic_detail_allowed_values", {}).items():
+            if key in semantic_values and semantic_values[key] not in allowed:
+                errors.append(
+                    f"operation semantic requirement {rule.get('id')!r} requires semantic_details.{key} in {allowed!r}"
+                )
 
     exposure_result = derive_exposure_floor(contract, env, exposure_facts, declared_exposure)
     errors.extend(exposure_result["errors"])
@@ -1955,6 +1997,7 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             and execution_boundary.get("runtime_forbidden_operation_behavior") == "FAIL"
             and execution_boundary.get("exposure_derivation") == EXPOSURE_DERIVATION
             and execution_boundary.get("action_digest_format") == ACTION_DIGEST_FORMAT
+            and execution_boundary.get("operation_semantic_requirements") == OPERATION_SEMANTIC_REQUIREMENTS
             and execution_boundary.get("approval_binding_required_for_gate") == "REQUIRE_EXPLICIT_APPROVAL"
             and execution_boundary.get("validator_establishes_approval") is False
         )

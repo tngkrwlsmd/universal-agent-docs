@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 11
+      "const": 12
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -685,7 +685,8 @@
         "action_digest_binds",
         "approval_replay_protection",
         "context_effect_escalation_rules",
-        "approval_max_ttl_seconds"
+        "approval_max_ttl_seconds",
+        "operation_semantic_requirements"
       ],
       "properties": {
         "required_inputs": {
@@ -972,6 +973,29 @@
         },
         "approval_max_ttl_seconds": {
           "const": 1800
+        },
+        "operation_semantic_requirements": {
+          "const": [
+            {
+              "id": "tracked_delete_recoverability",
+              "operations": [
+                "filesystem.tracked_delete"
+              ],
+              "required_semantic_details": [
+                "recoverability",
+                "recovery_revision"
+              ],
+              "semantic_detail_allowed_values": {
+                "recoverability": [
+                  "git_tracked_clean"
+                ]
+              },
+              "allowed_environments": [
+                "local",
+                "test"
+              ]
+            }
+          ]
         }
       }
     },

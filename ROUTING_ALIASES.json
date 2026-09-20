@@ -999,6 +999,98 @@
         "빌드 산출물 삭제"
       ],
       "patterns": []
+    },
+    "build.execute": {
+      "phrases": [
+        "build project",
+        "run build",
+        "compile project",
+        "npm run build",
+        "cargo build",
+        "go build",
+        "mvn package",
+        "gradle build",
+        "dotnet build",
+        "swift build",
+        "프로젝트 빌드",
+        "빌드 실행"
+      ],
+      "stems": [
+        "빌드"
+      ],
+      "patterns": [
+        "\\b(?:npm\\s+run\\s+build|cargo\\s+build|go\\s+build|mvn\\s+package|gradle\\s+build|dotnet\\s+build|swift\\s+build)\\b"
+      ]
+    },
+    "lint.execute": {
+      "phrases": [
+        "run lint",
+        "lint code",
+        "eslint",
+        "ruff check",
+        "golangci-lint",
+        "cargo clippy",
+        "린트 실행",
+        "린트 검사"
+      ],
+      "stems": [
+        "린트"
+      ],
+      "patterns": [
+        "\\b(?:eslint|ruff\\s+check|golangci-lint|cargo\\s+clippy)\\b"
+      ]
+    },
+    "typecheck.execute": {
+      "phrases": [
+        "run typecheck",
+        "type check",
+        "typecheck",
+        "mypy",
+        "pyright",
+        "tsc noemit",
+        "타입 검사",
+        "타입체크"
+      ],
+      "stems": [
+        "타입 검사",
+        "타입체크"
+      ],
+      "patterns": [
+        "\\b(?:mypy|pyright|tsc\\s+--noEmit)\\b"
+      ]
+    },
+    "format.execute": {
+      "phrases": [
+        "format code",
+        "run formatter",
+        "prettier write",
+        "ruff format",
+        "black formatter",
+        "gofmt",
+        "cargo fmt",
+        "코드 포맷",
+        "포매터 실행"
+      ],
+      "stems": [
+        "포맷",
+        "포매터"
+      ],
+      "patterns": [
+        "\\b(?:prettier\\s+--write|ruff\\s+format|black\\b|gofmt\\b|cargo\\s+fmt)\\b"
+      ]
+    },
+    "filesystem.tracked_delete": {
+      "phrases": [
+        "delete tracked source file",
+        "remove tracked file",
+        "delete clean git tracked file",
+        "추적 중인 소스 파일 삭제",
+        "git tracked 파일 삭제"
+      ],
+      "stems": [
+        "추적 파일 삭제"
+      ],
+      "patterns": []
     }
   }
 }

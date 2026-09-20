@@ -125,6 +125,31 @@
         "estimated_financial_impact": "none"
       },
       "expected_error_contains": "high-confidence action signature"
+    },
+    {
+      "id": "tracked-delete-without-recoverability-proof",
+      "planned_operations": [
+        "filesystem.tracked_delete"
+      ],
+      "actual_operations": [
+        "filesystem.tracked_delete"
+      ],
+      "actual_action": "delete src/obsolete.py",
+      "affected_resources": [
+        "src/obsolete.py"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "semantic_details": {},
+      "expected_error_contains": "requires semantic_details.recoverability"
     }
   ]
 }

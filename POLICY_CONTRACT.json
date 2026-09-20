@@ -1,5 +1,5 @@
 {
-  "schema_version": 11,
+  "schema_version": 12,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -288,6 +288,50 @@
         "lifecycle_status": "active"
       },
       {
+        "id": "build.execute",
+        "policies": [
+          "implementation",
+          "testing",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "lint.execute",
+        "policies": [
+          "implementation",
+          "testing",
+          "execution"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "typecheck.execute",
+        "policies": [
+          "implementation",
+          "testing",
+          "execution"
+        ],
+        "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "format.execute",
+        "policies": [
+          "implementation",
+          "testing",
+          "execution"
+        ],
+        "effect_floor": "L2",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
         "id": "test.design",
         "policies": [
           "testing"
@@ -391,6 +435,18 @@
           "execution"
         ],
         "effect_floor": "L1",
+        "requires_execution_policy": true,
+        "lifecycle_status": "active"
+      },
+      {
+        "id": "filesystem.tracked_delete",
+        "policies": [
+          "implementation",
+          "git",
+          "file_handling",
+          "execution"
+        ],
+        "effect_floor": "L2",
         "requires_execution_policy": true,
         "lifecycle_status": "active"
       },
@@ -1176,7 +1232,28 @@
         "effect": "L4"
       }
     ],
-    "approval_max_ttl_seconds": 1800
+    "approval_max_ttl_seconds": 1800,
+    "operation_semantic_requirements": [
+      {
+        "id": "tracked_delete_recoverability",
+        "operations": [
+          "filesystem.tracked_delete"
+        ],
+        "required_semantic_details": [
+          "recoverability",
+          "recovery_revision"
+        ],
+        "semantic_detail_allowed_values": {
+          "recoverability": [
+            "git_tracked_clean"
+          ]
+        },
+        "allowed_environments": [
+          "local",
+          "test"
+        ]
+      }
+    ]
   },
   "integrity": {
     "manifest_format": "universal-agent-docs-trust-manifest-v2",
