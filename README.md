@@ -333,6 +333,17 @@ universal-agent-docs-consumer/
 
 consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박한다. root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
 
+consumer project facts는 vendored `.agent-policy/PROJECT.md`를 실제 프로젝트 truth로 사용하지 않는다. 그 파일은 upstream template일 뿐이며, 기본 consumer facts 위치는 project root의 `PROJECT.md`다. validator는 정책 bundle 위치와 검증 대상 repository root를 분리할 수 있다.
+
+```bash
+python .agent-policy/scripts/validate.py \
+  --readiness development \
+  --project-file ./PROJECT.md \
+  --project-root .
+```
+
+root `PROJECT.md`가 없다면 `--bootstrap-project .`로 후보를 만들고 실제 evidence에 맞게 검토한 뒤 사용할 위치를 정한다. 다른 프로젝트 convention 때문에 facts 파일을 다른 경로에 두는 경우에도 `--project-file`과 `--project-root`를 명시한다.
+
 ```bash
 python scripts/package_consumer.py --output-dir ./dist
 python scripts/package_consumer.py \
