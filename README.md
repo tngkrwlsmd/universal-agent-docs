@@ -333,11 +333,14 @@ ZIP은 최상위 `universal-agent-docs/` root를 가져야 한다. `AGENTS.md` �
 `PROHIBITED_WITHOUT_OVERRIDE`는 일반 task-level 요청이나 정적 프로젝트 설정만으로 해제되지 않는다. protected override는 `PROTECTED_OVERRIDE.schema.json`을 따르는 독립 객체이며 canonical operations, concrete targets, environment, correlation ID, **execution nonce**, **action digest**, `single_use=true`, scope와 발급·만료/authorization reference를 포함한다.
 
 validator는 schema와 시간뿐 아니라 override의 digest/correlation/nonce/operations/targets/environment를 현재 `PROHIBITED_WITHOUT_OVERRIDE` action boundary와 정확히 비교해 `binding=VALID|INVALID`를 반환한다. 그래도 `authority=UNVERIFIED`, `task_approval=UNVERIFIED`, `authorization=NOT_ESTABLISHED`이며, protected override는 별도의 task-level explicit approval을 대체하지 않는다. higher-authority runtime은 override nonce도 single-use로 소비해야 한다.
+Reference validator는 `--override-ledger`와 `--consume-override`로 SQLite 기반 atomic replay 검증을 제공하며, 동일 override ID 또는 execution nonce의 재사용은 `REPLAY_DETECTED`로 거부한다. 이 local ledger는 issuer identity/authority를 인증하지 않는다.
 
 ```bash
 python scripts/validate.py \
   --runtime-action ./runtime-action.json \
-  --protected-override ./override.json
+  --protected-override ./override.json \
+  --override-ledger ./override-consumption.sqlite \
+  --consume-override
 ```
 
 ## Runtime integration

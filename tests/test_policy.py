@@ -1451,11 +1451,14 @@ class OverrideTests(unittest.TestCase):
             "authorization_reference": "approval/123",
         }
 
-    def validate(self, data, boundary=None):
+    def validate(self, data, boundary=None, *, replay_registry=None, consume=False):
         with tempfile.TemporaryDirectory() as td:
             p = Path(td) / "override.json"
             p.write_text(json.dumps(data), encoding="utf-8")
-            return mod.validate_protected_override(p, self.contract, boundary or self.boundary())
+            return mod.validate_protected_override(
+                p, self.contract, boundary or self.boundary(),
+                replay_registry=replay_registry, consume=consume,
+            )
 
     def test_valid_object_binds_exact_action_but_never_claims_authorized(self):
         boundary = self.boundary()
@@ -1468,6 +1471,19 @@ class OverrideTests(unittest.TestCase):
         self.assertEqual("UNVERIFIED", result["authority"])
         self.assertEqual("UNVERIFIED", result["task_approval"])
         self.assertEqual("NOT_ESTABLISHED", result["authorization"])
+
+    def test_override_single_use_registry_rejects_exact_replay(self):
+        boundary = self.boundary()
+        data = self.make_override(boundary)
+        with tempfile.TemporaryDirectory() as td:
+            ledger = Path(td) / "override-consumption.sqlite"
+            first = self.validate(data, boundary, replay_registry=ledger, consume=True)
+            self.assertEqual("VALID", first["object_validity"], first)
+            self.assertEqual("CONSUMED", first["replay_protection"], first)
+            second = self.validate(data, boundary, replay_registry=ledger, consume=True)
+            self.assertEqual("INVALID", second["object_validity"], second)
+            self.assertEqual("REPLAY_DETECTED", second["replay_protection"], second)
+            self.assertTrue(any("already been consumed" in x for x in second["errors"]), second)
 
     def test_override_digest_mismatch_invalidates_binding(self):
         boundary = self.boundary()

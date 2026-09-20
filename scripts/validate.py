@@ -2468,6 +2468,44 @@ def _approval_replay_state(registry: Path, approval_id: str, execution_nonce: st
         conn.close()
 
 
+
+def _override_replay_state(registry: Path, override_id: str, execution_nonce: str, action_digest: str, *, consume: bool) -> tuple[str, str | None]:
+    """Check/atomically consume a single-use protected override in a local SQLite registry.
+
+    This mirrors approval replay protection as a reference implementation. Production
+    runtimes may use another atomic store, but first-use/second-use semantics must match.
+    """
+    registry.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(registry), timeout=10, isolation_level=None)
+    try:
+        conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute("CREATE TABLE IF NOT EXISTS override_consumption (override_id TEXT PRIMARY KEY, execution_nonce TEXT UNIQUE NOT NULL, action_digest TEXT NOT NULL, consumed_at TEXT NOT NULL)")
+        row = conn.execute("SELECT execution_nonce, action_digest FROM override_consumption WHERE override_id=? OR execution_nonce=?", (override_id, execution_nonce)).fetchone()
+        if row is not None:
+            return "REPLAY_DETECTED", "override_id or execution_nonce has already been consumed"
+        if not consume:
+            return "UNUSED", None
+        try:
+            conn.execute("BEGIN IMMEDIATE")
+            row = conn.execute("SELECT 1 FROM override_consumption WHERE override_id=? OR execution_nonce=?", (override_id, execution_nonce)).fetchone()
+            if row is not None:
+                conn.execute("ROLLBACK")
+                return "REPLAY_DETECTED", "override_id or execution_nonce has already been consumed"
+            conn.execute(
+                "INSERT INTO override_consumption(override_id, execution_nonce, action_digest, consumed_at) VALUES (?,?,?,?)",
+                (override_id, execution_nonce, action_digest, datetime.now(timezone.utc).isoformat()),
+            )
+            conn.execute("COMMIT")
+            return "CONSUMED", None
+        except sqlite3.IntegrityError:
+            try:
+                conn.execute("ROLLBACK")
+            except sqlite3.OperationalError:
+                pass
+            return "REPLAY_DETECTED", "override_id or execution_nonce has already been consumed"
+    finally:
+        conn.close()
+
 def validate_approval_assertion(
     path: Path,
     contract: dict,
@@ -2611,6 +2649,8 @@ def validate_protected_override(
     contract: dict,
     boundary: dict | None = None,
     root: Path = ROOT,
+    replay_registry: Path | None = None,
+    consume: bool = False,
 ) -> dict:
     """Validate a protected override and bind it to the exact prohibited action.
 
@@ -2621,8 +2661,9 @@ def validate_protected_override(
     warnings = [
         "issuer authority must be verified by a higher-authority runtime/organization workflow",
         "task-level approval for the exact action and target must be verified separately",
-        "single-use override consumption must be enforced atomically by the higher-authority runtime",
     ]
+    if replay_registry is None:
+        warnings.append("single-use override replay status is unverified without an atomic override consumption registry")
     errors: list[str] = []
     schema_name = rules.get("schema", "PROTECTED_OVERRIDE.schema.json")
     try:
@@ -2690,6 +2731,19 @@ def validate_protected_override(
             binding = "INVALID"
             errors.extend(binding_errors)
 
+    replay_protection = "UNVERIFIED"
+    if consume and replay_registry is None:
+        errors.append("consume=True requires replay_registry for atomic single-use override enforcement")
+        replay_protection = "INVALID"
+    elif replay_registry is not None and not errors:
+        replay_protection, replay_error = _override_replay_state(
+            replay_registry, data["override_id"], data["execution_nonce"], data["action_digest"], consume=consume
+        )
+        if replay_error:
+            errors.append(replay_error)
+            if binding == "VALID":
+                binding = "INVALID"
+
     return {
         "object_validity":"VALID" if not errors else "INVALID",
         "schema_status":"PASS",
@@ -2699,6 +2753,7 @@ def validate_protected_override(
         "correlation_id":data.get("correlation_id"),
         "execution_nonce":data.get("execution_nonce"),
         "action_digest":data.get("action_digest"),
+        "replay_protection":replay_protection,
         "authority":"UNVERIFIED",
         "task_approval":"UNVERIFIED",
         "authorization":"NOT_ESTABLISHED",
@@ -2740,6 +2795,8 @@ def main() -> int:
     parser.add_argument("--approval-ledger", type=Path, help="SQLite registry used to detect/record single-use approval replay")
     parser.add_argument("--consume-approval", action="store_true", help="atomically consume the bound approval in --approval-ledger; requires --approval-ledger")
     parser.add_argument("--protected-override", type=Path, help="validate protected override object structure/time only; never establishes authorization")
+    parser.add_argument("--override-ledger", type=Path, help="SQLite registry used to detect/record single-use protected override replay")
+    parser.add_argument("--consume-override", action="store_true", help="atomically consume the bound protected override in --override-ledger; requires --override-ledger")
     parser.add_argument("--bootstrap-project", type=Path, metavar="REPO", help="scan a repository and write a conservative PROJECT.inferred.md candidate")
     parser.add_argument("--bootstrap-output", type=Path, help="output path for --bootstrap-project; defaults to REPO/PROJECT.inferred.md")
     parser.add_argument("--bootstrap-force", action="store_true", help="allow --bootstrap-project to overwrite its output path")
@@ -2855,8 +2912,18 @@ def main() -> int:
             emitted = write_trust_manifest(args.emit_trust_manifest, ROOT)
             result["emitted_trust_manifest"] = {"path": str(args.emit_trust_manifest), "manifest": emitted}
 
+    if args.consume_override and not args.protected_override:
+        result["protected_override_error"] = "--consume-override requires --protected-override"
+        exit_code = 1
+    if args.override_ledger and not args.protected_override:
+        result["protected_override_error"] = "--override-ledger requires --protected-override"
+        exit_code = 1
+
     if args.protected_override:
-        o = validate_protected_override(args.protected_override, contract, approval_boundary, ROOT)
+        o = validate_protected_override(
+            args.protected_override, contract, approval_boundary, ROOT,
+            replay_registry=args.override_ledger, consume=args.consume_override,
+        )
         result["protected_override"] = o
         if o["object_validity"] != "VALID" or o.get("binding") == "INVALID":
             exit_code = 1
@@ -2868,7 +2935,8 @@ def main() -> int:
     policy_only = (
         bool(args.policy) and args.route is None and not args.action_boundary and not args.runtime_action and not args.readiness
         and not args.distribution and not args.trusted_manifest and not args.release_manifest and not args.emit_trust_manifest
-        and not args.approval_assertion and not args.protected_override and not args.bootstrap_project
+        and not args.approval_assertion and not args.protected_override and not args.override_ledger and not args.consume_override
+        and not args.bootstrap_project
     )
     if policy_only:
         if result["bundle"]["status"] != "PASS":

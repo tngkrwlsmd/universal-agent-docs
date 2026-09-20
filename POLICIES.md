@@ -129,6 +129,7 @@ approval의 유효기간은 `issued_at`부터 최대 30분이며 이를 넘으�
 - 현재 task의 action과 target에 대한 일반 explicit approval도 별도로 필요하다. protected override 하나만으로 task approval을 대체하지 않는다.
 - scope 밖 action/target, 만료된 override, 신뢰할 수 없는 issuer는 무효다. protected override의 TTL은 최대 15분으로 제한한다.
 - override도 `single_use=true`이며 higher-authority runtime이 nonce 소비를 원자적으로 관리해야 한다.
+- reference validator는 `--override-ledger <sqlite>`와 `--consume-override`로 atomic first-use/second-use 검증을 제공한다. 첫 소비는 `CONSUMED`, 동일 override ID/nonce의 재사용은 `REPLAY_DETECTED`이며, 이 결과는 issuer authority를 확립하지 않는다.
 - validator는 schema·canonical operation·concrete target·시간·exact action binding을 검사하지만 authority와 별도 task approval을 확립하지 않는다. `VALID`/`binding=VALID`은 `AUTHORIZED`를 의미하지 않는다.
 
 ### Canonical operation granularity
