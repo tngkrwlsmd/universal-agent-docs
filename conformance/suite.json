@@ -2126,6 +2126,95 @@
       "normative_fields": [
         "status"
       ]
+    },
+    {
+      "id": "lifecycle-deprecated-policy-contract",
+      "description": "Deprecated operations require replacement and unknown IDs are rejected.",
+      "category": "operation_lifecycle",
+      "kind": "lifecycle",
+      "input": {
+        "scenario": "deprecated_policy"
+      },
+      "expected": {
+        "deprecated_operation_requires_replacement": true,
+        "adapter_must_reject_unknown_operation_ids": true
+      },
+      "normative_fields": [
+        "deprecated_operation_requires_replacement",
+        "adapter_must_reject_unknown_operation_ids"
+      ]
+    },
+    {
+      "id": "boundary-invalid-environment-fails",
+      "description": "Environment labels outside the contract enum fail closed.",
+      "category": "target_requirements",
+      "kind": "execution_boundary",
+      "input": {
+        "planned_operations": [
+          "build.execute"
+        ],
+        "actual_operations": [
+          "build.execute"
+        ],
+        "actual_action": "build",
+        "affected_resources": [
+          "src"
+        ],
+        "targets": [],
+        "environment": "moon",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "status",
+        "decision"
+      ]
+    },
+    {
+      "id": "approval-wrong-digest-invalid",
+      "description": "Approval action digest mismatch invalidates exact binding.",
+      "category": "approval",
+      "kind": "approval",
+      "input": {
+        "mutation": "action_digest",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "binding"
+      ]
+    },
+    {
+      "id": "override-expired-invalid",
+      "description": "Expired protected override is temporally invalid.",
+      "category": "override",
+      "kind": "override",
+      "input": {
+        "mutation": "expired",
+        "reference_time": "2030-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "temporal": "INVALID"
+      },
+      "normative_fields": [
+        "object_validity",
+        "temporal"
+      ]
     }
   ],
   "operation_coverage_exemptions": {
