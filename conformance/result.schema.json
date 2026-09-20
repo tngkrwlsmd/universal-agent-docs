@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tngkrwlsmd/universal-agent-docs/conformance/result.schema.json",
+  "title": "universal-agent-docs conformance result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "suite_schema_version",
+    "policy_schema_version",
+    "implementation",
+    "summary",
+    "results"
+  ],
+  "properties": {
+    "format": {
+      "const": "universal-agent-docs-conformance-result-v1"
+    },
+    "suite_schema_version": {
+      "const": 2
+    },
+    "policy_schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "implementation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version",
+        "language"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        },
+        "language": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "total",
+        "passed",
+        "failed"
+      ],
+      "properties": {
+        "total": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "passed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "failed": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "actual",
+          "mismatches"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "PASS",
+              "FAIL"
+            ]
+          },
+          "actual": {
+            "type": "object"
+          },
+          "mismatches": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
