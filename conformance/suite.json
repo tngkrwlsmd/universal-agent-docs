@@ -2127,5 +2127,42 @@
         "status"
       ]
     }
-  ]
+  ],
+  "operation_coverage_exemptions": {
+    "code.refactor": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "documentation.modify": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.design": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.scenario.toctou": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.scenario.replay_idempotency": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.scenario.transaction_rollback": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.scenario.concurrency": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.scenario.security": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.scenario.file": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "test.scenario.external_system": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "external.message_send": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "process.control": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "service.restart": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "filesystem.permission_change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "storage.object_delete": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "network.configuration_change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "data.export": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "database.schema_change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "database.destructive_change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "auth.change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "security.configuration_change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "credential.rotate": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "iam.change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "prompt_injection.inspect": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "git.branch_change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "git.commit": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "git.merge": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "git.rebase": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "file.parse": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "archive.inspect": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "dependency.change": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "code.generate": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "artifact.publish": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "incident.diagnose": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics.",
+    "performance.diagnose": "Not independently vectored in conformance v2; semantics are represented by another operation with the same policy/risk family. Add a dedicated case when this operation gains distinct semantics."
+  }
 }
