@@ -33,33 +33,60 @@ class BundleTests(unittest.TestCase):
         self.assertIn(path, contract["distribution"]["required_files"])
         self.assertIn(path, contract["distribution"]["allowed_files"])
         self.assertIn(path, mod.CANONICAL_REQUIRED_FILES)
+        self.assertIn("release_tag", workflow)
         self.assertIn("expected_source_sha", workflow)
-        self.assertIn('test "$source_sha" = "$EXPECTED_SOURCE_SHA"', workflow)
-        self.assertIn('test "$workflow_path" = ".github/workflows/release.yml"', workflow)
-        self.assertIn('test "$source_branch" = "main"', workflow)
+        self.assertIn('test "$resolved_sha" = "$EXPECTED_SOURCE_SHA"', workflow)
+        self.assertIn("test \"$(jq -r '.immutable' <<<\"$release_json\")\" = \"true\"", workflow)
+        self.assertIn("gh release verify", workflow)
+        self.assertIn("gh release verify-asset", workflow)
         self.assertIn("gh attestation verify", workflow)
         self.assertIn("--signer-workflow", workflow)
-        self.assertIn("--source-ref refs/heads/main", workflow)
+        self.assertIn('--source-ref "refs/tags/$TAG"', workflow)
         self.assertIn("--source-digest", workflow)
         self.assertIn("sha256sum --check", workflow)
         self.assertIn("universal-agent-docs-consumer", workflow)
         self.assertIn("package_consumer.py", workflow)
 
-    def test_release_workflow_requires_main_source(self):
+    def test_release_workflow_is_semver_tag_driven_and_refuses_replacement(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-        self.assertIn('test "$GITHUB_REF" = "refs/heads/main"', workflow)
+        self.assertIn('tags:', workflow)
+        self.assertIn('- "v*"', workflow)
+        self.assertNotIn("workflow_dispatch:", workflow)
+        self.assertIn('test "$GITHUB_REF_TYPE" = "tag"', workflow)
+        self.assertIn("release tag is not strict SemVer with v prefix", workflow)
+        self.assertIn('git merge-base --is-ancestor "$SOURCE_SHA" origin/main', workflow)
+        self.assertIn('gh release view "$TAG"', workflow)
+        self.assertIn("refusing replacement", workflow)
+        self.assertIn("--verify-tag", workflow)
+        self.assertNotIn("--clobber", workflow)
 
-    def test_release_workflow_attests_consumer_artifacts_after_upload(self):
+    def test_release_workflow_publishes_and_verifies_immutable_release(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn('release create "$TAG"', workflow)
+        self.assertIn('gh "${args[@]}"', workflow)
+        self.assertIn("test \"$(jq -r '.immutable' <<<\"$release_json\")\" = \"true\"", workflow)
+        self.assertIn("gh release verify", workflow)
+        self.assertIn("gh release verify-asset", workflow)
+        self.assertLess(workflow.index("Generate signed build provenance"), workflow.index("Publish GitHub Release with canonical assets"))
+        self.assertLess(workflow.index("Publish GitHub Release with canonical assets"), workflow.index("Require immutable published release and release attestation"))
+
+    def test_release_workflow_attests_consumer_artifacts_before_publication(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn("python scripts/package_consumer.py --output-dir dist", workflow)
         self.assertIn("name: universal-agent-docs-consumer", workflow)
         self.assertIn("dist/universal-agent-docs-consumer.zip", workflow)
-        self.assertLess(workflow.index("Upload canonical consumer artifacts"), workflow.index("Generate signed build provenance"))
+        self.assertLess(workflow.index("Upload canonical consumer artifacts for workflow retention"), workflow.index("Generate signed build provenance"))
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         provenance = contract["integrity"]["release_provenance"]
+        self.assertEqual("github_immutable_release_and_artifact_attestation", provenance["mechanism"])
+        self.assertEqual("semver_tag_push", provenance["trigger"])
+        self.assertEqual("git_tag", provenance["release_identity"])
+        self.assertTrue(provenance["immutable_release_required"])
+        self.assertTrue(provenance["github_release_attestation_required"])
+        self.assertTrue(provenance["tag_reuse_forbidden"])
+        self.assertTrue(provenance["release_version_independent_of_schema_version"])
         self.assertTrue(provenance["consumer_verification_required"])
         self.assertIn("universal-agent-docs-consumer.zip", provenance["attested_artifacts"])
-
 
     def test_github_actions_are_pinned_to_full_commit_shas(self):
         import re

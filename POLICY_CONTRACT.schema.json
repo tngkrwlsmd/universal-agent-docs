@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 15
+      "const": 16
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -1054,12 +1054,22 @@
         },
         "release_provenance": {
           "const": {
-            "mechanism": "github_artifact_attestation",
+            "mechanism": "github_immutable_release_and_artifact_attestation",
             "workflow": ".github/workflows/release.yml",
+            "trigger": "semver_tag_push",
+            "release_identity": "git_tag",
+            "semver_tag_prefix": "v",
             "attestation_action": "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
             "signature_model": "sigstore_oidc",
-            "required_source_ref": "refs/heads/main",
+            "required_source_ref_kind": "tag",
+            "require_tag_commit_reachable_from_main": true,
+            "require_preexisting_tag": true,
+            "immutable_release_required": true,
+            "github_release_attestation_required": true,
+            "verifier_requires_expected_tag": true,
             "verifier_requires_expected_source_digest": true,
+            "tag_reuse_forbidden": true,
+            "release_version_independent_of_schema_version": true,
             "attested_artifacts": [
               "universal-agent-docs.zip",
               "universal-agent-docs.sha256",

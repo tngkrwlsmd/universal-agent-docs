@@ -61,10 +61,10 @@ universal-agent-docs/
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
 - `conformance/`: runtime/tool adapter가 canonical operation과 exposure fact를 정확히 보고하는지 검증하는 golden/invalid vector kit
 - `.github/workflows/ci.yml`: Linux/macOS/Windows에서 bundle validation과 전체 테스트를 실행하는 CI
-- `.github/workflows/release.yml`: canonical artifact를 만들고 GitHub Artifact Attestation/Sigstore provenance를 생성하는 release workflow
-- `.github/workflows/verify-release.yml`: release run artifact의 signer workflow/source revision attestation, detached checksum, trust/release manifest를 소비자 관점에서 다시 검증하는 workflow
+- `.github/workflows/release.yml`: `vMAJOR.MINOR.PATCH` SemVer tag push를 release identity로 사용해 canonical artifact를 만들고 build attestation을 생성한 뒤 immutable GitHub Release로 publish하는 workflow
+- `.github/workflows/verify-release.yml`: trusted release tag + source SHA를 기준으로 immutable release attestation, build provenance, detached checksum, trust/release manifest를 소비자 관점에서 다시 검증하는 workflow
 
-프로젝트와 배포 산출물의 이름은 항상 **`universal-agent-docs`**로 유지한다. 날짜나 임의 suffix를 파일명에 붙이지 않는다. Git commit이 변경 이력을 담당하고, machine compatibility는 `schema_version`이 담당한다. 실행 승인 binding은 사람이 붙인 bundle version 대신 `POLICY_CONTRACT.json`의 canonical JSON SHA-256인 `policy_contract_digest`를 사용하므로 정확한 정책 의미를 계속 고정할 수 있다.
+프로젝트와 배포 산출물의 이름은 항상 **`universal-agent-docs`**로 유지한다. 날짜나 임의 suffix를 파일명에 붙이지 않는다. **Git release tag는 배포 bundle의 release identity**, `schema_version`은 machine contract compatibility를 담당하며 두 버전은 독립적이다. 실행 승인 binding은 release version 대신 `POLICY_CONTRACT.json`의 canonical JSON SHA-256인 `policy_contract_digest`를 사용하므로 정확한 정책 의미를 계속 고정할 수 있다.
 
 ## 시작 방법
 
@@ -356,11 +356,25 @@ python scripts/package.py --output-dir ./dist
 
 source packager 출력은 항상 `universal-agent-docs.zip`, `universal-agent-docs.trust.json`, `universal-agent-docs.release.json`, `universal-agent-docs.sha256` 네 파일이다. consumer packager는 `universal-agent-docs-consumer.zip`, `universal-agent-docs-consumer.release.json`, `universal-agent-docs-consumer.sha256`을 별도로 만든다. 날짜나 버전 suffix를 파일명에 넣지 않는다. trust/release manifest에는 `POLICY_CONTRACT.json`의 SHA-256이 포함되어 정책 계약 bytes와 함께 검증된다. manifest를 실제 trust anchor로 사용할 때는 ZIP과 같은 비신뢰 채널에만 두지 말고 독립된 protected release/CI/organization channel 또는 검증 가능한 서명과 함께 보관한다.
 
-GitHub 저장소에서는 `.github/workflows/release.yml`을 수동 실행하면 **source와 consumer artifact를 모두** 생성·upload하고, 이어서 full-SHA pinned `actions/attest`로 두 artifact 계열 전체에 GitHub Artifact Attestation을 만든다. 이는 OIDC 기반 Sigstore build provenance를 제공한다. upload를 attestation보다 먼저 수행하므로 attestation 단계가 실패해도 생성된 artifact 자체는 workflow artifact로 남을 수 있지만, workflow 전체는 실패하며 `verify-release.yml`은 `conclusion=success`가 아닌 release run을 신뢰하지 않는다.
+GitHub의 공식 release identity는 **사전에 push된 strict SemVer tag**다. `.github/workflows/release.yml`은 `v*` tag push에서만 시작한 뒤 실제 tag가 `vMAJOR.MINOR.PATCH[-PRERELEASE][+BUILD]` 형식인지, tag commit이 `main` history에 포함되는지, 같은 tag의 GitHub Release가 아직 없는지 확인한다. workflow가 release tag를 자동 생성하지 않으며 `gh release create --verify-tag`를 사용한다. annotated tag와 lightweight tag는 모두 허용하지만 tag annotation이나 tag message 자체를 trust anchor로 취급하지 않는다.
 
-`.github/workflows/verify-release.yml`은 release workflow run ID와 **별도 trusted channel에서 얻은 40-hex `expected_source_sha`**를 함께 입력받는다. verifier는 해당 run이 `.github/workflows/release.yml`의 성공한 `workflow_dispatch`이고 `main`에서 실행되었는지 확인한 뒤 run의 `head_sha`가 외부 expected SHA와 정확히 같은지 검증한다. 그 후 source 4개와 consumer 3개, 총 7개 canonical artifact에 대해 `gh attestation verify`로 repository, signer workflow, `refs/heads/main`, source digest를 함께 고정하고 source/consumer detached ZIP checksum과 각각의 release manifest를 검증한다. run 자신이 제공한 SHA만으로 trust expectation을 만들지 않는다.
+release workflow는 source와 consumer artifact를 deterministic하게 생성하고 full-SHA pinned `actions/attest`로 **tag source ref + source commit에 결박된 build provenance**를 만든 뒤, 같은 고정 파일명을 GitHub Release asset으로 publish한다. Actions artifact는 CI/debug와 제한된 보존 기간의 실행 evidence이고, published GitHub Release asset이 장기 consumer distribution이다. prerelease suffix가 있는 SemVer tag는 GitHub prerelease로 publish하며 build metadata만 있는 tag는 prerelease로 취급하지 않는다.
 
-GitHub Actions의 외부 action reference는 mutable major tag 대신 검토한 **full commit SHA**로 pin한다. branch protection/ruleset과 required review/CI는 repository governance의 별도 trust control이며 workflow 파일만으로 대체할 수 없다. provenance를 강한 trust signal로 사용하려면 `main` 보호 정책도 함께 설정하는 것이 권장된다.
+이 저장소는 GitHub의 **immutable releases** 기능이 켜져 있다는 전제에서 published release를 canonical release로 인정한다. publish 후 workflow와 verifier는 REST release object의 `immutable=true`, GitHub release attestation(`gh release verify` / `gh release verify-asset`), 기존 build attestation을 모두 확인한다. immutable releases 설정은 repository/organization administration control이므로 workflow 파일만으로 활성화할 수 없다. 비활성 상태에서 release가 publish되면 workflow는 immutable 검증에서 실패하며 그 release를 canonical 성공으로 간주하지 않는다.
+
+`.github/workflows/verify-release.yml`은 **별도 trusted channel에서 얻은 `release_tag`와 40-hex `expected_source_sha`**를 함께 입력받는다. verifier는 tag가 strict SemVer인지, remote tag가 정확히 expected SHA로 resolve되는지, source commit이 `main` history에 포함되는지, 해당 GitHub Release가 published + immutable인지 확인한다. 그 후 source 4개와 consumer 3개 총 7개 asset에 대해 GitHub release attestation과 `gh attestation verify`의 signer workflow, `refs/tags/<tag>`, source digest를 함께 검증하고 detached ZIP checksum과 trust/release manifest를 다시 확인한다. release 페이지나 workflow run이 스스로 제공한 SHA만으로 trust expectation을 만들지 않는다.
+
+release version과 `schema_version`은 같은 숫자를 강제하지 않는다. `schema_version`은 machine contract 의미가 breaking하게 바뀔 때 증가하고, SemVer tag는 사용자에게 배포되는 bundle의 변경 수준을 표현한다. 안정 버전 v1 이상에서는 consumer-facing breaking change에 major bump를 사용해야 하지만, 모든 schema bump가 반드시 SemVer major를 요구하는 것은 아니므로 이를 기계적으로 1:1 결박하지 않는다. rollback은 기존 tag/release를 이동하거나 asset을 교체하는 방식이 아니라, 필요한 되돌림 변경을 새 patch/minor release로 발행한다.
+
+release 전에는 repository Settings의 Releases에서 **release immutability를 활성화**해야 한다. 예시 release 절차는 다음과 같다.
+
+```bash
+# main의 원하는 release commit에서
+git tag -a v0.1.0 -m "universal-agent-docs v0.1.0"
+git push origin v0.1.0
+```
+
+GitHub Actions의 외부 action reference는 mutable major tag 대신 검토한 **full commit SHA**로 pin한다. tag 생성 권한, tag ruleset, `main` branch protection, required review/CI는 repository governance의 별도 trust control이며 workflow 파일만으로 대체할 수 없다. 특히 임의 사용자가 과거 commit에 release tag를 만들지 못하도록 release tag namespace에 대한 ruleset을 함께 두는 것이 권장된다.
 
 ## Distribution validation
 

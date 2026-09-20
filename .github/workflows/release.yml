@@ -1,40 +1,95 @@
-name: Build and attest universal-agent-docs
+name: Publish immutable versioned universal-agent-docs release
 
 on:
-  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
 
 permissions:
-  contents: read
+  contents: write
   id-token: write
   attestations: write
   artifact-metadata: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - name: Require canonical main source
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - name: Validate immutable release identity
+        id: release_identity
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
         shell: bash
         run: |
-          test "$GITHUB_REF" = "refs/heads/main"
-          test "$GITHUB_SHA" = "${{ github.sha }}"
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+          set -euo pipefail
+          test "$GITHUB_REF_TYPE" = "tag"
+          test "$GITHUB_REF" = "refs/tags/$TAG"
+
+          python - "$TAG" <<'PY'
+          import re
+          import sys
+
+          tag = sys.argv[1]
+          pattern = re.compile(
+              r"^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)"
+              r"(?:-((?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*)"
+              r"(?:\.(?:0|[1-9][0-9]*|[0-9A-Za-z-]*[A-Za-z-][0-9A-Za-z-]*))*))?"
+              r"(?:\+([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?$"
+          )
+          if not pattern.fullmatch(tag):
+              raise SystemExit(f"release tag is not strict SemVer with v prefix: {tag}")
+          PY
+
+          resolved_sha="$(git rev-list -n 1 "$TAG")"
+          test "$resolved_sha" = "$SOURCE_SHA"
+
+          git fetch --no-tags origin main:refs/remotes/origin/main
+          git merge-base --is-ancestor "$SOURCE_SHA" origin/main
+
+          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "release already exists for $TAG; refusing replacement" >&2
+            exit 1
+          fi
+
+          core_version="${TAG%%+*}"
+          prerelease=false
+          if [[ "$core_version" == *-* ]]; then
+            prerelease=true
+          fi
+
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "source_sha=$SOURCE_SHA" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.14"
           cache: pip
+
       - name: Install validation dependency
         run: python -m pip install --require-hashes --requirement requirements.lock
+
       - name: Validate and test
         run: |
           python scripts/validate.py
           python -m unittest discover -s tests -v
+
       - name: Build canonical source and consumer artifacts
         run: |
           python scripts/package.py --output-dir dist
           python scripts/package_consumer.py --output-dir dist
 
-      - name: Upload canonical source artifacts
+      - name: Upload canonical source artifacts for workflow retention
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: universal-agent-docs
@@ -45,7 +100,7 @@ jobs:
             dist/universal-agent-docs.release.json
           if-no-files-found: error
 
-      - name: Upload canonical consumer artifacts
+      - name: Upload canonical consumer artifacts for workflow retention
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: universal-agent-docs-consumer
@@ -66,3 +121,84 @@ jobs:
             dist/universal-agent-docs-consumer.zip
             dist/universal-agent-docs-consumer.sha256
             dist/universal-agent-docs-consumer.release.json
+
+      - name: Verify build provenance before publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release_identity.outputs.tag }}
+          SOURCE_SHA: ${{ steps.release_identity.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          signer="github.com/$GITHUB_REPOSITORY/.github/workflows/release.yml"
+          for file in \
+            universal-agent-docs.zip \
+            universal-agent-docs.sha256 \
+            universal-agent-docs.trust.json \
+            universal-agent-docs.release.json \
+            universal-agent-docs-consumer.zip \
+            universal-agent-docs-consumer.sha256 \
+            universal-agent-docs-consumer.release.json
+          do
+            gh attestation verify "dist/$file" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$signer" \
+              --source-ref "refs/tags/$TAG" \
+              --source-digest "$SOURCE_SHA"
+          done
+
+      - name: Publish GitHub Release with canonical assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release_identity.outputs.tag }}
+          SOURCE_SHA: ${{ steps.release_identity.outputs.source_sha }}
+          PRERELEASE: ${{ steps.release_identity.outputs.prerelease }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=(
+            release create "$TAG"
+            dist/universal-agent-docs.zip
+            dist/universal-agent-docs.sha256
+            dist/universal-agent-docs.trust.json
+            dist/universal-agent-docs.release.json
+            dist/universal-agent-docs-consumer.zip
+            dist/universal-agent-docs-consumer.sha256
+            dist/universal-agent-docs-consumer.release.json
+            --repo "$GITHUB_REPOSITORY"
+            --verify-tag
+            --target "$SOURCE_SHA"
+            --title "$TAG"
+            --generate-notes
+          )
+          if [[ "$PRERELEASE" == "true" ]]; then
+            args+=(--prerelease)
+          fi
+          gh "${args[@]}"
+
+      - name: Require immutable published release and release attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release_identity.outputs.tag }}
+          SOURCE_SHA: ${{ steps.release_identity.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          test "$(jq -r '.draft' <<<"$release_json")" = "false"
+          test "$(jq -r '.immutable' <<<"$release_json")" = "true"
+          test "$(jq -r '.tag_name' <<<"$release_json")" = "$TAG"
+          test "$(git rev-list -n 1 "$TAG")" = "$SOURCE_SHA"
+
+          gh release verify "$TAG" --repo "$GITHUB_REPOSITORY"
+          for file in \
+            universal-agent-docs.zip \
+            universal-agent-docs.sha256 \
+            universal-agent-docs.trust.json \
+            universal-agent-docs.release.json \
+            universal-agent-docs-consumer.zip \
+            universal-agent-docs-consumer.sha256 \
+            universal-agent-docs-consumer.release.json
+          do
+            gh release verify-asset "$TAG" "dist/$file" --repo "$GITHUB_REPOSITORY"
+          done
