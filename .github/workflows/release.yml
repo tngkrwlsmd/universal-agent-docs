@@ -53,7 +53,7 @@ jobs:
           resolved_sha="$(git rev-list -n 1 "$TAG")"
           test "$resolved_sha" = "$SOURCE_SHA"
 
-          git fetch --no-tags origin main
+          git fetch --no-tags origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$SOURCE_SHA" origin/main
 
           if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
