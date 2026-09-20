@@ -29,13 +29,15 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def render_consumer_agents(policy_root: str) -> bytes:
+def render_consumer_agents(policy_root: str, project_file: str = "PROJECT.md") -> bytes:
     source = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
 
     def rewrite(match: re.Match[str]) -> str:
         label, dest = match.group(1), match.group(2)
         if dest.startswith(("http://", "https://", "#", policy_root + "/")):
             return match.group(0)
+        if dest == "PROJECT.md":
+            return f"[{label}]({project_file})"
         return f"[{label}]({policy_root}/{dest})"
 
     rewritten = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", rewrite, source)
@@ -43,7 +45,8 @@ def render_consumer_agents(policy_root: str) -> bytes:
     banner = (
         "> Consumer layout: the canonical universal-agent-docs bundle is vendored under "
         f"`{policy_root}/`. Bare policy filenames mentioned below refer to that directory; "
-        f"project facts live at `{policy_root}/PROJECT.md`."
+        f"project facts are project-owned and default to `{project_file}` relative to the consuming repository root. "
+        "Use validator --project-file/--project-root when the project uses another location."
     )
     return (lines[0] + "\n\n" + banner + "\n\n" + "\n".join(lines[1:]) + "\n").encode("utf-8")
 
@@ -97,7 +100,7 @@ def validate_consumer_zip(path: Path, contract: dict, release_manifest: Path | N
                 errors.append("consumer ZIP has unexpected files: " + ", ".join(extra))
 
         root_agents_name = prefix + contract["consumer_distribution"]["root_agents_path"]
-        if root_agents_name in names and zf.read(root_agents_name) != render_consumer_agents(policy_root):
+        if root_agents_name in names and zf.read(root_agents_name) != render_consumer_agents(policy_root, contract["consumer_distribution"]["project_file_default"]):
             errors.append("consumer root AGENTS.md does not match canonical generated router")
 
         if not errors:
@@ -147,7 +150,7 @@ def package_consumer(output_dir: Path) -> dict:
     sha_path = output_dir / "universal-agent-docs-consumer.sha256"
 
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
-        _write_entry(zf, f"{root}/AGENTS.md", render_consumer_agents(policy_root))
+        _write_entry(zf, f"{root}/AGENTS.md", render_consumer_agents(policy_root, contract["consumer_distribution"]["project_file_default"]))
         for rel in contract["distribution"]["required_files"]:
             data = (ROOT / rel).read_bytes()
             executable = rel.startswith("scripts/") and rel.endswith(".py")

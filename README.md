@@ -71,7 +71,7 @@ universal-agent-docs/
 이 저장소 자체를 개발·검증할 때는 clone한 source tree에서 아래 validator/테스트를 직접 실행한다. **다른 개발 프로젝트에 도입할 때는 source bundle을 project root에 overlay하지 않는다.** 해당 경우에는 아래 `Consumer installation layout`의 `universal-agent-docs-consumer.zip`을 사용하고, 기존 root `AGENTS.md`가 있으면 자동 덮어쓰기 대신 사람이 instruction hierarchy를 검토해 통합한다.
 
 1. source repository 자체를 검토하는 경우 현재 tree를 그대로 사용한다. 소비 프로젝트에 설치하는 경우 `.agent-policy/` 아래 vendored core와 root consumer router 구조를 사용한다.
-2. [`PROJECT.md`](PROJECT.md)의 machine-readable project facts와 사람이 읽는 구조 설명을 실제 프로젝트 근거로 채운다. consumer layout에서는 vendored template이 `.agent-policy/PROJECT.md`에 있으므로 이를 프로젝트 사실의 출발점으로 사용하되, 실제 프로젝트의 canonical fact 문서 위치는 해당 프로젝트 convention에 맞게 유지한다. 처음 도입하는 저장소라면 bootstrap candidate를 만들 수 있다. 자동 탐색 결과는 모두 `Inferred`이며 `Confirmed`로 자동 승격되지 않고, 기본 출력도 기존 `PROJECT.md`를 덮어쓰지 않는다.
+2. [`PROJECT.md`](PROJECT.md)의 machine-readable project facts와 사람이 읽는 구조 설명을 실제 프로젝트 근거로 채운다. consumer layout에서 `.agent-policy/PROJECT.md`는 **upstream template 사본**일 뿐 live project facts가 아니다. 기본 live project facts는 consuming repository의 `PROJECT.md`이며, 다른 위치를 쓰는 프로젝트는 `--project-file`로 명시한다. readiness evidence와 Git revision의 기준 root는 `--project-root`로 별도 지정한다. 처음 도입하는 저장소라면 bootstrap candidate를 만들 수 있다. 자동 탐색 결과는 모두 `Inferred`이며 `Confirmed`로 자동 승격되지 않고, 기본 출력도 기존 `PROJECT.md`를 덮어쓰지 않는다.
 
 ```bash
 python scripts/validate.py --bootstrap-project .
@@ -97,13 +97,23 @@ python scripts/validate.py --policy data_safety --policy security
 4. 개발 준비 상태를 확인한다.
 
 ```bash
+# source repository 자체
 python scripts/validate.py --readiness development
+
+# consumer installation: policy code는 .agent-policy에 있어도 evidence/Git root는 consuming repository
+python .agent-policy/scripts/validate.py --readiness development \
+  --project-file ./PROJECT.md \
+  --project-root .
 ```
 
 5. 배포 작업까지 수행할 프로젝트라면 deployment readiness도 확인한다.
 
 ```bash
 python scripts/validate.py --readiness deployment
+# consumer installation
+python .agent-policy/scripts/validate.py --readiness deployment \
+  --project-file ./PROJECT.md \
+  --project-root .
 ```
 
 validator의 언어 기준선은 Python 3.10+다. `requirements.txt`는 사람이 검토하는 직접 dependency intent를 유지하고, CI/release는 `requirements.lock`의 전체 transitive closure를 `--require-hashes`로 설치한다. 이 저장소의 release qualification matrix는 현재 Python 3.10과 3.14를 Linux/macOS/Windows에서 직접 검증한다. 3.11~3.13을 지원 불가로 선언하는 것은 아니지만, 해당 minor가 이 저장소 CI에서 독립적으로 qualification되었다고 주장하지 않는다.
@@ -331,7 +341,7 @@ universal-agent-docs-consumer/
     └── ...
 ```
 
-consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박한다. root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
+consumer root `AGENTS.md`는 canonical router에서 생성되며 정책 링크를 `.agent-policy/`로 다시 결박하되, `PROJECT.md` 링크는 consuming repository의 project-owned facts 문서를 가리킨다. `.agent-policy/PROJECT.md`는 template/reference이므로 live readiness source로 자동 사용하지 않는다. root `AGENTS.md`가 이미 있는 프로젝트에서는 **덮어쓰지 말고** 기존 instruction과 consumer router를 검토해 통합한다. consumer 계약은 `overwrite_existing_root_agents=false`, `extraction_requires_collision_check=true`를 명시하므로 ZIP을 기존 프로젝트 위에 무검토 overlay하는 방식은 지원하지 않는다.
 
 ```bash
 python scripts/package_consumer.py --output-dir ./dist

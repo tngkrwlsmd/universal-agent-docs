@@ -38,7 +38,7 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
-SUPPORTED_SCHEMA_VERSIONS = {13}
+SUPPORTED_SCHEMA_VERSIONS = {14}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
 TASK_HINT_AUTHORITY = "advisory_only"
@@ -1464,7 +1464,7 @@ def verify_fact_evidence(project_root: Path, key: str, value: str, evidence: str
     return verify_evidence(project_root, evidence)
 
 
-def readiness(project_path: Path = PROJECT_PATH, mode: str = "development") -> dict:
+def readiness(project_path: Path = PROJECT_PATH, mode: str = "development", project_root: Path | None = None) -> dict:
     try:
         facts_doc = parse_project_facts(project_path)
     except Exception as exc:
@@ -1474,7 +1474,8 @@ def readiness(project_path: Path = PROJECT_PATH, mode: str = "development") -> d
     if shape_errors:
         return _readiness_structure_failure(mode, shape_errors)
 
-    project_root = project_path.parent
+    project_path = project_path.resolve()
+    project_root = (project_root.resolve() if project_root is not None else project_path.parent)
     facts = facts_doc["facts"]
     required = ["repository_root", "primary_source", "build_command", "test_command", "runtime"]
     if mode == "deployment":
@@ -2105,6 +2106,8 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             consumer.get("canonical_root") == "universal-agent-docs-consumer"
             and consumer.get("policy_root") == ".agent-policy"
             and consumer.get("root_agents_path") == "AGENTS.md"
+            and consumer.get("project_file_default") == "PROJECT.md"
+            and consumer.get("project_root_default") == "."
             and consumer.get("vendored_files_source") == "distribution.required_files"
             and consumer.get("release_manifest_format") == "universal-agent-docs-consumer-release-manifest-v1"
             and consumer.get("overwrite_existing_root_agents") is False
@@ -2856,6 +2859,8 @@ def main() -> int:
     parser.add_argument("--effect", choices=["L1", "L2", "L3", "L4"], help="optional runtime-observed Effect escalation; never lowers operation floors")
     parser.add_argument("--policy", action="append", default=[], metavar="ID", help="print a primary-owner policy section by policy ID; repeatable")
     parser.add_argument("--readiness", choices=["development", "deployment"])
+    parser.add_argument("--project-file", type=Path, help="project facts Markdown for --readiness; defaults to PROJECT.md in the policy source tree, or PROJECT.md under --project-root")
+    parser.add_argument("--project-root", type=Path, help="repository root used to resolve readiness evidence, component paths, and Git revision")
     parser.add_argument("--distribution", type=Path, help="validate a complete explicit distribution directory or ZIP")
     parser.add_argument("--trusted-manifest", type=Path, help="verify core policy hashes against an out-of-band trusted manifest; with --distribution, verifies the artifact")
     parser.add_argument("--release-manifest", type=Path, help="verify full distributed-file and ZIP integrity against an out-of-band release manifest; requires --distribution ZIP")
@@ -2953,8 +2958,19 @@ def main() -> int:
         if approval_result["object_validity"] != "VALID":
             exit_code = 1
 
+    if (args.project_file or args.project_root) and not args.readiness:
+        result["readiness_error"] = "--project-file/--project-root require --readiness"
+        exit_code = 1
+
     if args.readiness:
-        r = readiness(PROJECT_PATH, args.readiness)
+        project_root = args.project_root.resolve() if args.project_root else None
+        if args.project_file:
+            project_file = args.project_file.resolve()
+        elif project_root is not None:
+            project_file = project_root / "PROJECT.md"
+        else:
+            project_file = PROJECT_PATH
+        r = readiness(project_file, args.readiness, project_root=project_root)
         result["readiness"] = r
         if r["documented"] != "PASS" or r["verified"] == "FAIL":
             exit_code = 1
@@ -3003,6 +3019,7 @@ def main() -> int:
 
     policy_only = (
         bool(args.policy) and args.route is None and not args.action_boundary and not args.runtime_action and not args.readiness
+        and not args.project_file and not args.project_root
         and not args.distribution and not args.trusted_manifest and not args.release_manifest and not args.emit_trust_manifest
         and not args.approval_assertion and not args.protected_override and not args.override_ledger and not args.consume_override
         and not args.bootstrap_project

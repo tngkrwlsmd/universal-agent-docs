@@ -26,6 +26,12 @@ class BundleTests(unittest.TestCase):
         failures = [c for c in checks if c.status != "PASS"]
         self.assertEqual([], [(c.name, c.detail) for c in failures])
 
+    def test_consumer_project_facts_are_project_owned(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        consumer = contract["consumer_distribution"]
+        self.assertEqual("PROJECT.md", consumer["project_file_default"])
+        self.assertEqual(".", consumer["project_root_default"])
+
     def test_release_attestation_verifier_is_part_of_canonical_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         path = ".github/workflows/verify-release.yml"
@@ -1079,6 +1085,20 @@ class ReadinessTests(unittest.TestCase):
             "components": [{"name": "core", "path": "src", "responsibility": "core"}],
             "review": {"reviewed_revision": "manual-revision", "reviewed_at": "2026-09-19"},
         }
+
+    def test_readiness_project_root_can_differ_from_project_file_directory(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "src").mkdir()
+            policy_dir = root / ".agent-policy"
+            policy_dir.mkdir()
+            data = self.base_data()
+            project_file = self.write_project(policy_dir, data)
+            result = mod.readiness(project_file, "development", project_root=root)
+            primary = next(x for x in result["verified_checks"] if x["name"] == "primary_source")
+            components = next(x for x in result["verified_checks"] if x["name"] == "components")
+            self.assertEqual("PASS", primary["status"], result)
+            self.assertEqual("PASS", components["status"], result)
 
     def test_confirmed_fake_path_does_not_verify(self):
         with tempfile.TemporaryDirectory() as td:

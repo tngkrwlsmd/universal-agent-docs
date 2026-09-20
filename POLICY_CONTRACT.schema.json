@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 13
+      "const": 14
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -1117,7 +1117,9 @@
         "vendored_files_source",
         "release_manifest_format",
         "overwrite_existing_root_agents",
-        "extraction_requires_collision_check"
+        "extraction_requires_collision_check",
+        "project_file_default",
+        "project_root_default"
       ],
       "properties": {
         "canonical_root": {
@@ -1140,6 +1142,12 @@
         },
         "extraction_requires_collision_check": {
           "const": true
+        },
+        "project_file_default": {
+          "const": "PROJECT.md"
+        },
+        "project_root_default": {
+          "const": "."
         }
       }
     }
