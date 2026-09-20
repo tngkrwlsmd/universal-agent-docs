@@ -6,29 +6,74 @@
 
 ## 5분 Quick Start
 
-처음 도입할 때는 "정책을 읽히는 것"과 "실제 tool 실행을 차단하는 것"을 같은 수준으로 보지 않는다. 필요한 보장에 따라 다음 세 profile 중 하나를 목표로 한다.
+처음 도입할 때는 **정책을 읽히는 것**, **정책 판단을 검증하는 것**, **실제 tool 실행을 차단하는 것**을 같은 수준으로 보지 않는다.
 
 | Profile | 선택 기준 | 제공 | 제공하지 않음 |
 |---|---|---|---|
-| **A — Guidance** | 에이전트에게 저장소 규칙과 project facts를 일관되게 읽히고 싶다 | root `AGENTS.md`, human policy, PROJECT facts | runtime/tool 실행 차단, approval enforcement |
+| **A — Guidance** | 에이전트에게 저장소 규칙과 project facts를 일관되게 읽히고 싶다 | instruction hierarchy, human policy, PROJECT facts | runtime/tool 실행 차단, approval enforcement |
 | **B — Validated** | CI에서 policy/readiness/routing/risk/integrity를 검증하고 싶다 | A + validator, canonical routing, Effect/Exposure/gate 계산, distribution validation | trusted runtime assertion이 없으면 실제 side-effect 차단 보장 없음 |
 | **C — Enforced Runtime** | 실제 tool/API/action 직전에 allow/block/approval/override를 강제해야 한다 | B + trusted runtime adapter, actual-vs-planned check, digest, replay, protected override | adapter가 intercept하지 못하는 surface까지 자동 통제한다는 보장 없음 |
 
 **선택법:** 지침만 필요하면 A, 자동 validation이 필요하면 B, 실제 실행을 기술적으로 막아야 하면 C다. production/customer data/privileged credential/external-public side effect를 자동 실행하는 환경은 C를 목표로 한다.
 
-### Consumer bundle로 시작
+Profile은 서로 다른 ZIP이나 파일 subset이 아니다. **공식 consumer bundle은 A/B/C 모두 동일한 full `.agent-policy/` bundle을 설치**하고, A는 guidance만 사용하고 B는 validator/CI를 활성화하며 C는 실제 runtime boundary까지 연결한다.
 
-source bundle을 프로젝트 root에 그대로 overlay하지 않는다. 먼저 consumer bundle을 staging 위치에 만든다.
+### 1. Consumer artifact 확보
+
+먼저 [GitHub Releases](https://github.com/tngkrwlsmd/universal-agent-docs/releases)를 확인한다.
+
+**현재 상태 (2026-09-20): published GitHub Release와 SemVer tag가 아직 없다.** 따라서 현재 첫 설치 경로는 source checkout에서 consumer artifact를 직접 build하는 것이다. 이 locally built ZIP은 구조·무결성 검증에는 사용할 수 있지만 **공식 immutable release나 publisher provenance가 검증된 artifact라고 부르지 않는다.**
 
 ```bash
+git clone https://github.com/tngkrwlsmd/universal-agent-docs.git
+cd universal-agent-docs
 python -m pip install --require-hashes --requirement requirements.lock
 python scripts/package_consumer.py --output-dir dist
 python -m zipfile -e dist/universal-agent-docs-consumer.zip /tmp/uad-consumer
 ```
 
-staging의 `universal-agent-docs-consumer/.agent-policy/`를 소비 프로젝트에 적용한다. root `AGENTS.md`가 없으면 generated router를 사용할 수 있다. **이미 root `AGENTS.md`가 있으면 덮어쓰지 말고 기존 instruction hierarchy와 generated router를 사람이 검토해 병합한다.**
+향후 immutable SemVer Release가 발행되면 production에서는 Release의 `universal-agent-docs-consumer.zip`을 우선하고, trusted `release_tag`와 별도로 확보한 `expected_source_sha`로 `.github/workflows/verify-release.yml`의 provenance/release verification을 수행한다. Release 페이지에서 얻은 값만으로 같은 Release 페이지를 스스로 신뢰하는 순환 검증은 피한다.
 
-설치 직후 vendored `.agent-policy/PROJECT.md`는 의도적으로 template 상태다. 소비 프로젝트 root에서 bootstrap candidate를 만든다.
+### 2. 소비 프로젝트에 설치
+
+source bundle을 프로젝트 root에 직접 overlay하지 않는다. staging tree의 `universal-agent-docs-consumer/.agent-policy/`를 사용한다.
+
+```text
+universal-agent-docs-consumer/
+├── AGENTS.md
+└── .agent-policy/
+    ├── AGENTS.md
+    ├── POLICIES.md
+    ├── PROJECT.md
+    ├── POLICY_CONTRACT.json
+    ├── scripts/
+    ├── conformance/
+    └── ...
+```
+
+`.agent-policy/`가 이미 있으면 무조건 덮어쓰지 말고 기존 설치/version/provenance를 먼저 확인한다. root `AGENTS.md`가 없으면 generated router를 사용할 수 있다.
+
+기존 root `AGENTS.md`가 있다면 **자동 overwrite하거나 단순 append하지 않는다.** 기존 project-specific instruction을 보존하고 generated router를 사람이 검토해 병합한다. 최소 형태는 다음과 같다.
+
+```markdown
+# Project instructions
+
+- Use pnpm.
+- Never edit generated migrations manually.
+
+## Universal agent policy
+
+Before making repository changes, read and apply `.agent-policy/AGENTS.md` in addition to the project-specific rules above.
+If the two instruction sets appear to conflict, do not silently discard either one; resolve the instruction hierarchy explicitly.
+```
+
+이 병합은 현재 수동 단계다. 단순히 `.agent-policy/AGENTS.md` 파일을 두는 것만으로 모든 agent/runtime이 자동으로 해당 instruction을 읽는다고 가정하지 않는다.
+
+### 3. PROJECT facts를 bootstrap하고 검토
+
+기본 consumer installation에서 **canonical project facts 문서는 `.agent-policy/PROJECT.md`**다. 설치 직후에는 의도적으로 `profile: "template"` 상태이므로 readiness PASS를 기대하지 않는다.
+
+소비 프로젝트 root에서 review candidate를 생성한다.
 
 ```bash
 python .agent-policy/scripts/validate.py \
@@ -36,16 +81,32 @@ python .agent-policy/scripts/validate.py \
   --bootstrap-output ./PROJECT.candidate.md
 ```
 
-candidate를 실제 source/config와 대조해 필요한 fact만 `Confirmed` 또는 근거 있는 `N/A`로 반영한 뒤 readiness를 실행한다.
+`PROJECT.candidate.md`는 **임시 review artifact**이며 canonical facts 문서가 아니다. 실제 source/config와 대조한 뒤 맞는 fact만 `Confirmed` 또는 근거 있는 `N/A`로 판단하고, 그 결과를 `.agent-policy/PROJECT.md`에 반영한다. bootstrap 결과는 어떤 fact도 자동으로 `Confirmed`로 승격하지 않는다.
+
+그 다음 readiness를 실행한다.
 
 ```bash
-python .agent-policy/scripts/validate.py --project-root . --readiness development
+python .agent-policy/scripts/validate.py \
+  --project-root . \
+  --readiness development
 ```
 
-여기까지는 A/B 도입 흐름이다. **B의 validator가 gate를 계산해도 trusted runtime/tool interception이 없으면 execution enforcement라고 부르지 않는다.** 실제 tool boundary에서 차단하려면 C의 runtime adapter, trusted actual operation, action digest, atomic approval/override replay protection이 필요하다.
+프로젝트 convention상 다른 canonical facts 문서를 사용해야 한다면 `--project-file`로 명시한다. 이 경우 agent instructions도 같은 위치를 가리키도록 사람이 함께 수정해야 한다.
 
-세 profile의 보장/비보장, upgrade path, production checklist, 최소 layout은 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)에 정리되어 있다.
+```bash
+python .agent-policy/scripts/validate.py \
+  --project-root . \
+  --project-file ./docs/PROJECT.md \
+  --readiness development
+```
 
+### 4. 어디까지가 enforcement인가
+
+A는 guidance, B는 validation이다. **B에서 gate를 계산하거나 `--routing-mode enforcement`를 사용해도 그 자체로 shell/tool/API 호출을 intercept하거나 차단하지 않는다.** 이 routing mode는 unknown/unresolved planned operation을 계획 단계에서 fail-closed하는 validator mode다.
+
+실제 side effect를 기술적으로 차단하는 Profile C에는 trusted runtime adapter, independently observed actual operation, target/environment/raw exposure facts, action digest, approval/override exact binding, atomic replay consumption과 higher-authority identity/transport trust가 추가로 필요하다.
+
+**첫 설치가 목적이라면 여기까지 진행하고 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)만 읽으면 된다. 아래 내용은 policy/runtime 구현, adapter integration, release/conformance를 개발하거나 감사하는 사용자를 위한 reference다.**
 ## 구성
 
 ```text
@@ -193,7 +254,7 @@ python scripts/validate.py --routing-mode enforcement \
   --operation database.read
 ```
 
-호환을 위해 `--operation "run tests"` 같은 자연어도 canonical ID로 추론한다. fallback corpus는 `ROUTING_ALIASES.json`에서 관리한다. 기본 `advisory` routing에서는 미분류 task, 미해석 planned operation, task에서 유추된 operation이 plan에 빠진 경우를 `WARN`으로 표면화한다. `enforcement`에서는 **미해석 planned operation과 canonical plan 부재를 `FAIL`**로 처리하지만, 자연어 task 미분류와 task↔plan mismatch는 `WARN`으로 남긴다. 자연어 coverage가 실행 가능성의 단일 병목이 되지 않게 하고, 실제 실행 안전성은 action boundary에서 trusted runtime actual operation과 plan을 대조해 fail-closed한다.
+**주의:** `--routing-mode enforcement`는 routing validation을 fail-closed하는 옵션일 뿐, 그 자체로 tool/API/shell 실행을 intercept하거나 차단하지 않는다. Profile C의 runtime enforcement와는 다른 계층이다.\n\n호환을 위해 `--operation "run tests"` 같은 자연어도 canonical ID로 추론한다. fallback corpus는 `ROUTING_ALIASES.json`에서 관리한다. 기본 `advisory` routing에서는 미분류 task, 미해석 planned operation, task에서 유추된 operation이 plan에 빠진 경우를 `WARN`으로 표면화한다. `enforcement`에서는 **미해석 planned operation과 canonical plan 부재를 `FAIL`**로 처리하지만, 자연어 task 미분류와 task↔plan mismatch는 `WARN`으로 남긴다. 자연어 coverage가 실행 가능성의 단일 병목이 되지 않게 하고, 실제 실행 안전성은 action boundary에서 trusted runtime actual operation과 plan을 대조해 fail-closed한다.
 
 각 canonical operation은 `effect_floor`를 가진다. 이는 실제 Effect 판정의 **최소값**이며 runtime은 target·environment·blast radius에 따라 더 높은 Effect로 올릴 수 있지만 근거 없이 더 낮출 수 없다. Exposure는 adapter가 `X2`처럼 최종 등급을 결정하지 않는다. adapter는 `data_classification`, `credential_class`, `tenant_scope`, `public_visibility`, `estimated_blast_radius`, `estimated_financial_impact`의 **원시 사실**과 environment를 보고하고, policy engine이 각 차원의 floor 중 최댓값을 계산한다. 명시적 `unknown` 값은 낙관하지 않고 보수적 floor를 가진다. 선택적 `declared_exposure`는 계산값을 올릴 수만 있고 낮출 수 없다. 모든 `test.scenario.*` operation은 실제 시나리오 실행을 전제로 `requires_execution_policy=true`이며 Execution policy를 명시적으로 포함한다. production DB read나 observability inspection처럼 read-only operation도 Execution의 Exposure 평가를 함께 받는다.
 
