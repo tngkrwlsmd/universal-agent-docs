@@ -1,5 +1,5 @@
 {
-  "schema_version": 13,
+  "schema_version": 14,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -1310,6 +1310,9 @@
     "vendored_files_source": "distribution.required_files",
     "release_manifest_format": "universal-agent-docs-consumer-release-manifest-v1",
     "overwrite_existing_root_agents": false,
-    "extraction_requires_collision_check": true
+    "extraction_requires_collision_check": true,
+    "consumer_project_facts_path": "PROJECT.md",
+    "vendored_project_template_path": ".agent-policy/PROJECT.md",
+    "readiness_requires_explicit_project_root": true
   }
 }
