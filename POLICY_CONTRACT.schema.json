@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 14
+      "const": 15
     },
     "project_name": {
       "const": "universal-agent-docs"

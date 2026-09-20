@@ -72,6 +72,15 @@ class BundleTests(unittest.TestCase):
         self.assertEqual("EXPLICIT_PARITY_CHECKS_ONLY", contract["authority"]["prose_validation_scope"])
         self.assertIn("does not claim to semantically parse every sentence", contract["authority"]["conflict_rule"])
 
+    def test_gitattributes_is_trusted_and_enforces_lf_checkout(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        text = (ROOT / ".gitattributes").read_text(encoding="utf-8")
+        self.assertIn(".gitattributes", contract["distribution"]["required_files"])
+        self.assertIn(".gitattributes", contract["integrity"]["trusted_core_files"])
+        self.assertIn(".gitattributes", mod.CANONICAL_REQUIRED_FILES)
+        self.assertIn(".gitattributes", mod.TRUSTED_CORE_FILES)
+        self.assertIn("eol=lf", text)
+
     def test_hash_locked_requirements_are_part_of_trusted_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         lock = (ROOT / "requirements.lock").read_text(encoding="utf-8")

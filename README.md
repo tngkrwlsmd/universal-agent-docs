@@ -8,6 +8,7 @@
 
 ```text
 universal-agent-docs/
+├── .gitattributes
 ├── AGENTS.md
 ├── POLICIES.md
 ├── PROJECT.md
@@ -57,7 +58,8 @@ universal-agent-docs/
 - `requirements.txt`: validator의 직접 dependency intent
 - `requirements.lock`: CI/release용 hash-locked transitive dependency closure
 - `scripts/validate.py`: bundle, routing, runtime action, exposure derivation, approval binding, readiness, protected override, distribution artifact 검증과 `PROJECT.md` bootstrap candidate 생성
-- `scripts/package.py`: canonical ZIP, detached core trust manifest, detached full release manifest, ZIP SHA-256을 일관되게 생성하고 다시 검증하는 release packager
+- `.gitattributes`: canonical text checkout을 LF로 고정해 OS별 checkout byte drift를 차단한다.
+- `scripts/package.py`: canonical ZIP, detached core trust manifest, detached full release manifest, ZIP SHA-256을 **cross-platform reproducible bytes**로 생성하고 다시 검증하는 release packager
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
 - `conformance/`: runtime/tool adapter가 canonical operation과 exposure fact를 정확히 보고하는지 검증하는 golden/invalid vector kit
 - `.github/workflows/ci.yml`: Linux/macOS/Windows에서 bundle validation과 전체 테스트를 실행하는 CI
@@ -354,7 +356,7 @@ consumer verifier는 root router가 canonical source에서 생성되었는지, `
 
 ## Release packaging
 
-배포 ZIP, detached manifests, ZIP checksum을 수작업으로 조립하지 않는다. 공식 packager는 먼저 bundle validation을 실행하고 canonical manifest에 있는 파일만 deterministic ZIP에 넣은 뒤, **core trust manifest와 full release manifest를 각각 생성**하고 새 ZIP에 대해 distribution + 두 manifest 검증을 다시 수행한다. manifest와 checksum은 **ZIP 바깥**에 생성된다.
+배포 ZIP, detached manifests, ZIP checksum을 수작업으로 조립하지 않는다. 공식 packager는 먼저 bundle validation을 실행하고 canonical manifest에 있는 파일만 deterministic ZIP에 넣은 뒤, **core trust manifest와 full release manifest를 각각 생성**하고 새 ZIP에 대해 distribution + 두 manifest 검증을 다시 수행한다. manifest와 checksum은 **ZIP 바깥**에 생성된다. Git checkout은 `.gitattributes`로 LF를 고정하고 ZIP entry는 fixed timestamp/permission의 `ZIP_STORED`를 사용하므로 동일 revision의 canonical bytes는 지원 OS/Python 사이에서도 같아야 한다.
 
 ```bash
 python scripts/package.py --output-dir ./dist

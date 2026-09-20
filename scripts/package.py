@@ -26,13 +26,13 @@ def sha256_bytes(path: Path) -> str:
 
 def write_deterministic_zip(output: Path, files: list[str], canonical_root: str) -> None:
     output.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=9) as zf:
+    with zipfile.ZipFile(output, "w", compression=zipfile.ZIP_STORED) as zf:
         for rel in files:
             source = ROOT / rel
             if not source.is_file():
                 raise FileNotFoundError(f"required distribution file is missing: {rel}")
             info = zipfile.ZipInfo(f"{canonical_root}/{rel}", FIXED_ZIP_TIMESTAMP)
-            info.compress_type = zipfile.ZIP_DEFLATED
+            info.compress_type = zipfile.ZIP_STORED
             info.create_system = 3
             # Regular file with portable read permissions; executable bit only for scripts.
             mode = 0o755 if rel.startswith("scripts/") and rel.endswith(".py") else 0o644
