@@ -40,7 +40,7 @@ def write_deterministic_zip(output: Path, files: list[str], canonical_root: str)
             zf.writestr(info, source.read_bytes())
 
 
-def package(output_dir: Path, basename: str | None = None) -> dict:
+def package(output_dir: Path) -> dict:
     checks = policy_validate.bundle_checks(ROOT)
     failures = [c for c in checks if c.status != "PASS"]
     if failures:
@@ -52,7 +52,7 @@ def package(output_dir: Path, basename: str | None = None) -> dict:
     contract = policy_validate.load_json(ROOT / "POLICY_CONTRACT.json")
     canonical_root = contract["distribution"]["canonical_root"]
     files = list(contract["distribution"]["required_files"])
-    stem = basename or canonical_root
+    stem = canonical_root
     zip_path = output_dir / f"{stem}.zip"
     trust_path = output_dir / f"{stem}.trust.json"
     release_path = output_dir / f"{stem}.release.json"
@@ -85,12 +85,11 @@ def package(output_dir: Path, basename: str | None = None) -> dict:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Build and self-verify a canonical universal-agent-docs release bundle")
     parser.add_argument("--output-dir", type=Path, default=ROOT / "dist")
-    parser.add_argument("--basename", help="optional output basename without extension")
     parser.add_argument("--json", action="store_true", dest="as_json")
     args = parser.parse_args()
 
     try:
-        result = package(args.output_dir.resolve(), args.basename)
+        result = package(args.output_dir.resolve())
     except Exception as exc:
         if args.as_json:
             print(json.dumps({"status": "FAIL", "error": str(exc)}, ensure_ascii=False, indent=2))

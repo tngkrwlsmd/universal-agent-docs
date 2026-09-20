@@ -132,6 +132,10 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertTrue(Path(first["trust_manifest"]).is_file())
             self.assertTrue(Path(first["release_manifest"]).is_file())
             self.assertTrue(Path(first["sha256_file"]).is_file())
+            self.assertEqual("universal-agent-docs.zip", Path(first["zip"]).name)
+            self.assertEqual("universal-agent-docs.trust.json", Path(first["trust_manifest"]).name)
+            self.assertEqual("universal-agent-docs.release.json", Path(first["release_manifest"]).name)
+            self.assertEqual("universal-agent-docs.sha256", Path(first["sha256_file"]).name)
             # Detached artifacts must not be entries in the canonical ZIP.
             import zipfile
             with zipfile.ZipFile(first["zip"]) as zf:

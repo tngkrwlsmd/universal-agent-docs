@@ -133,6 +133,7 @@ CANONICAL_REQUIRED_FILES = [
     "APPROVAL_ASSERTION.schema.json",
     "PROTECTED_OVERRIDE.schema.json",
     "README.md",
+    "LICENSE",
     "requirements.txt",
     "scripts/validate.py",
     "scripts/package.py",

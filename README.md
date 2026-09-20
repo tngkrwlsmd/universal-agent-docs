@@ -19,6 +19,7 @@ universal-agent-docs/
 ├── APPROVAL_ASSERTION.schema.json
 ├── PROTECTED_OVERRIDE.schema.json
 ├── README.md
+├── LICENSE
 ├── requirements.txt
 ├── conformance/
 │   ├── README.md
@@ -49,6 +50,7 @@ universal-agent-docs/
 - [`RUNTIME_ACTION.schema.json`](RUNTIME_ACTION.schema.json): runtime/tool adapter가 실행 직전에 제출하는 구조화된 action assertion 형식
 - [`APPROVAL_ASSERTION.schema.json`](APPROVAL_ASSERTION.schema.json): explicit approval을 exact action digest + single-use execution nonce에 결박하는 wire contract
 - [`PROTECTED_OVERRIDE.schema.json`](PROTECTED_OVERRIDE.schema.json): protected override를 `PROHIBITED_WITHOUT_OVERRIDE` imminent action에 정확히 결박하는 독립 wire contract
+- [`LICENSE`](LICENSE): 코드·문서·스키마·테스트를 포함한 저장소 전체에 적용되는 Apache License 2.0
 - `scripts/validate.py`: bundle, routing, runtime action, exposure derivation, approval binding, readiness, protected override, distribution artifact 검증과 `PROJECT.md` bootstrap candidate 생성
 - `scripts/package.py`: canonical ZIP, detached core trust manifest, detached full release manifest, ZIP SHA-256을 일관되게 생성하고 다시 검증하는 release packager
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
@@ -224,7 +226,7 @@ python scripts/validate.py --runtime-action ./runtime-action.json
     "decision": "APPROVE",
     "scope": "one imminent production action",
     "issued_at": "2026-09-20T00:00:00Z",
-    "expires_at": "2026-09-20T01:00:00Z",
+    "expires_at": "2026-09-20T00:30:00Z",
     "operations": ["cloud.resource_change"],
     "targets": ["production/cluster-a/namespace-app"],
     "environment": "production",
@@ -354,3 +356,7 @@ Runtime 지원 방식은 바뀔 수 있으므로 도입 시 해당 도구의 공
 - `PASS`, `VERIFIED`, `완료`는 실제 evidence보다 강하게 표현하지 않는다.
 - dependency/deployment resource fallback은 Node/Python/Rust/Go뿐 아니라 Maven/Gradle/.NET/Swift/Dart/Bun/Deno와 GitLab/Azure/CircleCI/Jenkins/Buildkite/Pulumi/CloudFormation 계열의 대표 파일까지 포함하되, canonical operation을 주 경로로 유지한다.
 - 정책 시스템 자체가 일반 프로젝트보다 복잡해지지 않도록 파일과 개념을 최소화한다.
+
+## License
+
+이 저장소의 코드, 문서, 스키마와 테스트는 [Apache License 2.0](LICENSE)에 따라 사용할 수 있다. 재배포 또는 파생 작업에서는 해당 라이선스의 조건을 따른다.

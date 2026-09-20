@@ -26,6 +26,13 @@ class BundleTests(unittest.TestCase):
         failures = [c for c in checks if c.status != "PASS"]
         self.assertEqual([], [(c.name, c.detail) for c in failures])
 
+    def test_license_is_part_of_canonical_distribution(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        self.assertTrue((ROOT / "LICENSE").is_file())
+        self.assertIn("LICENSE", contract["distribution"]["required_files"])
+        self.assertIn("LICENSE", contract["distribution"]["allowed_files"])
+        self.assertIn("LICENSE", mod.CANONICAL_REQUIRED_FILES)
+
     def test_root_router_is_small(self):
         self.assertLessEqual(len((ROOT / "AGENTS.md").read_text(encoding="utf-8").splitlines()), 150)
 

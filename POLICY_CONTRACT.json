@@ -918,6 +918,7 @@
       "APPROVAL_ASSERTION.schema.json",
       "PROTECTED_OVERRIDE.schema.json",
       "README.md",
+      "LICENSE",
       "requirements.txt",
       "scripts/validate.py",
       "scripts/package.py",
@@ -943,6 +944,7 @@
       "APPROVAL_ASSERTION.schema.json",
       "PROTECTED_OVERRIDE.schema.json",
       "README.md",
+      "LICENSE",
       "requirements.txt",
       "scripts/validate.py",
       "scripts/package.py",
@@ -974,7 +976,7 @@
     "max_archive_entries": 256,
     "max_file_uncompressed_bytes": 2000000,
     "max_total_uncompressed_bytes": 10000000,
-    "max_compression_ratio": 200.0
+    "max_compression_ratio": 200
   },
   "execution_boundary": {
     "required_inputs": [
