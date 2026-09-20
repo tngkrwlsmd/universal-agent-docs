@@ -1202,6 +1202,21 @@ class ReadinessTests(unittest.TestCase):
         r = mod.readiness(ROOT / "PROJECT.md", "development")
         self.assertEqual("FAIL", r["documented"])
 
+    def test_readiness_can_use_external_project_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            policy_dir = base / ".agent-policy"
+            project_root = base / "consumer"
+            policy_dir.mkdir()
+            project_root.mkdir()
+            (project_root / "src").mkdir()
+            data = self.base_data()
+            facts_path = policy_dir / "PROJECT.md"
+            self.write_project(policy_dir, data)
+            result = mod.readiness(facts_path, "development", project_root)
+            primary = next(x for x in result["verified_checks"] if x["name"] == "primary_source")
+            self.assertEqual("PASS", primary["status"], result)
+
     def test_readiness_distinguishes_evidence_from_command_execution(self):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td)
