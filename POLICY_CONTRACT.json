@@ -1,5 +1,5 @@
 {
-  "schema_version": 14,
+  "schema_version": 15,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -1287,7 +1287,17 @@
       "attestation_action": "actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6",
       "signature_model": "sigstore_oidc",
       "required_source_ref": "refs/heads/main",
-      "verifier_requires_expected_source_digest": true
+      "verifier_requires_expected_source_digest": true,
+      "subject_artifacts": [
+        "universal-agent-docs.zip",
+        "universal-agent-docs.sha256",
+        "universal-agent-docs.trust.json",
+        "universal-agent-docs.release.json",
+        "universal-agent-docs-consumer.zip",
+        "universal-agent-docs-consumer.sha256",
+        "universal-agent-docs-consumer.release.json"
+      ],
+      "artifacts_uploaded_before_attestation": true
     }
   },
   "operation_lifecycle": {
