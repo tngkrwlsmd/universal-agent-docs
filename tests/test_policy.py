@@ -19,6 +19,14 @@ assert SPEC and SPEC.loader
 sys.modules[SPEC.name] = mod
 SPEC.loader.exec_module(mod)
 
+CONSUMER_SPEC = importlib.util.spec_from_file_location(
+    "uad_package_consumer", ROOT / "scripts" / "package_consumer.py"
+)
+consumer_mod = importlib.util.module_from_spec(CONSUMER_SPEC)
+assert CONSUMER_SPEC and CONSUMER_SPEC.loader
+sys.modules[CONSUMER_SPEC.name] = consumer_mod
+CONSUMER_SPEC.loader.exec_module(consumer_mod)
+
 
 class BundleTests(unittest.TestCase):
     def test_bundle_checks_pass(self):
@@ -1377,6 +1385,103 @@ class BootstrapTests(unittest.TestCase):
                 mod.bootstrap_project(root, output)
             self.assertEqual("do not overwrite", output.read_text(encoding="utf-8"))
 
+
+class AdoptionProfileTests(unittest.TestCase):
+    def test_readme_exposes_five_minute_profile_decision_guide(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertLess(readme.index("## 5분 Quick Start"), readme.index("## 구성"))
+        for label in ["A — Guidance", "B — Validated", "C — Enforced Runtime"]:
+            self.assertIn(label, readme)
+        self.assertIn("trusted runtime assertion이 없으면 실제 side-effect 차단 보장 없음", readme)
+        self.assertIn("이미 root `AGENTS.md`가 있으면 덮어쓰지 말고", readme)
+        self.assertIn("docs/adoption-profiles.md", readme)
+
+    def test_adoption_profiles_are_documentation_not_machine_enforcement_state(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        self.assertNotIn("adoption_profile", contract)
+        self.assertNotIn("adoption_profiles", contract)
+        guide = (ROOT / "docs" / "adoption-profiles.md").read_text(encoding="utf-8")
+        self.assertIn("문서 분류", guide)
+        self.assertIn("Guidance는 **문서와 instruction을 제공할 뿐 실행을 intercept하지 않는다**", guide)
+        self.assertIn("trusted runtime/tool adapter가 실제 호출을 독립적으로 보고하지 않는다면", guide)
+        self.assertIn("adapter가 intercept하지 못하는 surface까지 통제한다고 과장하지 않는다", guide)
+
+    def test_consumer_bundle_contains_adoption_guide_and_expected_layout(self):
+        with tempfile.TemporaryDirectory() as td:
+            out = Path(td) / "dist"
+            result = consumer_mod.package_consumer(out)
+            self.assertEqual("PASS", result["status"], result)
+            contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+            root = contract["consumer_distribution"]["canonical_root"]
+            policy_root = contract["consumer_distribution"]["policy_root"]
+            with zipfile.ZipFile(result["zip"]) as zf:
+                names = set(zf.namelist())
+                self.assertIn(f"{root}/AGENTS.md", names)
+                self.assertIn(f"{root}/{policy_root}/PROJECT.md", names)
+                self.assertIn(f"{root}/{policy_root}/docs/adoption-profiles.md", names)
+                router = zf.read(f"{root}/AGENTS.md").decode("utf-8")
+                self.assertIn(f"{policy_root}/PROJECT.md", router)
+
+    def test_empty_repo_consumer_install_template_bootstrap_and_readiness_flow(self):
+        with tempfile.TemporaryDirectory() as td:
+            base = Path(td)
+            out = base / "dist"
+            packaged = consumer_mod.package_consumer(out)
+            stage = base / "stage"
+            repo = base / "consumer"
+            repo.mkdir()
+            with zipfile.ZipFile(packaged["zip"]) as zf:
+                zf.extractall(stage)
+
+            contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+            cfg = contract["consumer_distribution"]
+            staged_root = stage / cfg["canonical_root"]
+            shutil.copytree(staged_root / cfg["policy_root"], repo / cfg["policy_root"])
+            shutil.copy2(staged_root / cfg["root_agents_path"], repo / cfg["root_agents_path"])
+
+            self.assertTrue((repo / "AGENTS.md").is_file())
+            self.assertTrue((repo / ".agent-policy" / "POLICIES.md").is_file())
+            template = mod.parse_project_facts(repo / ".agent-policy" / "PROJECT.md")
+            self.assertEqual("template", template["profile"])
+
+            template_readiness = mod.readiness(
+                repo / ".agent-policy" / "PROJECT.md", "development", project_root=repo
+            )
+            self.assertEqual("FAIL", template_readiness["documented"], template_readiness)
+
+            (repo / "src").mkdir()
+            (repo / "package.json").write_text(
+                json.dumps({
+                    "scripts": {"build": "npm run build:impl", "test": "node --test"},
+                    "engines": {"node": ">=22"},
+                }),
+                encoding="utf-8",
+            )
+            candidate = repo / "PROJECT.candidate.md"
+            boot = mod.bootstrap_project(repo, candidate)
+            self.assertEqual("PASS", boot["status"], boot)
+            facts = mod.parse_project_facts(candidate)
+            statuses = {item["status"] for item in facts["facts"].values()}
+            self.assertNotIn("Confirmed", statuses)
+
+            candidate_readiness = mod.readiness(candidate, "development", project_root=repo)
+            self.assertEqual("FAIL", candidate_readiness["documented"], candidate_readiness)
+            self.assertEqual("NOT_RUN", candidate_readiness["execution_verified"])
+
+    def test_existing_root_agents_is_a_documented_install_collision(self):
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        cfg = contract["consumer_distribution"]
+        self.assertFalse(cfg["overwrite_existing_root_agents"])
+        self.assertTrue(cfg["extraction_requires_collision_check"])
+        guide = (ROOT / "docs" / "adoption-profiles.md").read_text(encoding="utf-8")
+        self.assertIn("root `AGENTS.md`가 이미 있으면 **자동 overwrite하지 않는다**", guide)
+        with tempfile.TemporaryDirectory() as td:
+            repo = Path(td)
+            existing = repo / cfg["root_agents_path"]
+            existing.write_text("# Existing project instructions\n", encoding="utf-8")
+            self.assertTrue(existing.exists())
+            self.assertFalse(cfg["overwrite_existing_root_agents"])
+            self.assertEqual("# Existing project instructions\n", existing.read_text(encoding="utf-8"))
 
 class DistributionTests(unittest.TestCase):
     @classmethod
