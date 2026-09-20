@@ -23,6 +23,8 @@ from .contract import (
     load_json,
 )
 from .risk import (
+    _EFFECT_RANK,
+    _EXPOSURE_RANK,
     _concrete_targets,
     _max_level,
     derive_exposure_floor,
