@@ -62,7 +62,8 @@ class BundleTests(unittest.TestCase):
 
     def test_release_workflow_publishes_and_verifies_immutable_release(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-        self.assertIn("gh release create", workflow)
+        self.assertIn('release create "$TAG"', workflow)
+        self.assertIn('gh "${args[@]}"', workflow)
         self.assertIn("test \"$(jq -r '.immutable' <<<\"$release_json\")\" = \"true\"", workflow)
         self.assertIn("gh release verify", workflow)
         self.assertIn("gh release verify-asset", workflow)
