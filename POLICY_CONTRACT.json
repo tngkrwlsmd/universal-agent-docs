@@ -1,5 +1,5 @@
 {
-  "schema_version": 16,
+  "schema_version": 17,
   "project_name": "universal-agent-docs",
   "authority": {
     "root_router": "AGENTS.md",
@@ -978,6 +978,7 @@
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",
+      "PROJECT.template.md",
       "POLICY_CONTRACT.json",
       "POLICY_CONTRACT.schema.json",
       "ROUTING_ALIASES.json",
@@ -1008,6 +1009,7 @@
       "AGENTS.md",
       "POLICIES.md",
       "PROJECT.md",
+      "PROJECT.template.md",
       "POLICY_CONTRACT.json",
       "POLICY_CONTRACT.schema.json",
       "ROUTING_ALIASES.json",
@@ -1325,12 +1327,33 @@
     "canonical_root": "universal-agent-docs-consumer",
     "policy_root": ".agent-policy",
     "root_agents_path": "AGENTS.md",
-    "vendored_files_source": "distribution.required_files",
+    "vendored_files_source": "consumer_distribution.vendored_files",
     "release_manifest_format": "universal-agent-docs-consumer-release-manifest-v1",
     "overwrite_existing_root_agents": false,
     "extraction_requires_collision_check": true,
     "consumer_project_facts_path": "PROJECT.md",
     "vendored_project_template_path": ".agent-policy/PROJECT.md",
-    "readiness_requires_explicit_project_root": true
+    "readiness_requires_explicit_project_root": true,
+    "vendored_files": [
+      "AGENTS.md",
+      "POLICIES.md",
+      "PROJECT.md",
+      "POLICY_CONTRACT.json",
+      "POLICY_CONTRACT.schema.json",
+      "ROUTING_ALIASES.json",
+      "ROUTING_ALIASES.schema.json",
+      "RUNTIME_ACTION.schema.json",
+      "APPROVAL_ASSERTION.schema.json",
+      "PROTECTED_OVERRIDE.schema.json",
+      "LICENSE",
+      "requirements.txt",
+      "requirements.lock",
+      "scripts/validate.py"
+    ],
+    "vendored_file_source_overrides": {
+      "PROJECT.md": "PROJECT.template.md"
+    },
+    "install_marker_path": "CONSUMER_INSTALL.json",
+    "archive_hardening_source": "distribution"
   }
 }
