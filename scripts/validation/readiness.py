@@ -3,8 +3,10 @@ from __future__ import annotations
 import json
 import re
 import subprocess
+import unicodedata
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Iterable
 
 from .contract import (
     Check,
@@ -15,7 +17,6 @@ from .contract import (
     PROJECT_START,
     POLICIES_PATH,
     REVIEW_FRESHNESS_DAYS,
-    git if False else None,
     load_json,
 )
 
