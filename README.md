@@ -56,7 +56,7 @@ universal-agent-docs/
 - [`LICENSE`](LICENSE): 코드·문서·스키마·테스트를 포함한 저장소 전체에 적용되는 Apache License 2.0
 - `requirements.txt`: validator의 직접 dependency intent
 - `requirements.lock`: CI/release용 hash-locked transitive dependency closure
-- `scripts/validate.py`: bundle, routing, runtime action, exposure derivation, approval binding, readiness, protected override, distribution artifact 검증과 `PROJECT.md` bootstrap candidate 생성
+- `scripts/validate.py`: 기존 CLI/import 호환성을 유지하는 얇은 orchestration facade. 실제 policy logic은 `scripts/validation/`의 `contract`, `routing`, `risk`, `runtime`, `integrity`, `readiness`, `bundle`, `distribution`, `approval`, `override` 모듈로 분리되어 있다.
 - `scripts/package.py`: canonical ZIP, detached core trust manifest, detached full release manifest, ZIP SHA-256을 일관되게 생성하고 다시 검증하는 release packager
 - `tests/test_policy.py`, `tests/test_fuzz.py`: 핵심 invariant 회귀 테스트와 deterministic property/fuzz 테스트
 - `conformance/`: runtime/tool adapter가 canonical operation과 exposure fact를 정확히 보고하는지 검증하는 golden/invalid vector kit
