@@ -137,9 +137,9 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertEqual("PASS", checked["status"], checked)
             with zipfile.ZipFile(zip_path) as zf:
                 names = [x.filename for x in zf.infolist() if not x.is_dir()]
+                consumer_agents = zf.read("universal-agent-docs-consumer/AGENTS.md").decode("utf-8")
             self.assertIn("universal-agent-docs-consumer/AGENTS.md", names)
             self.assertIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
-            consumer_agents = zf.read("universal-agent-docs-consumer/AGENTS.md").decode("utf-8")
             self.assertIn("](PROJECT.md)", consumer_agents)
             self.assertIn("--project-file ./PROJECT.md --project-root .", consumer_agents)
             self.assertNotIn("](.agent-policy/PROJECT.md)", consumer_agents)
