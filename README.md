@@ -68,8 +68,10 @@ universal-agent-docs/
 
 ## 시작 방법
 
-1. 이 디렉터리를 프로젝트 루트에 배치하거나 필요한 파일을 복사한다.
-2. [`PROJECT.md`](PROJECT.md)의 machine-readable project facts와 사람이 읽는 구조 설명을 실제 프로젝트 근거로 채운다. 처음 도입하는 저장소라면 bootstrap candidate를 만들 수 있다. 자동 탐색 결과는 모두 `Inferred`이며 `Confirmed`로 자동 승격되지 않고, 기본 출력도 기존 `PROJECT.md`를 덮어쓰지 않는다.
+이 저장소 자체를 개발·검증할 때는 clone한 source tree에서 아래 validator/테스트를 직접 실행한다. **다른 개발 프로젝트에 도입할 때는 source bundle을 project root에 overlay하지 않는다.** 해당 경우에는 아래 `Consumer installation layout`의 `universal-agent-docs-consumer.zip`을 사용하고, 기존 root `AGENTS.md`가 있으면 자동 덮어쓰기 대신 사람이 instruction hierarchy를 검토해 통합한다.
+
+1. source repository 자체를 검토하는 경우 현재 tree를 그대로 사용한다. 소비 프로젝트에 설치하는 경우 `.agent-policy/` 아래 vendored core와 root consumer router 구조를 사용한다.
+2. [`PROJECT.md`](PROJECT.md)의 machine-readable project facts와 사람이 읽는 구조 설명을 실제 프로젝트 근거로 채운다. consumer layout에서는 vendored template이 `.agent-policy/PROJECT.md`에 있으므로 이를 프로젝트 사실의 출발점으로 사용하되, 실제 프로젝트의 canonical fact 문서 위치는 해당 프로젝트 convention에 맞게 유지한다. 처음 도입하는 저장소라면 bootstrap candidate를 만들 수 있다. 자동 탐색 결과는 모두 `Inferred`이며 `Confirmed`로 자동 승격되지 않고, 기본 출력도 기존 `PROJECT.md`를 덮어쓰지 않는다.
 
 ```bash
 python scripts/validate.py --bootstrap-project .

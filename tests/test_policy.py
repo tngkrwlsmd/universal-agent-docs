@@ -88,6 +88,11 @@ class BundleTests(unittest.TestCase):
     def test_root_router_is_small(self):
         self.assertLessEqual(len((ROOT / "AGENTS.md").read_text(encoding="utf-8").splitlines()), 150)
 
+    def test_root_router_is_scannable(self):
+        lines = (ROOT / "AGENTS.md").read_text(encoding="utf-8").splitlines()
+        longest = max((len(line) for line in lines), default=0)
+        self.assertLessEqual(longest, 320, longest)
+
     def test_common_development_operation_vocabulary_is_present(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         ids = {x["id"] for x in contract["routing"]["operation_catalog"]}

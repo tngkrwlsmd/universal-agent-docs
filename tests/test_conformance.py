@@ -62,6 +62,24 @@ class AdapterConformanceTests(unittest.TestCase):
                 joined = "\n".join(result["errors"])
                 self.assertIn(vector["expected_error_contains"], joined, result)
 
+    def test_minimum_cross_family_operation_coverage(self):
+        doc = json.loads((ROOT / "conformance" / "golden.json").read_text(encoding="utf-8"))
+        covered = {
+            operation
+            for vector in doc["vectors"]
+            for operation in vector.get("actual_operations", [])
+        }
+        required = {
+            "build.execute", "lint.execute", "typecheck.execute", "format.execute",
+            "filesystem.generated_delete", "filesystem.tracked_delete", "filesystem.delete",
+            "dependency.install", "database.write", "permission.change", "credential.use",
+            "file.import", "file.export", "external.upload", "git.push",
+            "cloud.resource_delete", "deploy.execute", "rollback.execute",
+            "observability.inspect", "package.publish", "release.publish",
+            "git.destructive_change", "secret.read",
+        }
+        self.assertEqual(set(), required - covered)
+
     def test_policy_contract_digest_is_stable_for_key_order(self):
         a = self.contract
         b = {k: a[k] for k in reversed(list(a.keys()))}

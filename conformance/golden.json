@@ -491,6 +491,312 @@
         "effective_exposure": "X0",
         "action_gate": "AUTO"
       }
+    },
+    {
+      "id": "test-database-write-requires-approval",
+      "planned_operations": [
+        "database.write"
+      ],
+      "actual_operations": [
+        "database.write"
+      ],
+      "actual_action": "update test user status",
+      "affected_resources": [
+        "users"
+      ],
+      "targets": [
+        "db/test/users"
+      ],
+      "environment": "test",
+      "exposure_facts": {
+        "data_classification": "internal",
+        "credential_class": "none",
+        "tenant_scope": "single_tenant",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      }
+    },
+    {
+      "id": "local-permission-change-requires-approval",
+      "planned_operations": [
+        "permission.change"
+      ],
+      "actual_operations": [
+        "permission.change"
+      ],
+      "actual_action": "change repository access permission",
+      "affected_resources": [
+        "repository/settings"
+      ],
+      "targets": [
+        "repository/example"
+      ],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X0",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      }
+    },
+    {
+      "id": "privileged-credential-use-is-x3",
+      "planned_operations": [
+        "credential.use"
+      ],
+      "actual_operations": [
+        "credential.use"
+      ],
+      "actual_action": "use privileged deployment credential",
+      "affected_resources": [
+        "credential/prod"
+      ],
+      "targets": [
+        "credential/prod"
+      ],
+      "environment": "production",
+      "exposure_facts": {
+        "data_classification": "restricted",
+        "credential_class": "privileged_credential",
+        "tenant_scope": "organization_wide",
+        "public_visibility": "none",
+        "estimated_blast_radius": "service",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X3",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      }
+    },
+    {
+      "id": "local-file-import-is-l2",
+      "planned_operations": [
+        "file.import"
+      ],
+      "actual_operations": [
+        "file.import"
+      ],
+      "actual_action": "import validated local fixture",
+      "affected_resources": [
+        "fixtures/input.csv"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
+    },
+    {
+      "id": "local-file-export-is-l2",
+      "planned_operations": [
+        "file.export"
+      ],
+      "actual_operations": [
+        "file.export"
+      ],
+      "actual_action": "export local report fixture",
+      "affected_resources": [
+        "out/report.csv"
+      ],
+      "targets": [],
+      "environment": "local",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      }
+    },
+    {
+      "id": "external-upload-requires-approval",
+      "planned_operations": [
+        "external.upload"
+      ],
+      "actual_operations": [
+        "external.upload"
+      ],
+      "actual_action": "upload artifact to external destination",
+      "affected_resources": [
+        "dist/app.zip"
+      ],
+      "targets": [
+        "external/storage/example"
+      ],
+      "environment": "external",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "public_destination",
+        "estimated_blast_radius": "bounded_set",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      }
+    },
+    {
+      "id": "git-push-is-external-effect",
+      "planned_operations": [
+        "git.push"
+      ],
+      "actual_operations": [
+        "git.push"
+      ],
+      "actual_action": "git push origin feature/example",
+      "affected_resources": [
+        "refs/heads/feature/example"
+      ],
+      "targets": [
+        "origin/feature/example"
+      ],
+      "environment": "external",
+      "exposure_facts": {
+        "data_classification": "internal",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "none",
+        "estimated_blast_radius": "single_resource",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      }
+    },
+    {
+      "id": "staging-rollback-requires-approval",
+      "planned_operations": [
+        "rollback.execute"
+      ],
+      "actual_operations": [
+        "rollback.execute"
+      ],
+      "actual_action": "rollback staging service to previous artifact",
+      "affected_resources": [
+        "service/api"
+      ],
+      "targets": [
+        "staging/service/api"
+      ],
+      "environment": "staging",
+      "exposure_facts": {
+        "data_classification": "internal",
+        "credential_class": "none",
+        "tenant_scope": "single_tenant",
+        "public_visibility": "none",
+        "estimated_blast_radius": "service",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      }
+    },
+    {
+      "id": "production-observability-read-uses-guards",
+      "planned_operations": [
+        "observability.inspect"
+      ],
+      "actual_operations": [
+        "observability.inspect"
+      ],
+      "actual_action": "inspect production error metrics",
+      "affected_resources": [
+        "metrics/api"
+      ],
+      "targets": [
+        "production/metrics/api"
+      ],
+      "environment": "production",
+      "exposure_facts": {
+        "data_classification": "internal",
+        "credential_class": "none",
+        "tenant_scope": "single_tenant",
+        "public_visibility": "none",
+        "estimated_blast_radius": "service",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X2",
+        "action_gate": "AUTO_WITH_GUARDS"
+      }
+    },
+    {
+      "id": "public-release-publish-is-l4",
+      "planned_operations": [
+        "release.publish"
+      ],
+      "actual_operations": [
+        "release.publish"
+      ],
+      "actual_action": "publish public release",
+      "affected_resources": [
+        "dist/release"
+      ],
+      "targets": [
+        "public/release/example"
+      ],
+      "environment": "public",
+      "exposure_facts": {
+        "data_classification": "public",
+        "credential_class": "none",
+        "tenant_scope": "single_user",
+        "public_visibility": "public_destination",
+        "estimated_blast_radius": "bounded_set",
+        "estimated_financial_impact": "none"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      }
     }
   ]
 }

@@ -41,7 +41,14 @@
 3. 공식 command source와 target, input/output, side effect, timeout, cleanup을 확인한다.
 4. task text를 힌트로 사용해 계획을 `POLICY_CONTRACT.json`의 **canonical operation ID**로 정규화하고, affected resources와 함께 applicable policy를 결정한다.
 5. 해석되지 않은 planned operation은 enforcement routing에서 fail-closed한다. 자연어 task 분류와 task↔plan mismatch는 독립적인 **advisory anomaly signal**로 유지하되 canonical plan을 대신하거나 실행 승인 근거로 사용하지 않는다. enforcement에서는 최소 한 개의 해석된 planned canonical operation이 필요하다. 자연어 단일 일반어를 Git/release 같은 고유 작업으로 성급히 승격하지 않는다.
-6. 실제 tool/action 직전에는 계획의 operation과 runtime/tool adapter가 독립적으로 보고한 **actual canonical operation**, 실제 resource/target/environment와 raw exposure facts를 다시 대조한다. actual operation이 plan 밖이면 실행하지 않고 routing을 갱신한다. adapter는 Exposure 최종등급을 소유하지 않고 `data_classification`, `credential_class`, `tenant_scope`, `public_visibility`, `estimated_blast_radius`, `estimated_financial_impact` 같은 사실을 `RUNTIME_ACTION.schema.json`으로 보고하며 policy engine이 보수적 floor를 계산한다. payload가 schema-valid하다는 사실만으로 adapter identity/transport trust가 증명되지는 않는다. production state-changing action은 context에 따라 Effect를 상향하고 최종 Effect × Exposure gate와 action digest를 다시 계산한다. runtime `actual_operations`에 opaque `command.execute`를 사용하지 않으며, imminent action마다 single-use `execution_nonce`를 발급해 digest에 포함한다.
+6. 실제 tool/action 직전에는 execution boundary를 다시 검증한다.
+   - 계획 operation과 runtime/tool adapter가 독립적으로 보고한 **actual canonical operation**, 실제 resource/target/environment를 대조한다.
+   - actual operation이 plan 밖이면 실행하지 않고 routing을 갱신한다.
+   - adapter는 Exposure 등급이 아니라 raw facts(`data_classification`, `credential_class`, `tenant_scope`, `public_visibility`, `estimated_blast_radius`, `estimated_financial_impact`)를 보고한다.
+   - policy engine이 raw facts와 environment에서 보수적 Exposure floor를 계산한다.
+   - schema-valid payload만으로 adapter identity/transport trust가 증명되지는 않는다.
+   - production/context가 Effect를 높이면 최종 Effect × Exposure gate와 action digest를 다시 계산한다.
+   - runtime `actual_operations`에는 opaque `command.execute`를 사용하지 않고, imminent action마다 single-use `execution_nonce`를 digest에 포함한다.
 7. 업무 의미·권한·파괴 범위를 바꾸는 불확실성은 근거 없이 채우지 않고, contract를 바꾸지 않는 구현 세부사항은 기존 convention으로 자율 결정한다.
 8. 장기 작업은 현재 상태, 검증 evidence, blocker와 다음 단계를 repository의 기존 지속 가능한 기록 수단에 남겨 handoff 가능하게 한다.
 
@@ -55,7 +62,9 @@
 - 인증/권한/secret/untrusted input: [`POLICIES.md#policy-security`](POLICIES.md#policy-security)
 - release/deploy/rollout: [`POLICIES.md#policy-deployment`](POLICIES.md#policy-deployment)
 
-`REQUIRE_EXPLICIT_APPROVAL`은 runtime enforcement에서 `APPROVAL_ASSERTION.schema.json`의 issuer/scope/operation/target/environment/correlation ID/execution nonce/action digest에 결박하고 approval ID와 nonce를 원자적으로 한 번만 소비한다. validator가 schema·시간·binding을 확인해도 issuer authority를 인증하지 않으므로 `AUTHORIZED`를 의미하지 않는다. `PROHIBITED_WITHOUT_OVERRIDE`는 일반 요청이나 저장소 설정으로 해제하지 않으며 `PROTECTED_OVERRIDE.schema.json` 객체를 동일한 imminent boundary에 결박하고 protected override authority와 별도 task approval을 검증한다.
+- `REQUIRE_EXPLICIT_APPROVAL`: `APPROVAL_ASSERTION.schema.json`의 issuer/scope/operation/target/environment/correlation ID/execution nonce/action digest에 결박하고 approval ID와 nonce를 원자적으로 한 번만 소비한다.
+- validator가 schema·시간·binding을 확인해도 issuer authority를 인증하지 않으므로 `AUTHORIZED`를 의미하지 않는다.
+- `PROHIBITED_WITHOUT_OVERRIDE`: 일반 요청이나 저장소 설정으로 해제하지 않는다. `PROTECTED_OVERRIDE.schema.json` 객체를 같은 imminent boundary에 결박하고 protected override authority와 별도 task approval을 검증한다.
 
 정책 core의 원본성까지 요구하는 환경은 bundle 내부 consistency만 믿지 않는다. trusted core bytes는 detached `.trust.json`, 공식 배포물 전체와 ZIP bytes는 detached `.release.json`으로 분리해 확인하고, 두 manifest 모두 **bundle 외부의 trusted channel 또는 검증 가능한 서명**으로 출처를 확보한다.
 
@@ -74,7 +83,17 @@
 | build artifact, release, deploy, rollout, rollback | [`POLICIES.md#policy-deployment`](POLICIES.md#policy-deployment) |
 | log, metric, trace, incident, performance | [`POLICIES.md#policy-observability`](POLICIES.md#policy-observability) |
 
-기계 라우팅 projection은 [`POLICY_CONTRACT.json`](POLICY_CONTRACT.json), 자연어 fallback 힌트는 [`ROUTING_ALIASES.json`](ROUTING_ALIASES.json), runtime adapter assertion은 [`RUNTIME_ACTION.schema.json`](RUNTIME_ACTION.schema.json), explicit approval wire contract는 [`APPROVAL_ASSERTION.schema.json`](APPROVAL_ASSERTION.schema.json), protected override wire contract는 [`PROTECTED_OVERRIDE.schema.json`](PROTECTED_OVERRIDE.schema.json)이다. canonical operation ID는 안정 API이며 rename은 새 ID 추가와 기존 ID deprecation으로 처리한다. `effect_floor`는 Effect 최소값이며 낮춰 해석하지 않고, `requires_execution_policy=true`이면 Execution 정책을 자동 포함한다. machine-enforceable 규칙은 `POLICY_CONTRACT.json`이 normative owner이고 `POLICIES.md`는 사람용 절차·근거 owner다. 두 표현이 enforcement 의미에서 충돌하면 어느 한쪽을 임의 우선하지 않고 invalid로 취급해 함께 수정한다. validator의 자동 parity 범위는 machine-readable/schema/implementation invariant와 명시적 회귀 테스트이며, 모든 prose 문장을 의미론적으로 파싱한다고 가정하지 않는다.
+기계 계약과 wire format의 owner는 다음과 같다.
+
+- canonical routing / risk semantics: [`POLICY_CONTRACT.json`](POLICY_CONTRACT.json)
+- 자연어 fallback hint: [`ROUTING_ALIASES.json`](ROUTING_ALIASES.json)
+- runtime adapter assertion: [`RUNTIME_ACTION.schema.json`](RUNTIME_ACTION.schema.json)
+- explicit approval: [`APPROVAL_ASSERTION.schema.json`](APPROVAL_ASSERTION.schema.json)
+- protected override: [`PROTECTED_OVERRIDE.schema.json`](PROTECTED_OVERRIDE.schema.json)
+
+canonical operation ID는 안정 API이며 rename은 새 ID 추가와 기존 ID deprecation으로 처리한다. `effect_floor`는 Effect 최소값이고, `requires_execution_policy=true`이면 Execution 정책을 자동 포함한다.
+
+machine-enforceable 규칙은 `POLICY_CONTRACT.json`이 normative owner이고 `POLICIES.md`는 사람용 절차·근거 owner다. 두 표현이 enforcement 의미에서 충돌하면 invalid로 취급해 함께 수정한다. validator의 자동 parity 범위는 machine-readable/schema/implementation invariant와 명시적 회귀 테스트이며 모든 prose 문장을 의미론적으로 파싱한다고 가정하지 않는다.
 
 ## 7. 구현·검증 루프
 
