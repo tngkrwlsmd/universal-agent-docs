@@ -20,7 +20,7 @@
   ],
   "properties": {
     "schema_version": {
-      "const": 13
+      "const": 14
     },
     "project_name": {
       "const": "universal-agent-docs"
@@ -1117,7 +1117,10 @@
         "vendored_files_source",
         "release_manifest_format",
         "overwrite_existing_root_agents",
-        "extraction_requires_collision_check"
+        "extraction_requires_collision_check",
+        "consumer_project_facts_path",
+        "vendored_project_template_path",
+        "readiness_requires_explicit_project_root"
       ],
       "properties": {
         "canonical_root": {
@@ -1139,6 +1142,15 @@
           "const": false
         },
         "extraction_requires_collision_check": {
+          "const": true
+        },
+        "consumer_project_facts_path": {
+          "const": "PROJECT.md"
+        },
+        "vendored_project_template_path": {
+          "const": ".agent-policy/PROJECT.md"
+        },
+        "readiness_requires_explicit_project_root": {
           "const": true
         }
       }
