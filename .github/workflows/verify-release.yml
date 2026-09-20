@@ -71,9 +71,17 @@ jobs:
         shell: bash
         run: |
           signer="github.com/$GITHUB_REPOSITORY/.github/workflows/release.yml"
-          for file in             universal-agent-docs.zip             universal-agent-docs.sha256             universal-agent-docs.trust.json             universal-agent-docs.release.json
+          for file in \
+            universal-agent-docs.zip \
+            universal-agent-docs.sha256 \
+            universal-agent-docs.trust.json \
+            universal-agent-docs.release.json
           do
-            gh attestation verify "downloaded/$file"               --repo "$GITHUB_REPOSITORY"               --signer-workflow "$signer"               --source-digest "$SOURCE_SHA"
+            gh attestation verify "downloaded/$file" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$signer" \
+              --source-ref refs/heads/main \
+              --source-digest "$SOURCE_SHA"
           done
 
       - name: Verify detached ZIP checksum
