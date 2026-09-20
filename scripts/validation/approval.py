@@ -70,6 +70,7 @@ def validate_approval_assertion(
     root: Path = ROOT,
     replay_registry: Path | None = None,
     consume: bool = False,
+    reference_time: datetime | None = None,
 ) -> dict:
     """Validate an explicit-approval object and, when supplied, bind it to one action.
 
@@ -129,7 +130,7 @@ def validate_approval_assertion(
     issued_errors: list[str] = []
     issued = _parse_timestamp(approval.get("issued_at"), "issued_at", issued_errors)
     expires = _parse_timestamp(approval.get("expires_at"), "expires_at", issued_errors)
-    now = datetime.now(timezone.utc)
+    now = reference_time.astimezone(timezone.utc) if reference_time is not None else datetime.now(timezone.utc)
     if issued is not None and expires is not None:
         if issued >= expires:
             issued_errors.append("issued_at must be earlier than expires_at")
