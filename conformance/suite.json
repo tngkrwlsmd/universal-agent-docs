@@ -1926,6 +1926,206 @@
         "second_replay_protection",
         "second_object_validity"
       ]
+    },
+    {
+      "id": "readiness-confirmed-missing-source",
+      "description": "Missing confirmed source evidence fails verification.",
+      "category": "readiness",
+      "kind": "readiness",
+      "input": {
+        "scenario": "missing_primary_source"
+      },
+      "expected": {
+        "documented": "PASS",
+        "evidence_verified": "FAIL",
+        "execution_verified": "NOT_RUN"
+      },
+      "normative_fields": [
+        "documented",
+        "evidence_verified",
+        "execution_verified"
+      ]
+    },
+    {
+      "id": "readiness-confirmed-source-partial",
+      "description": "Manual command evidence remains partial.",
+      "category": "readiness",
+      "kind": "readiness",
+      "input": {
+        "scenario": "valid_source_manual_commands"
+      },
+      "expected": {
+        "documented": "PASS",
+        "evidence_verified": "PARTIAL",
+        "execution_verified": "NOT_RUN"
+      },
+      "normative_fields": [
+        "documented",
+        "evidence_verified",
+        "execution_verified"
+      ]
+    },
+    {
+      "id": "readiness-template-not-ready",
+      "description": "Template profile is not development-ready.",
+      "category": "readiness",
+      "kind": "readiness",
+      "input": {
+        "scenario": "template"
+      },
+      "expected": {
+        "documented": "FAIL"
+      },
+      "normative_fields": [
+        "documented"
+      ]
+    },
+    {
+      "id": "distribution-path-traversal-rejected",
+      "description": "Distribution mutation path_traversal is rejected.",
+      "category": "distribution",
+      "kind": "distribution",
+      "input": {
+        "mutation": "path_traversal"
+      },
+      "expected": {
+        "status": "FAIL",
+        "finding": "unsafe_entries"
+      },
+      "normative_fields": [
+        "status",
+        "finding"
+      ]
+    },
+    {
+      "id": "distribution-duplicate-entry-rejected",
+      "description": "Distribution mutation duplicate is rejected.",
+      "category": "distribution",
+      "kind": "distribution",
+      "input": {
+        "mutation": "duplicate"
+      },
+      "expected": {
+        "status": "FAIL",
+        "finding": "duplicate_entries"
+      },
+      "normative_fields": [
+        "status",
+        "finding"
+      ]
+    },
+    {
+      "id": "distribution-casefold-collision-rejected",
+      "description": "Distribution mutation casefold_collision is rejected.",
+      "category": "distribution",
+      "kind": "distribution",
+      "input": {
+        "mutation": "casefold_collision"
+      },
+      "expected": {
+        "status": "FAIL",
+        "finding": "name_collisions"
+      },
+      "normative_fields": [
+        "status",
+        "finding"
+      ]
+    },
+    {
+      "id": "distribution-unicode-collision-rejected",
+      "description": "Distribution mutation unicode_collision is rejected.",
+      "category": "distribution",
+      "kind": "distribution",
+      "input": {
+        "mutation": "unicode_collision"
+      },
+      "expected": {
+        "status": "FAIL",
+        "finding": "name_collisions"
+      },
+      "normative_fields": [
+        "status",
+        "finding"
+      ]
+    },
+    {
+      "id": "distribution-symlink-rejected",
+      "description": "Distribution mutation symlink is rejected.",
+      "category": "distribution",
+      "kind": "distribution",
+      "input": {
+        "mutation": "symlink"
+      },
+      "expected": {
+        "status": "FAIL",
+        "finding": "symlinks"
+      },
+      "normative_fields": [
+        "status",
+        "finding"
+      ]
+    },
+    {
+      "id": "distribution-resource-limit-rejected",
+      "description": "Distribution mutation file_size_limit is rejected.",
+      "category": "distribution",
+      "kind": "distribution",
+      "input": {
+        "mutation": "file_size_limit"
+      },
+      "expected": {
+        "status": "FAIL",
+        "finding": "resource_limit_violations"
+      },
+      "normative_fields": [
+        "status",
+        "finding"
+      ]
+    },
+    {
+      "id": "integrity-trust-manifest-valid",
+      "description": "Fresh trust manifest validates unchanged core.",
+      "category": "integrity",
+      "kind": "integrity",
+      "input": {
+        "scenario": "trust_valid"
+      },
+      "expected": {
+        "status": "PASS"
+      },
+      "normative_fields": [
+        "status"
+      ]
+    },
+    {
+      "id": "integrity-trust-manifest-tamper",
+      "description": "Trust manifest detects core mutation.",
+      "category": "integrity",
+      "kind": "integrity",
+      "input": {
+        "scenario": "trust_tamper"
+      },
+      "expected": {
+        "status": "FAIL"
+      },
+      "normative_fields": [
+        "status"
+      ]
+    },
+    {
+      "id": "integrity-release-manifest-tamper",
+      "description": "Release manifest detects ZIP mutation.",
+      "category": "integrity",
+      "kind": "integrity",
+      "input": {
+        "scenario": "release_tamper"
+      },
+      "expected": {
+        "status": "FAIL"
+      },
+      "normative_fields": [
+        "status"
+      ]
     }
   ]
 }
