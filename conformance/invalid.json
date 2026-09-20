@@ -1,155 +1,1194 @@
 {
-  "schema_version": 1,
+  "format": "universal-agent-docs-conformance-v2",
+  "schema_version": 2,
+  "policy_schema_version": 16,
   "vectors": [
     {
       "id": "terraform-destroy-underreported-as-change",
-      "planned_operations": [
-        "cloud.resource_change"
+      "description": "terraform destroy underreported as change",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:cloud.resource_change",
+        "runtime.high_confidence_signature"
       ],
-      "actual_operations": [
-        "cloud.resource_change"
-      ],
-      "actual_action": "terraform destroy -auto-approve",
-      "affected_resources": [
-        "infra/main.tf"
-      ],
-      "targets": [
-        "cloud/project-demo"
-      ],
-      "environment": "test",
-      "exposure_facts": {
-        "data_classification": "public",
-        "credential_class": "none",
-        "tenant_scope": "single_user",
-        "public_visibility": "none",
-        "estimated_blast_radius": "single_resource",
-        "estimated_financial_impact": "none"
+      "input": {
+        "planned_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_action": "terraform destroy -auto-approve",
+        "affected_resources": [
+          "infra/main.tf"
+        ],
+        "targets": [
+          "cloud/project-demo"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-terraform-destroy-underreported-as-change",
+        "execution_nonce": "nonce-terraform-destroy-underreported-as-change-00000001"
       },
-      "expected_error_contains": "high-confidence action signature"
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision"
+      ],
+      "notes": "Failure reason is intentionally not exact-string matched; covers identifies the normative rule."
     },
     {
       "id": "opaque-command-runtime-operation",
-      "planned_operations": [
-        "command.execute"
+      "description": "opaque command runtime operation",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:command.execute",
+        "runtime.forbidden_opaque_operation"
       ],
-      "actual_operations": [
-        "command.execute"
-      ],
-      "actual_action": "python script.py",
-      "affected_resources": [
-        "script.py"
-      ],
-      "targets": [
-        "workspace"
-      ],
-      "environment": "local",
-      "exposure_facts": {
-        "data_classification": "public",
-        "credential_class": "none",
-        "tenant_scope": "single_user",
-        "public_visibility": "none",
-        "estimated_blast_radius": "single_resource",
-        "estimated_financial_impact": "none"
+      "input": {
+        "planned_operations": [
+          "command.execute"
+        ],
+        "actual_operations": [
+          "command.execute"
+        ],
+        "actual_action": "python script.py",
+        "affected_resources": [
+          "script.py"
+        ],
+        "targets": [
+          "workspace"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-opaque-command-runtime-operation",
+        "execution_nonce": "nonce-opaque-command-runtime-operation-00000001"
       },
-      "expected_error_contains": "opaque/forbidden operation"
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision"
+      ],
+      "notes": "Failure reason is intentionally not exact-string matched; covers identifies the normative rule."
     },
     {
       "id": "actual-write-not-covered-by-plan",
-      "planned_operations": [
-        "code.modify"
+      "description": "actual write not covered by plan",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:external.api_write",
+        "runtime.plan_actual_binding"
       ],
-      "actual_operations": [
-        "external.api_write"
-      ],
-      "actual_action": "POST /admin/tenants/123",
-      "affected_resources": [
-        "api/admin"
-      ],
-      "targets": [
-        "tenant/123"
-      ],
-      "environment": "external",
-      "exposure_facts": {
-        "data_classification": "internal",
-        "credential_class": "service_credential",
-        "tenant_scope": "single_tenant",
-        "public_visibility": "none",
-        "estimated_blast_radius": "bounded_set",
-        "estimated_financial_impact": "none"
+      "input": {
+        "planned_operations": [
+          "code.modify"
+        ],
+        "actual_operations": [
+          "external.api_write"
+        ],
+        "actual_action": "POST /admin/tenants/123",
+        "affected_resources": [
+          "api/admin"
+        ],
+        "targets": [
+          "tenant/123"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-actual-write-not-covered-by-plan",
+        "execution_nonce": "nonce-actual-write-not-covered-by-plan-00000001"
       },
-      "expected_error_contains": "not covered by the plan"
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision"
+      ],
+      "notes": "Failure reason is intentionally not exact-string matched; covers identifies the normative rule."
     },
     {
       "id": "missing-raw-exposure-facts",
-      "planned_operations": [
-        "external.api_write"
+      "description": "missing raw exposure facts",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:external.api_write",
+        "exposure.required_facts"
       ],
-      "actual_operations": [
-        "external.api_write"
-      ],
-      "actual_action": "POST /internal/update",
-      "affected_resources": [
-        "api/internal"
-      ],
-      "targets": [
-        "tenant/123"
-      ],
-      "environment": "external",
-      "exposure_facts": {
-        "data_classification": "internal"
+      "input": {
+        "planned_operations": [
+          "external.api_write"
+        ],
+        "actual_operations": [
+          "external.api_write"
+        ],
+        "actual_action": "POST /internal/update",
+        "affected_resources": [
+          "api/internal"
+        ],
+        "targets": [
+          "tenant/123"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "internal"
+        },
+        "correlation_id": "conformance-missing-raw-exposure-facts",
+        "execution_nonce": "nonce-missing-raw-exposure-facts-00000001"
       },
-      "expected_error_contains": "missing required key"
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision"
+      ],
+      "notes": "Failure reason is intentionally not exact-string matched; covers identifies the normative rule."
     },
     {
       "id": "kubectl-namespace-delete-underreported-as-change",
-      "planned_operations": [
-        "cloud.resource_change"
+      "description": "kubectl namespace delete underreported as change",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:cloud.resource_change",
+        "runtime.high_confidence_signature"
       ],
-      "actual_operations": [
-        "cloud.resource_change"
-      ],
-      "actual_action": "kubectl delete namespace demo",
-      "affected_resources": [
-        "namespace/demo"
-      ],
-      "targets": [
-        "test/cluster-a/namespace/demo"
-      ],
-      "environment": "test",
-      "exposure_facts": {
-        "data_classification": "public",
-        "credential_class": "none",
-        "tenant_scope": "single_user",
-        "public_visibility": "none",
-        "estimated_blast_radius": "bounded_set",
-        "estimated_financial_impact": "none"
+      "input": {
+        "planned_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_operations": [
+          "cloud.resource_change"
+        ],
+        "actual_action": "kubectl delete namespace demo",
+        "affected_resources": [
+          "namespace/demo"
+        ],
+        "targets": [
+          "test/cluster-a/namespace/demo"
+        ],
+        "environment": "test",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-kubectl-namespace-delete-underreported-as-change",
+        "execution_nonce": "nonce-kubectl-namespace-delete-underreported-as-change-00000001"
       },
-      "expected_error_contains": "high-confidence action signature"
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision"
+      ],
+      "notes": "Failure reason is intentionally not exact-string matched; covers identifies the normative rule."
     },
     {
       "id": "tracked-delete-without-recoverability-proof",
-      "planned_operations": [
-        "filesystem.tracked_delete"
+      "description": "tracked delete without recoverability proof",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:filesystem.tracked_delete",
+        "semantic_details.binding"
       ],
-      "actual_operations": [
-        "filesystem.tracked_delete"
-      ],
-      "actual_action": "delete src/obsolete.py",
-      "affected_resources": [
-        "src/obsolete.py"
-      ],
-      "targets": [],
-      "environment": "local",
-      "exposure_facts": {
-        "data_classification": "public",
-        "credential_class": "none",
-        "tenant_scope": "single_user",
-        "public_visibility": "none",
-        "estimated_blast_radius": "single_resource",
-        "estimated_financial_impact": "none"
+      "input": {
+        "planned_operations": [
+          "filesystem.tracked_delete"
+        ],
+        "actual_operations": [
+          "filesystem.tracked_delete"
+        ],
+        "actual_action": "delete src/obsolete.py",
+        "affected_resources": [
+          "src/obsolete.py"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "semantic_details": {},
+        "correlation_id": "conformance-tracked-delete-without-recoverability-proof",
+        "execution_nonce": "nonce-tracked-delete-without-recoverability-proof-00000001"
       },
-      "semantic_details": {},
-      "expected_error_contains": "requires semantic_details.recoverability"
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision"
+      ],
+      "notes": "Failure reason is intentionally not exact-string matched; covers identifies the normative rule."
+    },
+    {
+      "id": "routing-unknown-operation-enforcement",
+      "description": "Unknown planned operation fails closed in enforcement mode",
+      "category": "routing-invalid",
+      "kind": "routing",
+      "covers": [
+        "routing.unknown_operation_rejection",
+        "routing.enforcement"
+      ],
+      "input": {
+        "task_text": "",
+        "planned_operations": [
+          "made.up.operation"
+        ],
+        "affected_resources": [],
+        "routing_mode": "enforcement"
+      },
+      "expected": {
+        "routing_status": "FAIL",
+        "unresolved_operations": [
+          "made.up.operation"
+        ]
+      },
+      "normative_fields": [
+        "/routing_status",
+        "/unresolved_operations"
+      ]
+    },
+    {
+      "id": "target-required-for-x3",
+      "description": "High exposure action without a concrete target fails closed",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "target.requirement",
+        "exposure.derivation"
+      ],
+      "input": {
+        "planned_operations": [
+          "code.modify"
+        ],
+        "actual_operations": [
+          "code.modify"
+        ],
+        "actual_action": "edit",
+        "affected_resources": [
+          "src/app.py"
+        ],
+        "targets": [],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "restricted",
+          "credential_class": "privileged_credential",
+          "tenant_scope": "organization_wide",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        },
+        "correlation_id": "target-x3-1",
+        "execution_nonce": "target-required-00001"
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "effective_exposure": "X3"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision",
+        "/effective_exposure"
+      ]
+    },
+    {
+      "id": "invalid-environment-rejected",
+      "description": "Unknown environment token outside the canonical enum fails closed",
+      "category": "execution-boundary-invalid",
+      "kind": "execution_boundary",
+      "covers": [
+        "environment.requirement"
+      ],
+      "input": {
+        "planned_operations": [
+          "code.modify"
+        ],
+        "actual_operations": [
+          "code.modify"
+        ],
+        "actual_action": "edit",
+        "affected_resources": [
+          "src/app.py"
+        ],
+        "targets": [],
+        "environment": "moon",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "env-invalid-1",
+        "execution_nonce": "invalid-environment-001"
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR"
+      },
+      "normative_fields": [
+        "/status",
+        "/decision"
+      ]
+    },
+    {
+      "id": "approval-expired",
+      "description": "Expired approval is invalid",
+      "category": "approval-invalid",
+      "kind": "approval",
+      "covers": [
+        "approval.expiry"
+      ],
+      "input": {
+        "boundary": {
+          "planned_operations": [
+            "database.write"
+          ],
+          "actual_operations": [
+            "database.write"
+          ],
+          "actual_action": "update test row",
+          "affected_resources": [
+            "users"
+          ],
+          "targets": [
+            "db/test/users"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "internal",
+            "credential_class": "none",
+            "tenant_scope": "single_tenant",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "approval-correlation-1",
+          "execution_nonce": "approval-nonce-0000001"
+        },
+        "assertion": {
+          "schema_version": 2,
+          "approval": {
+            "approval_id": "approval-conformance-1",
+            "issuer": "conformance-human",
+            "decision": "APPROVE",
+            "scope": "exact action only",
+            "issued_at": "2025-12-31T23:00:00Z",
+            "expires_at": "2025-12-31T23:20:00Z",
+            "operations": "$ACTUAL_OPERATIONS",
+            "targets": "$TARGETS",
+            "environment": "$ENVIRONMENT",
+            "correlation_id": "$CORRELATION_ID",
+            "execution_nonce": "$EXECUTION_NONCE",
+            "single_use": true,
+            "action_digest": "$ACTION_DIGEST",
+            "authorization_reference": "ticket:CONFORMANCE-1"
+          }
+        },
+        "reference_time": "2026-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "temporal": "INVALID"
+      },
+      "normative_fields": [
+        "/object_validity",
+        "/temporal"
+      ]
+    },
+    {
+      "id": "approval-wrong-target",
+      "description": "Approval target must exactly match runtime targets",
+      "category": "approval-invalid",
+      "kind": "approval",
+      "covers": [
+        "approval.target_binding"
+      ],
+      "input": {
+        "boundary": {
+          "planned_operations": [
+            "database.write"
+          ],
+          "actual_operations": [
+            "database.write"
+          ],
+          "actual_action": "update test row",
+          "affected_resources": [
+            "users"
+          ],
+          "targets": [
+            "db/test/users"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "internal",
+            "credential_class": "none",
+            "tenant_scope": "single_tenant",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "approval-correlation-1",
+          "execution_nonce": "approval-nonce-0000001"
+        },
+        "assertion": {
+          "schema_version": 2,
+          "approval": {
+            "approval_id": "approval-conformance-1",
+            "issuer": "conformance-human",
+            "decision": "APPROVE",
+            "scope": "exact action only",
+            "issued_at": "2026-01-01T00:00:00Z",
+            "expires_at": "2026-01-01T00:20:00Z",
+            "operations": "$ACTUAL_OPERATIONS",
+            "targets": [
+              "db/test/other"
+            ],
+            "environment": "$ENVIRONMENT",
+            "correlation_id": "$CORRELATION_ID",
+            "execution_nonce": "$EXECUTION_NONCE",
+            "single_use": true,
+            "action_digest": "$ACTION_DIGEST",
+            "authorization_reference": "ticket:CONFORMANCE-1"
+          }
+        },
+        "reference_time": "2026-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "/object_validity",
+        "/binding"
+      ]
+    },
+    {
+      "id": "approval-wrong-environment",
+      "description": "Approval environment must exactly match runtime environment",
+      "category": "approval-invalid",
+      "kind": "approval",
+      "covers": [
+        "approval.environment_binding"
+      ],
+      "input": {
+        "boundary": {
+          "planned_operations": [
+            "database.write"
+          ],
+          "actual_operations": [
+            "database.write"
+          ],
+          "actual_action": "update test row",
+          "affected_resources": [
+            "users"
+          ],
+          "targets": [
+            "db/test/users"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "internal",
+            "credential_class": "none",
+            "tenant_scope": "single_tenant",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "approval-correlation-1",
+          "execution_nonce": "approval-nonce-0000001"
+        },
+        "assertion": {
+          "schema_version": 2,
+          "approval": {
+            "approval_id": "approval-conformance-1",
+            "issuer": "conformance-human",
+            "decision": "APPROVE",
+            "scope": "exact action only",
+            "issued_at": "2026-01-01T00:00:00Z",
+            "expires_at": "2026-01-01T00:20:00Z",
+            "operations": "$ACTUAL_OPERATIONS",
+            "targets": "$TARGETS",
+            "environment": "staging",
+            "correlation_id": "$CORRELATION_ID",
+            "execution_nonce": "$EXECUTION_NONCE",
+            "single_use": true,
+            "action_digest": "$ACTION_DIGEST",
+            "authorization_reference": "ticket:CONFORMANCE-1"
+          }
+        },
+        "reference_time": "2026-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "/object_validity",
+        "/binding"
+      ]
+    },
+    {
+      "id": "approval-wrong-correlation",
+      "description": "Approval correlation ID must exactly match runtime action",
+      "category": "approval-invalid",
+      "kind": "approval",
+      "covers": [
+        "approval.correlation_binding"
+      ],
+      "input": {
+        "boundary": {
+          "planned_operations": [
+            "database.write"
+          ],
+          "actual_operations": [
+            "database.write"
+          ],
+          "actual_action": "update test row",
+          "affected_resources": [
+            "users"
+          ],
+          "targets": [
+            "db/test/users"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "internal",
+            "credential_class": "none",
+            "tenant_scope": "single_tenant",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "approval-correlation-1",
+          "execution_nonce": "approval-nonce-0000001"
+        },
+        "assertion": {
+          "schema_version": 2,
+          "approval": {
+            "approval_id": "approval-conformance-1",
+            "issuer": "conformance-human",
+            "decision": "APPROVE",
+            "scope": "exact action only",
+            "issued_at": "2026-01-01T00:00:00Z",
+            "expires_at": "2026-01-01T00:20:00Z",
+            "operations": "$ACTUAL_OPERATIONS",
+            "targets": "$TARGETS",
+            "environment": "$ENVIRONMENT",
+            "correlation_id": "wrong-correlation",
+            "execution_nonce": "$EXECUTION_NONCE",
+            "single_use": true,
+            "action_digest": "$ACTION_DIGEST",
+            "authorization_reference": "ticket:CONFORMANCE-1"
+          }
+        },
+        "reference_time": "2026-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "/object_validity",
+        "/binding"
+      ]
+    },
+    {
+      "id": "approval-wrong-nonce",
+      "description": "Approval nonce must exactly match runtime action",
+      "category": "approval-invalid",
+      "kind": "approval",
+      "covers": [
+        "approval.nonce_binding"
+      ],
+      "input": {
+        "boundary": {
+          "planned_operations": [
+            "database.write"
+          ],
+          "actual_operations": [
+            "database.write"
+          ],
+          "actual_action": "update test row",
+          "affected_resources": [
+            "users"
+          ],
+          "targets": [
+            "db/test/users"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "internal",
+            "credential_class": "none",
+            "tenant_scope": "single_tenant",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "approval-correlation-1",
+          "execution_nonce": "approval-nonce-0000001"
+        },
+        "assertion": {
+          "schema_version": 2,
+          "approval": {
+            "approval_id": "approval-conformance-1",
+            "issuer": "conformance-human",
+            "decision": "APPROVE",
+            "scope": "exact action only",
+            "issued_at": "2026-01-01T00:00:00Z",
+            "expires_at": "2026-01-01T00:20:00Z",
+            "operations": "$ACTUAL_OPERATIONS",
+            "targets": "$TARGETS",
+            "environment": "$ENVIRONMENT",
+            "correlation_id": "$CORRELATION_ID",
+            "execution_nonce": "wrong-nonce-00000001",
+            "single_use": true,
+            "action_digest": "$ACTION_DIGEST",
+            "authorization_reference": "ticket:CONFORMANCE-1"
+          }
+        },
+        "reference_time": "2026-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "/object_validity",
+        "/binding"
+      ]
+    },
+    {
+      "id": "approval-wrong-digest",
+      "description": "Approval digest must exactly match runtime action digest",
+      "category": "approval-invalid",
+      "kind": "approval",
+      "covers": [
+        "approval.digest_binding"
+      ],
+      "input": {
+        "boundary": {
+          "planned_operations": [
+            "database.write"
+          ],
+          "actual_operations": [
+            "database.write"
+          ],
+          "actual_action": "update test row",
+          "affected_resources": [
+            "users"
+          ],
+          "targets": [
+            "db/test/users"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "internal",
+            "credential_class": "none",
+            "tenant_scope": "single_tenant",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "approval-correlation-1",
+          "execution_nonce": "approval-nonce-0000001"
+        },
+        "assertion": {
+          "schema_version": 2,
+          "approval": {
+            "approval_id": "approval-conformance-1",
+            "issuer": "conformance-human",
+            "decision": "APPROVE",
+            "scope": "exact action only",
+            "issued_at": "2026-01-01T00:00:00Z",
+            "expires_at": "2026-01-01T00:20:00Z",
+            "operations": "$ACTUAL_OPERATIONS",
+            "targets": "$TARGETS",
+            "environment": "$ENVIRONMENT",
+            "correlation_id": "$CORRELATION_ID",
+            "execution_nonce": "$EXECUTION_NONCE",
+            "single_use": true,
+            "action_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "authorization_reference": "ticket:CONFORMANCE-1"
+          }
+        },
+        "reference_time": "2026-01-01T00:10:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "/object_validity",
+        "/binding"
+      ]
+    },
+    {
+      "id": "override-wrong-digest",
+      "description": "Protected override digest must exactly match the imminent action",
+      "category": "override-invalid",
+      "kind": "protected_override",
+      "covers": [
+        "protected_override.digest_binding"
+      ],
+      "input": {
+        "boundary": {
+          "planned_operations": [
+            "code.modify"
+          ],
+          "actual_operations": [
+            "code.modify"
+          ],
+          "actual_action": "edit privileged config",
+          "affected_resources": [
+            "src/config.py"
+          ],
+          "targets": [
+            "workspace/src/config.py"
+          ],
+          "environment": "local",
+          "exposure_facts": {
+            "data_classification": "restricted",
+            "credential_class": "privileged_credential",
+            "tenant_scope": "organization_wide",
+            "public_visibility": "none",
+            "estimated_blast_radius": "service",
+            "estimated_financial_impact": "bounded"
+          },
+          "correlation_id": "override-correlation-1",
+          "execution_nonce": "override-nonce-0000001"
+        },
+        "assertion": {
+          "schema_version": 1,
+          "override_id": "override-conformance-1",
+          "issuer": "conformance-admin",
+          "issued_at": "2026-01-01T00:00:00Z",
+          "expires_at": "2026-01-01T00:10:00Z",
+          "scope": "exact action only",
+          "operations": "$ACTUAL_OPERATIONS",
+          "targets": "$TARGETS",
+          "environment": "$ENVIRONMENT",
+          "correlation_id": "$CORRELATION_ID",
+          "execution_nonce": "$EXECUTION_NONCE",
+          "action_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+          "single_use": true,
+          "authorization_reference": "change:CONFORMANCE-1"
+        },
+        "reference_time": "2026-01-01T00:05:00Z"
+      },
+      "expected": {
+        "object_validity": "INVALID",
+        "binding": "INVALID"
+      },
+      "normative_fields": [
+        "/object_validity",
+        "/binding"
+      ]
+    },
+    {
+      "id": "readiness-template-not-ready",
+      "description": "Template project facts are not development-ready",
+      "category": "readiness-invalid",
+      "kind": "readiness",
+      "covers": [
+        "readiness.documented",
+        "readiness.template"
+      ],
+      "input": {
+        "project": {
+          "profile": "template",
+          "facts": {
+            "repository_root": {
+              "value": "",
+              "status": "Unknown",
+              "evidence": ""
+            },
+            "primary_source": {
+              "value": "",
+              "status": "Unknown",
+              "evidence": ""
+            },
+            "build_command": {
+              "value": "",
+              "status": "Unknown",
+              "evidence": ""
+            },
+            "test_command": {
+              "value": "",
+              "status": "Unknown",
+              "evidence": ""
+            },
+            "runtime": {
+              "value": "",
+              "status": "Unknown",
+              "evidence": ""
+            },
+            "deploy_command": {
+              "value": "",
+              "status": "Unknown",
+              "evidence": ""
+            },
+            "deploy_target": {
+              "value": "",
+              "status": "Unknown",
+              "evidence": ""
+            }
+          },
+          "components": [],
+          "review": {
+            "reviewed_revision": "",
+            "reviewed_at": "",
+            "reviewed_paths": []
+          }
+        },
+        "mode": "development",
+        "reference_time": "2026-01-10T00:00:00Z",
+        "files": {}
+      },
+      "expected": {
+        "documented": "FAIL",
+        "evidence_verified": "FAIL",
+        "execution_verified": "NOT_RUN"
+      },
+      "normative_fields": [
+        "/documented",
+        "/evidence_verified",
+        "/execution_verified"
+      ]
+    },
+    {
+      "id": "readiness-missing-evidence-path",
+      "description": "Confirmed path evidence that does not exist fails evidence verification",
+      "category": "readiness-invalid",
+      "kind": "readiness",
+      "covers": [
+        "readiness.evidence_states",
+        "readiness.path_evidence"
+      ],
+      "input": {
+        "project": {
+          "profile": "project",
+          "facts": {
+            "repository_root": {
+              "value": ".",
+              "status": "Confirmed",
+              "evidence": "manual:fixture root"
+            },
+            "primary_source": {
+              "value": "missing",
+              "status": "Confirmed",
+              "evidence": "path:missing"
+            },
+            "build_command": {
+              "value": "build",
+              "status": "Confirmed",
+              "evidence": "manual:build confirmed"
+            },
+            "test_command": {
+              "value": "test",
+              "status": "Confirmed",
+              "evidence": "manual:test confirmed"
+            },
+            "runtime": {
+              "value": "runtime",
+              "status": "Confirmed",
+              "evidence": "manual:runtime confirmed"
+            },
+            "deploy_command": {
+              "value": "",
+              "status": "N/A",
+              "evidence": "manual:not deployed"
+            },
+            "deploy_target": {
+              "value": "",
+              "status": "N/A",
+              "evidence": "manual:not deployed"
+            }
+          },
+          "components": [
+            {
+              "name": "src",
+              "path": "src",
+              "responsibility": "fixture source"
+            }
+          ],
+          "review": {
+            "reviewed_revision": "fixture-revision",
+            "reviewed_at": "2026-01-01T00:00:00Z",
+            "reviewed_paths": []
+          }
+        },
+        "mode": "development",
+        "reference_time": "2026-01-10T00:00:00Z",
+        "files": {
+          "src/.keep": ""
+        }
+      },
+      "expected": {
+        "documented": "PASS",
+        "evidence_verified": "FAIL",
+        "execution_verified": "NOT_RUN"
+      },
+      "normative_fields": [
+        "/documented",
+        "/evidence_verified",
+        "/execution_verified"
+      ]
+    },
+    {
+      "id": "distribution-path-traversal",
+      "description": "Archive path traversal is rejected before extraction",
+      "category": "distribution-invalid",
+      "kind": "distribution",
+      "covers": [
+        "distribution.path_traversal"
+      ],
+      "input": {
+        "entries": [
+          {
+            "name": "../evil.txt",
+            "data": "x"
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "has_unsafe_entries": true
+      },
+      "normative_fields": [
+        "/status",
+        "/has_unsafe_entries"
+      ]
+    },
+    {
+      "id": "distribution-duplicate-entry",
+      "description": "Duplicate archive entries are rejected",
+      "category": "distribution-invalid",
+      "kind": "distribution",
+      "covers": [
+        "distribution.duplicate_entry"
+      ],
+      "input": {
+        "entries": [
+          {
+            "name": "universal-agent-docs/README.md",
+            "data": "a"
+          },
+          {
+            "name": "universal-agent-docs/README.md",
+            "data": "b"
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "has_duplicate_entries": true
+      },
+      "normative_fields": [
+        "/status",
+        "/has_duplicate_entries"
+      ]
+    },
+    {
+      "id": "distribution-casefold-collision",
+      "description": "Case-insensitive path collisions are rejected",
+      "category": "distribution-invalid",
+      "kind": "distribution",
+      "covers": [
+        "distribution.casefold_collision"
+      ],
+      "input": {
+        "entries": [
+          {
+            "name": "universal-agent-docs/ReadMe.md",
+            "data": "a"
+          },
+          {
+            "name": "universal-agent-docs/README.md",
+            "data": "b"
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "has_name_collisions": true
+      },
+      "normative_fields": [
+        "/status",
+        "/has_name_collisions"
+      ]
+    },
+    {
+      "id": "distribution-unicode-collision",
+      "description": "Unicode-normalized path collisions are rejected",
+      "category": "distribution-invalid",
+      "kind": "distribution",
+      "covers": [
+        "distribution.unicode_collision"
+      ],
+      "input": {
+        "entries": [
+          {
+            "name": "universal-agent-docs/café.txt",
+            "data": "a"
+          },
+          {
+            "name": "universal-agent-docs/café.txt",
+            "data": "b"
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "has_name_collisions": true
+      },
+      "normative_fields": [
+        "/status",
+        "/has_name_collisions"
+      ]
+    },
+    {
+      "id": "distribution-symlink",
+      "description": "Symlink archive entries are rejected",
+      "category": "distribution-invalid",
+      "kind": "distribution",
+      "covers": [
+        "distribution.symlink"
+      ],
+      "input": {
+        "entries": [
+          {
+            "name": "universal-agent-docs/link",
+            "type": "symlink",
+            "data": "README.md"
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "has_symlinks": true
+      },
+      "normative_fields": [
+        "/status",
+        "/has_symlinks"
+      ]
+    },
+    {
+      "id": "distribution-resource-limit",
+      "description": "Oversized archive entries are rejected before extraction",
+      "category": "distribution-invalid",
+      "kind": "distribution",
+      "covers": [
+        "distribution.resource_limits"
+      ],
+      "input": {
+        "entries": [
+          {
+            "name": "universal-agent-docs/large.bin",
+            "repeat_byte": "x",
+            "size": 2000001
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "has_resource_limit_violations": true
+      },
+      "normative_fields": [
+        "/status",
+        "/has_resource_limit_violations"
+      ]
+    },
+    {
+      "id": "trust-manifest-tamper",
+      "description": "Tampered trusted-core digest is detected",
+      "category": "integrity-invalid",
+      "kind": "integrity",
+      "covers": [
+        "integrity.trust_manifest"
+      ],
+      "input": {
+        "scenario": "trust_manifest_tamper"
+      },
+      "expected": {
+        "status": "FAIL"
+      },
+      "normative_fields": [
+        "/status"
+      ]
+    },
+    {
+      "id": "release-manifest-artifact-hash-tamper",
+      "description": "Tampered release artifact digest is detected",
+      "category": "integrity-invalid",
+      "kind": "integrity",
+      "covers": [
+        "integrity.release_manifest"
+      ],
+      "input": {
+        "scenario": "release_manifest_artifact_hash_tamper"
+      },
+      "expected": {
+        "status": "FAIL"
+      },
+      "normative_fields": [
+        "/status"
+      ]
     }
   ]
 }
