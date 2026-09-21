@@ -40,3 +40,31 @@ explicit plan
 - 예제의 higher-authority/transport boolean은 production identity/transport control을 대신하는 명시적 stand-in이다.
 - production에서는 실제 tool/API 호출 앞의 trusted interception, 조직 identity/authorization, shared durable atomic ledger, trusted transport와 final dispatcher enforcement가 별도로 필요하다.
 - 이 예제는 특정 vendor/cloud/runtime 전체 지원을 주장하지 않는다.
+
+## GitHub issue production-shaped reference adapter
+
+`github_issue_adapter.py`는 core canonical operation `external.api_write`를 GitHub issue-create surface에 고정해 **실제 production integration에서 필요한 경계 순서**를 보여준다. 테스트와 demo는 `RecordingGitHubTransport`만 사용하며 네트워크나 실제 GitHub side effect를 발생시키지 않는다.
+
+```bash
+python examples/runtime-adapter/github_issue_adapter.py
+```
+
+핵심 차이는 precomputed boundary를 dispatcher가 그대로 믿지 않는다는 점이다. Dispatcher는 실제로 전송하려는 repository/title/body에서 target과 semantic digest를 다시 구성하고, 그 시점의 boundary를 다시 계산한 뒤 exact approval을 atomic consume한다. 따라서 승인 뒤 repository target이나 issue content가 바뀌면 transport 호출 전에 차단된다.
+
+이 reference가 보여주는 보장:
+
+- fixed tool surface에서 actual operation을 adapter가 독립 구성
+- concrete GitHub repository target과 external environment를 실행 직전에 재관찰
+- title/body digest를 `semantic_details`로 action digest에 결박
+- plan/actual mismatch, unknown/opaque operation, exposure fact 누락 fail-closed
+- approval exact binding, TTL과 single-use replay consume 후에만 dispatcher 호출
+
+이 reference가 **보장하지 않는 것**:
+
+- 실제 GitHub credential identity/authz
+- HTTPS endpoint/transport authenticity 자체의 구현
+- 모든 GitHub API surface의 interception
+- 분산 production shared replay ledger
+- GitHub API 성공과 audit sink를 하나의 exactly-once transaction으로 만드는 것
+
+Production에서는 위 항목을 소비 환경이 제공해야 한다. 전체 공격 모델과 residual risk는 [`docs/threat-model.md`](../../docs/threat-model.md)를 따른다.

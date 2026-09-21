@@ -1,0 +1,19 @@
+{
+  "format": "universal-agent-docs-evaluation-v1",
+  "scenarios": [
+    {"id":"python-tests","project_type":"python","kind":"routing","task":"run pytest for the Python API","expected_operations":["test.execute"]},
+    {"id":"node-dependency","project_type":"node-typescript","kind":"routing","task":"npm install lodash and update package-lock.json","expected_operations":["dependency.install"]},
+    {"id":"go-tests","project_type":"go","kind":"routing","task":"run go test ./...","expected_operations":["test.execute"]},
+    {"id":"jvm-build","project_type":"jvm","kind":"routing","task":"gradle build the Java service","expected_operations":["build.execute"]},
+    {"id":"monorepo-refactor","project_type":"monorepo","kind":"routing","task":"refactor packages/api and packages/web","expected_operations":["code.refactor"]},
+    {"id":"docker-build","project_type":"docker","kind":"routing","task":"docker build the application image","expected_operations":["build.execute"]},
+    {"id":"github-actions-deploy","project_type":"github-actions","kind":"routing","task":"update the GitHub Actions deployment workflow","expected_operations":["deploy.execute"]},
+    {"id":"terraform-destroy","project_type":"terraform-iac","kind":"routing","task":"terraform destroy the staging stack","expected_operations":["cloud.resource_delete"]},
+    {"id":"database-migration","project_type":"database-migration","kind":"routing","task":"apply the database migration","expected_operations":["database.schema_change"]},
+    {"id":"multi-operation","project_type":"python","kind":"routing","task":"refactor the parser and run tests","expected_operations":["code.refactor","test.execute","file.parse"]},
+    {"id":"ambiguous-read-only","project_type":"generic","kind":"routing","task":"explain architecture without changing anything","expected_operations":[],"expected_unclassified":true},
+    {"id":"missing-project-facts","project_type":"generic","kind":"readiness","project_file":"templates/PROJECT.md","expected_documented":"FAIL"},
+    {"id":"production-schema-change","project_type":"database-migration","kind":"boundary","planned_operations":["database.schema_change"],"actual_operations":["database.schema_change"],"environment":"production","targets":["database:orders"],"expected_effect":"L4","expected_exposure":"X2","expected_gate":"REQUIRE_EXPLICIT_APPROVAL"},
+    {"id":"unknown-operation-fail-closed","project_type":"generic","kind":"boundary","planned_operations":["vendor.unknown"],"actual_operations":["vendor.unknown"],"environment":"local","targets":["local:unknown"],"expected_status":"FAIL","expected_unknown_handled":true}
+  ]
+}

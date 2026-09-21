@@ -16,33 +16,33 @@
 
 > **Release channel:** Production adoption에는 최신 immutable SemVer Release를 우선한다. `main`에는 아직 Release되지 않은 변경이 있을 수 있으므로 source checkout은 unreleased 변경을 평가할 때 사용한다.
 
-## 어떤 Profile을 써야 하나?
-
-| Profile | 필요한 경우 | 이 저장소가 제공하는 것 | 추가 integration 필요 |
-|---|---|---|---|
-| **A — Guidance** | 에이전트에게 일관된 규칙과 project facts를 읽히고 싶다 | `AGENTS.md`, `POLICIES.md`, consumer `PROJECT.md` discipline | runtime 차단 없음 |
-| **B — Validated** | CI에서 routing/risk/readiness/integrity를 검증하고 싶다 | A + validator, Effect/Exposure/gate 계산, distribution/conformance validation | actual tool 호출 interception 없음 |
-| **C — Enforced Runtime** | 실제 side effect 직전에 allow/block/approval/override를 강제해야 한다 | B + runtime/approval/override contract와 reference semantics | trusted adapter/interceptor, issuer authz, transport, shared replay ledger, final dispatcher |
-
-선택 기준은 단순하다.
-
-1. 규칙을 읽히는 것만 필요하면 **A**.
-2. 자동 검증이 필요하면 **B**.
-3. 실제 실행을 기술적으로 막아야 하면 **C**.
-
-A/B/C는 서로 다른 ZIP이 아니다. 공식 consumer artifact는 동일한 full `.agent-policy/` bundle을 설치하고, 차이는 **어디까지 실제 runtime에 연결했는가**다.
-
-Profile C는 bundle을 설치하거나 `--routing-mode enforcement`를 실행했다고 자동으로 성립하지 않는다.
-
 ## 5분 Quick Start
 
-상세 설치·PROJECT bootstrap·readiness·A→B→C upgrade 절차의 primary owner는 [Adoption profiles](docs/adoption-profiles.md)다. 아래는 처음 방향을 잡기 위한 최소 흐름이다.
+처음 도입할 때 내부 schema나 runtime contract를 모두 이해할 필요는 없다. A/B/C는 **동일한 full `.agent-policy/` bundle**을 사용하며 Canonical onboarding은 하나다.
 
-### 1. Consumer artifact 확보
+```text
+install → bootstrap → human review → validate → optional runtime integration
+```
 
-가능하면 [GitHub Releases](https://github.com/tngkrwlsmd/universal-agent-docs/releases)의 최신 immutable SemVer Release에서 `universal-agent-docs-consumer.zip`을 사용한다.
+| 처음 묻는 질문 | 답 |
+|---|---|
+| **무엇을 설치하나?** | Release의 `universal-agent-docs-consumer.zip` 안 `.agent-policy/` bundle |
+| **무엇을 직접 수정하나?** | project-owned root `AGENTS.md` router 병합과 `.agent-policy/PROJECT.md`의 project facts |
+| **Profile A/B는 어떻게 구분하나?** | 지침만 연결하면 A, validator로 readiness/routing을 자동 검증하면 B |
 
-Unreleased `main`을 평가하거나 source tree 자체를 검증할 때만 source build를 사용한다.
+설치 후 파일 ownership도 단순하게 본다.
+
+| 경로 | 기본 owner | 규칙 |
+|---|---|---|
+| root `AGENTS.md` | consumer project | 기존 지시를 보존하고 universal policy router만 사람이 병합한다. 자동 overwrite하지 않는다. |
+| `.agent-policy/PROJECT.md` | consumer project | 실제 repository facts와 evidence를 사람이 검토해 유지한다. |
+| 그 외 `.agent-policy/` | upstream bundle | 임의 편집보다 새 Release로 교체한다. 조직별 확장은 공식 extension/capability contract를 사용한다. |
+
+### 1. Install
+
+가능하면 [GitHub Releases](https://github.com/tngkrwlsmd/universal-agent-docs/releases)의 최신 immutable SemVer Release에서 `universal-agent-docs-consumer.zip`을 받아 프로젝트의 `.agent-policy/`로 설치한다. Unreleased `main` 평가가 아니라면 source checkout에서 직접 만든 ZIP을 production provenance의 대체물로 취급하지 않는다.
+
+Source checkout 자체를 평가해야 할 때만 다음을 사용한다.
 
 ```bash
 git clone https://github.com/tngkrwlsmd/universal-agent-docs.git
@@ -51,21 +51,22 @@ python -m pip install --require-hashes --requirement requirements.lock
 python scripts/package_consumer.py --output-dir dist
 ```
 
-Source-built ZIP은 local validation에는 사용할 수 있지만 published Release의 publisher authenticity/provenance를 대신하지 않는다. Canonical source artifact `universal-agent-docs.zip`에는 source docs, `templates/PROJECT.md`, `examples/`가 포함된다. Consumer artifact `universal-agent-docs-consumer.zip`은 `.agent-policy/` policy/runtime surface를 제공하며 source-only template/example 경로는 포함하지 않는다.
+### 2. Bootstrap → human review
 
-### 2. 소비 프로젝트에 연결
+소비 프로젝트에서 conservative candidate를 만든다.
 
-Consumer artifact의 policy bundle은 프로젝트의 `.agent-policy/` 아래에 둔다. 기존 root `AGENTS.md`가 있으면 덮어쓰거나 단순 append하지 말고 project-specific instruction을 보존한 채 generated router를 사람이 병합한다.
+```bash
+python .agent-policy/scripts/validate.py --bootstrap-project . --bootstrap-output PROJECT.candidate.md
+```
 
-Canonical project facts의 기본 위치는 `.agent-policy/PROJECT.md`다. 설치 직후에는 template이므로 readiness PASS를 기대하지 않는다.
+Bootstrap 결과는 `Inferred`/`Unknown` 후보일 뿐 자동 `Confirmed`가 아니다. source/config/evidence와 대조해 맞는 값만 `.agent-policy/PROJECT.md`에 반영한다.
 
-처음 적용하는 흐름은 [Profile A/B consumer example](examples/consumer-basic/README.md)에서 before → after 형태로 볼 수 있다.
+이 시점까지 정책 지침을 읽히는 용도로만 사용하면 **Profile A — Guidance**다.
 
-### 3. Profile B validation
+### 3. Validate
 
 ```bash
 python .agent-policy/scripts/validate.py --project-root . --readiness development
-
 python .agent-policy/scripts/validate.py --routing-mode enforcement --route "run tests" --operation test.execute
 ```
 
@@ -75,13 +76,23 @@ python .agent-policy/scripts/validate.py --routing-mode enforcement --route "run
 python .agent-policy/scripts/validate.py --compiled-policy --operation code.modify --resource src/auth/login.py
 ```
 
-`documented=PASS` 또는 `evidence_verified=PASS`는 build/test/deploy command를 실제 실행해 성공했다는 뜻이 아니다. Validator의 기본 `execution_verified`는 `NOT_RUN`이다.
+Bundle/readiness/routing/risk를 자동 검증하면 **Profile B — Validated**다. `documented=PASS` 또는 `evidence_verified=PASS`는 build/test/deploy command의 실제 성공을 뜻하지 않으며 기본 `execution_verified`는 `NOT_RUN`이다.
 
-### 4. Profile C가 필요한 경우
+### 4. Optional runtime integration
 
-실제 tool/API/action 앞에 trusted runtime boundary를 연결해야 한다. Planner와 독립적으로 관찰된 actual operation, concrete target/environment/exposure facts, exact approval/override binding, atomic replay consumption, issuer/transport trust, final allow/block dispatcher가 필요하다.
+실제 tool/API/action 직전에 allow/block/approval/override를 집행해야 하면 **Profile C — Enforced Runtime**으로 확장한다. Planner와 독립적인 actual operation 관찰, concrete target/environment/exposure facts, exact approval/override binding, atomic replay consumption, issuer/transport trust와 final dispatcher가 필요하다. Bundle 설치나 `--routing-mode enforcement`만으로 Profile C가 되지 않는다.
 
-Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 [runtime adapter examples](examples/runtime-adapter/README.md)를 본다.
+상세 설치·PROJECT bootstrap/readiness·A→B→C upgrade 절차의 primary owner는 [Adoption profiles](docs/adoption-profiles.md)다. 작은 before/after 흐름은 [Profile A/B consumer example](examples/consumer-basic/README.md), 신뢰 경계는 [Threat model](docs/threat-model.md), 실행 형태는 [runtime adapter examples](examples/runtime-adapter/README.md)를 따른다.
+
+## 어떤 Profile을 써야 하나?
+
+| Profile | 필요한 경우 | 이 저장소가 제공하는 것 | 추가 integration 필요 |
+|---|---|---|---|
+| **A — Guidance** | 에이전트에게 일관된 규칙과 project facts를 읽히고 싶다 | `AGENTS.md`, `POLICIES.md`, consumer `PROJECT.md` discipline | runtime 차단 없음 |
+| **B — Validated** | CI에서 routing/risk/readiness/integrity를 검증하고 싶다 | A + validator, Effect/Exposure/gate 계산, distribution/conformance validation | actual tool 호출 interception 없음 |
+| **C — Enforced Runtime** | 실제 side effect 직전에 allow/block/approval/override를 강제해야 한다 | B + runtime/approval/override contract와 reference semantics | trusted adapter/interceptor, issuer authz, transport, shared replay ledger, final dispatcher |
+
+A/B/C는 서로 다른 ZIP이 아니라 같은 bundle을 **어디까지 실제 runtime에 연결했는가**의 차이다.
 
 ## 문서 지도
 
@@ -90,6 +101,8 @@ Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 [runtime ad
 | [README.md](README.md) | landing page / orientation |
 | [docs/adoption-profiles.md](docs/adoption-profiles.md) | consumer installation, PROJECT bootstrap/readiness, A/B/C adoption |
 | [docs/extensions.md](docs/extensions.md) | operation extension, adapter capability, integrity/authority boundary |
+| [docs/threat-model.md](docs/threat-model.md) | Profile C trust boundary, threat, residual risk와 integration responsibility |
+| [evaluation/README.md](evaluation/README.md) | non-normative practical evaluation corpus와 품질 지표 |
 | [conformance/README.md](conformance/README.md) | language-neutral conformance protocol |
 | [AGENTS.md](AGENTS.md) | 항상 읽는 작은 root router와 공통 invariant |
 | [POLICIES.md](POLICIES.md) | human-facing policy rationale/procedure |
@@ -118,6 +131,7 @@ universal-agent-docs/
 ├── docs/
 │   ├── adoption-profiles.md
 │   ├── extensions.md
+│   ├── threat-model.md
 │   └── generated-policy-reference.md
 ├── examples/
 │   ├── consumer-basic/
@@ -125,9 +139,13 @@ universal-agent-docs/
 │   ├── capabilities/
 │   └── runtime-adapter/
 ├── conformance/
+├── evaluation/
 ├── scripts/
 │   ├── validate.py
 │   ├── conformance.py
+│   ├── evaluate.py
+│   ├── policy_diff.py
+│   ├── benchmark.py
 │   ├── package.py
 │   ├── package_consumer.py
 │   └── validation/
@@ -160,9 +178,12 @@ python scripts/validate.py
 python -m unittest discover -s tests -v
 python scripts/conformance.py
 python scripts/conformance.py --coverage
+python scripts/evaluate.py --fail-on-mismatch
 ```
 
-CI는 Linux/macOS/Windows × Python 3.10/3.14에서 bundle validation, tests, conformance, canonical/consumer distribution build와 verification을 수행한다.
+Conformance는 normative semantics의 구현 정합성이고 `evaluation/`은 representative real-world routing/gate 품질 측정이다. 둘을 같은 PASS 의미로 취급하지 않는다. Policy contract upgrade 영향을 비교하려면 `python scripts/policy_diff.py <before.json> <after.json>`을 사용한다. JSON Schema required-field 변화까지 보려면 `--before-schema`와 `--after-schema`를 함께 넘긴다. 또한 정책 적용 비용 baseline은 `python scripts/benchmark.py --static-only --json`으로 측정할 수 있다. Timing benchmark는 환경 의존 값이므로 기본 CI threshold로 사용하지 않는다.
+
+CI는 Linux/macOS/Windows × Python 3.10/3.14에서 bundle validation, tests, conformance, practical evaluation, canonical/consumer distribution build와 verification을 수행한다.
 
 Release는 `.github/workflows/release.yml`의 SemVer tag flow를 사용하며 immutable Release와 provenance verification을 우회하지 않는다. Canonical source artifact 이름은 `universal-agent-docs.zip`, consumer artifact 이름은 `universal-agent-docs-consumer.zip`이다.
 

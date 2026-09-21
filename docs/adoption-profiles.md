@@ -4,6 +4,30 @@
 
 이 문서는 **consumer installation, PROJECT bootstrap/readiness, A→B→C adoption 절차의 primary owner**다. README는 방향 선택과 최소 시작점만 제공하며, 실제 도입 절차는 이 문서를 기준으로 유지한다. 처음 적용하는 작은 before/after 흐름은 [Profile A/B consumer example](../examples/consumer-basic/README.md)을 함께 볼 수 있다. 이 source example은 canonical source Release artifact에는 포함되지만 consumer `.agent-policy` artifact에는 포함되지 않는다.
 
+## Canonical onboarding flow
+
+처음 도입하는 사용자는 내부 contract 전체를 먼저 이해할 필요가 없다. Profile A/B의 canonical flow는 다음 하나로 유지한다.
+
+```text
+install → bootstrap → human review → validate → optional runtime integration
+```
+
+| 단계 | 사용자가 하는 일 | 결과 |
+|---|---|---|
+| install | immutable Release의 consumer `.agent-policy/` bundle 설치, 기존 root `AGENTS.md`에 router를 사람이 병합 | Profile A 기반 |
+| bootstrap | `--bootstrap-project`로 project facts 후보 생성 | `Inferred`/`Unknown` candidate |
+| human review | source/config/evidence와 대조해 `.agent-policy/PROJECT.md`만 project facts로 확정 | documented facts |
+| validate | `--readiness`, `--routing-mode enforcement`, 필요 시 `--compiled-policy` 실행 | Profile B 자동 검증 |
+| optional runtime integration | trusted adapter/interceptor와 dispatcher를 tool/API 앞에 연결 | 필요한 경우 Profile C |
+
+설치 후 ownership은 다음처럼 유지한다.
+
+- root `AGENTS.md`: consumer project-owned. 기존 instruction을 보존하고 router만 병합하며 자동 overwrite하지 않는다.
+- `.agent-policy/PROJECT.md`: consumer project-owned facts. Upstream template을 시작점으로 삼되 실제 evidence에 맞게 유지한다.
+- 나머지 `.agent-policy/`: upstream-managed bundle. 직접 fork하기보다 versioned Release 교체와 extension/capability contract를 우선한다.
+
+Profile C의 trust boundary와 공격/잔여 위험은 [Threat model](threat-model.md)이 primary owner다. `schema-valid`, validator `PASS`, digest match만으로 issuer/adapter/transport authority가 성립하지 않는다.
+
 ## 구현 중립성의 범위
 
 policy model, canonical operation ID, `POLICY_CONTRACT.json`과 language-neutral conformance corpus는 특정 구현 언어를 전제로 하지 않는다. 다른 언어의 policy engine은 repository의 Python module을 import하지 않고 JSON contract/corpus를 구현해 동일 normative result를 낼 수 있다.
@@ -53,7 +77,7 @@ python -m zipfile -e dist/universal-agent-docs-consumer.zip uad-consumer-stage
 
 ### Distribution file ownership
 
-`distribution.required_files`는 consumer `.agent-policy/`에 vendoring되는 필수 policy/runtime surface이며 canonical source artifact에도 반드시 존재한다. `distribution.allowed_files`는 canonical source artifact의 전체 allowlist로, required consumer files에 `templates/PROJECT.md`, examples 같은 승인된 source-only material을 더한 superset이다. 따라서 consumer packager는 `required_files`를 사용하고 canonical source packager는 `allowed_files`를 사용한다. Source template의 primary path는 `templates/PROJECT.md`이며 root `PROJECT.md`는 compatibility mirror다; consumer package는 primary template content를 `.agent-policy/PROJECT.md`로 materialize한다.
+`distribution.required_files`는 consumer `.agent-policy/`에 vendoring되는 필수 policy/runtime surface이며 canonical source artifact에도 반드시 존재한다. `distribution.allowed_files`는 canonical source artifact의 전체 allowlist로, required consumer files에 `templates/PROJECT.md`, examples, evaluation/tooling/test 같은 승인된 source-only material을 더한 superset이다. 따라서 consumer packager는 `required_files`를 사용하고 canonical source packager는 `allowed_files`를 사용한다. Source template의 primary path는 `templates/PROJECT.md`이며 root `PROJECT.md`는 compatibility mirror다; consumer package는 primary template content를 `.agent-policy/PROJECT.md`로 materialize한다.
 
 ### Staging and install
 
@@ -274,7 +298,7 @@ action digest는 adapter가 imminent action을 관찰하고 assertion을 확정�
 
 이 예제에서 reference validator는 3번과 5번의 policy/binding 판단을 구현하는 기준이 될 수 있지만, 1) 실제 send call interception, 2) adapter producer/transport 인증, 3) issuer authority 인증, 4) production-grade shared atomic ledger, 5) 최종 tool dispatch 차단은 소비 runtime이 제공해야 한다.
 
-같은 흐름을 실제 reference code로 실행하려면 **source repository checkout**의 `examples/runtime-adapter/mock_runtime.py`를 사용한다. source-only 예제이며 canonical consumer/release bundle에 포함되는 runtime adapter라고 간주하지 않는다. 이 예제는 외부 시스템을 호출하지 않고 첫 approval consumption은 성공하고 동일 approval replay는 차단되는 것을 검증한다.
+같은 흐름을 실제 reference code로 실행하려면 **source repository checkout**의 `examples/runtime-adapter/mock_runtime.py`를 사용한다. source-only 예제이며 consumer `.agent-policy` bundle에 포함되는 runtime adapter라고 간주하지 않는다. 이 예제는 외부 시스템을 호출하지 않고 첫 approval consumption은 성공하고 동일 approval replay는 차단되는 것을 검증한다.
 
 ### Fail-closed conditions
 
