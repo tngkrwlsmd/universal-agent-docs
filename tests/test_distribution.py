@@ -49,7 +49,7 @@ class DistributionTests(unittest.TestCase):
         self.assertIn("tests/test_github_reference_adapter.py", source_only)
         self.assertTrue(all(
             path == "templates/PROJECT.md"
-            or path.startswith(("examples/", "evaluation/", "scripts/", "tests/"))
+            or path.startswith(("examples/", "evaluation/", "scripts/", "tests/", "conformance/reference-javascript/"))
             for path in source_only
         ))
 

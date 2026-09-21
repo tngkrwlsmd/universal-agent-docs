@@ -49,7 +49,7 @@ explicit plan
 python examples/runtime-adapter/github_issue_adapter.py
 ```
 
-핵심 차이는 precomputed boundary를 dispatcher가 그대로 믿지 않는다는 점이다. Dispatcher는 실제로 전송하려는 repository/title/body에서 target과 semantic digest를 다시 구성하고, 그 시점의 boundary를 다시 계산한 뒤 exact approval을 atomic consume한다. 따라서 승인 뒤 repository target이나 issue content가 바뀌면 transport 호출 전에 차단된다.
+핵심 차이는 precomputed boundary를 dispatcher가 그대로 믿지 않는다는 점이다. 또한 production-shaped path에서는 `exposure_facts` 생략을 허용하지 않는다. demo의 낮은 위험 값은 `demo_exposure_facts()`라는 명시적 fixture에만 존재하며 실제 adapter는 authenticated runtime context에서 raw facts를 공급해야 한다. Dispatcher는 실제로 전송하려는 repository/title/body에서 target과 semantic digest를 다시 구성하고, 그 시점의 boundary를 다시 계산한 뒤 exact approval을 atomic consume한다. 따라서 승인 뒤 repository target이나 issue content가 바뀌면 transport 호출 전에 차단된다.
 
 이 reference가 보여주는 보장:
 

@@ -42,6 +42,19 @@ def collect_static_metrics() -> dict:
     required = contract["distribution"]["required_files"]
     bundle_bytes = sum((ROOT / rel).stat().st_size for rel in required)
     agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+    compiled_cases = {}
+    for name, operations, resources in (
+        ("code_modify", ["code.modify"], ["src/simple.py"]),
+        ("code_modify_auth", ["code.modify"], ["src/auth/login.py"]),
+        ("test_execute", ["test.execute"], ["tests/test_app.py"]),
+        ("git_commit", ["git.commit"], [".git/COMMIT_EDITMSG"]),
+        ("database_schema_change", ["database.schema_change"], ["db/migrations/001.sql"]),
+        ("external_api_write", ["external.api_write"], ["src/integration.py"]),
+    ):
+        rendered = policy.render_compiled_policy_view(policy.compile_policy_view(
+            contract, operations=operations, resources=resources, routing_mode="enforcement"
+        ))
+        compiled_cases[name] = _text_metrics(rendered)
     compiled = policy.render_compiled_policy_view(policy.compile_policy_view(
         contract, operations=["code.modify"], resources=["src/auth/login.py"], routing_mode="enforcement"
     ))
@@ -56,6 +69,7 @@ def collect_static_metrics() -> dict:
         "full_policy_bundle_bytes": bundle_bytes,
         "agents": _text_metrics(agents),
         "compiled_policy": _text_metrics(compiled),
+        "compiled_policy_cases": compiled_cases,
         "operation_count": len(contract["routing"]["operation_catalog"]),
         "schema_count": schema_count,
         "conformance_vector_count": conformance_vectors,

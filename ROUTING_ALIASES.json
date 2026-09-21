@@ -132,11 +132,16 @@
         "go test",
         "cargo test",
         "mvn test",
-        "gradle test"
+        "gradle test",
+        "execute the test suite",
+        "테스트 전체 실행",
+        "api 테스트 run",
+        "run pytes"
       ],
       "stems": [
         "테스트 돌",
-        "테스트 실행"
+        "테스트 실행",
+        "테스트 전체 실행"
       ],
       "patterns": [
         "\\b(?:run|execute)\\s+(?:(?:npm|pnpm|yarn|pytest|go|cargo|mvn|gradle)\\s+)?tests?\\b"
@@ -1014,7 +1019,9 @@
         "swift build",
         "프로젝트 빌드",
         "빌드 실행",
-        "docker build"
+        "docker build",
+        "docker bulid",
+        "docker 이미지 build"
       ],
       "stems": [
         "빌드"

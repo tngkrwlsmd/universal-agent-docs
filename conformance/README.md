@@ -176,3 +176,13 @@ direct vector는 operation 이름이 corpus에 등장하는지만 확인하는 �
 
 `git.merge`와 `git.rebase`도 우선 검토했지만 현재 contract에서 둘은 L2이고 schema v16에 operation-specific production/context escalation 또는 semantic-detail requirement가 없다. 따라서 이번 high-risk direct set에서는 shared Git/runtime invariant exemption을 유지한다. **exemption은 adapter support 인증이 아니며**, 해당 operation 지원을 주장하려면 direct vector를 추가해야 한다.
 
+
+## Independent JavaScript core evaluator
+
+`conformance/reference-javascript/runner.mjs`는 Python module import나 Python subprocess 없이 `POLICY_CONTRACT.json`, `ROUTING_ALIASES.json`, conformance corpus를 직접 읽어 핵심 machine semantics를 계산한다.
+
+```bash
+node conformance/reference-javascript/runner.mjs
+```
+
+현재 독립 구현 범위는 `routing`, `execution_boundary`, `catalog_invariant` vector다. 이는 Python 구현 세부사항 없이 core contract를 재구현할 수 있음을 확인하는 cross-language evidence이며, approval/override/distribution/extension을 포함한 완전한 대체 runtime 또는 validator를 의미하지 않는다. 전체 normative reference suite의 primary runner는 계속 `scripts/conformance.py`다.

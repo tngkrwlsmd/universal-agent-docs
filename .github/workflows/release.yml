@@ -86,6 +86,7 @@ jobs:
           python -m unittest discover -s tests -v
           python scripts/conformance.py
           python scripts/conformance.py --coverage
+          node conformance/reference-javascript/runner.mjs
           python scripts/evaluate.py --fail-on-mismatch
 
       - name: Build canonical source and consumer artifacts
@@ -114,6 +115,9 @@ jobs:
           test -f "$source_root/examples/extensions/internal-sandbox-artifact.json"
           test -f "$source_root/examples/capabilities/reference-sandbox-artifact-adapter.json"
           test -f "$source_root/evaluation/scenarios.json"
+          test -f "$source_root/evaluation/smoke.json"
+          test -f "$source_root/evaluation/regression.json"
+          test -f "$source_root/conformance/reference-javascript/runner.mjs"
           test -f "$source_root/scripts/evaluate.py"
           test -f "$source_root/scripts/policy_diff.py"
           test -f "$source_root/scripts/benchmark.py"

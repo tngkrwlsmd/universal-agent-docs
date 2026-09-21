@@ -15,6 +15,32 @@ def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+
+def strip_negated_action_clauses(value: str) -> str:
+    """Remove obvious action clauses that are explicitly negated/read-only.
+
+    Natural-language routing is advisory; this deliberately handles only high-confidence
+    negation patterns so a phrase such as "do not deploy" is not promoted into an
+    execution hint. Ambiguous text stays unclassified rather than inventing intent.
+    """
+    raw = unicodedata.normalize("NFKC", value)
+    clauses = re.split(r"(?:[,;]|\bbut\b|\bhowever\b|하지만)", raw, flags=re.I)
+    kept: list[str] = []
+    negative_markers = (
+        r"\bdo\s+not\b", r"\bdon['’]?t\b", r"\bwithout\s+(?:execut|run|deploy|publish|appl)",
+        r"하지\s*말", r"하지말", r"실행하지", r"하지\s*않", r"않고", r"말고",
+    )
+    read_only_markers = (r"\breview\b", r"\bexplain\b", r"\bshow\s+me\b", r"검토", r"리뷰", r"설명", r"내용만", r"설정만")
+    for clause in clauses:
+        if not clause.strip():
+            continue
+        negated = any(re.search(pattern, clause, flags=re.I) for pattern in negative_markers)
+        read_only = any(re.search(pattern, clause, flags=re.I) for pattern in read_only_markers)
+        if negated or (read_only and re.search(r"\b(?:plan|without)\b|실행하지", clause, flags=re.I)):
+            continue
+        kept.append(clause)
+    return " ".join(kept)
+
 def has_hangul(value: str) -> bool:
     return bool(re.search(r"[가-힣]", value))
 
@@ -92,7 +118,7 @@ def load_routing_aliases(contract: dict, root: Path = ROOT) -> dict:
 
 
 def infer_operations(contract: dict, text: str, aliases_doc: dict | None = None) -> list[str]:
-    normalized = normalize_text(text)
+    normalized = normalize_text(strip_negated_action_clauses(text))
     if not normalized:
         return []
     if aliases_doc is None:

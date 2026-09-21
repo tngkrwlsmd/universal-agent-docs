@@ -33,7 +33,7 @@ class GitHubIssueReferenceAdapterTests(unittest.TestCase):
             request or self.request,
             correlation_id=self.correlation_id,
             execution_nonce=self.nonce,
-            exposure_facts=exposure_facts,
+            exposure_facts=adapter.demo_exposure_facts() if exposure_facts is None else exposure_facts,
         )
 
     def _write_approval(self, root: Path, boundary: dict, *, expires_delta=timedelta(minutes=10)) -> Path:
@@ -53,13 +53,39 @@ class GitHubIssueReferenceAdapterTests(unittest.TestCase):
         self.assertEqual("REPLAY_DETECTED", result["replay"]["approval"]["replay_protection"])
         self.assertEqual(1, result["transport_calls"])
 
+
+    def test_missing_exposure_facts_is_rejected_at_reference_surface(self):
+        with self.assertRaisesRegex(ValueError, "exposure_facts must be explicitly supplied"):
+            adapter.evaluate_issue_create(
+                self.contract, [adapter.ACTUAL_OPERATION], self.request,
+                correlation_id=self.correlation_id, execution_nonce=self.nonce,
+            )
+
+    def test_unknown_and_x3_exposure_remain_conservative(self):
+        unknown = self._boundary(exposure_facts=adapter.unknown_exposure_facts())
+        self.assertEqual("PASS", unknown["status"], unknown)
+        self.assertEqual("X2", unknown["effective_exposure"], unknown)
+        self.assertEqual("REQUIRE_EXPLICIT_APPROVAL", unknown["action_gate"], unknown)
+        for key, value in (
+            ("credential_class", "privileged_credential"),
+            ("tenant_scope", "organization_wide"),
+            ("data_classification", "regulated"),
+        ):
+            with self.subTest(key=key):
+                facts = adapter.demo_exposure_facts()
+                facts[key] = value
+                result = self._boundary(exposure_facts=facts)
+                self.assertEqual("PASS", result["status"], result)
+                self.assertEqual("X3", result["effective_exposure"], result)
+                self.assertEqual("PROHIBITED_WITHOUT_OVERRIDE", result["action_gate"], result)
+
     def test_plan_actual_mismatch_is_blocked(self):
         boundary = self._boundary(planned=["git.push"])
         self.assertEqual("FAIL", boundary["status"], boundary)
         self.assertIn(adapter.ACTUAL_OPERATION, boundary["unplanned_actual_operations"])
 
     def test_missing_raw_exposure_fact_fails_closed(self):
-        facts = adapter.github_exposure_facts()
+        facts = adapter.demo_exposure_facts()
         facts.pop("tenant_scope")
         boundary = self._boundary(exposure_facts=facts)
         self.assertEqual("FAIL", boundary["status"], boundary)
@@ -77,6 +103,7 @@ class GitHubIssueReferenceAdapterTests(unittest.TestCase):
                 contract=self.contract, reference_time=self.now,
                 correlation_id=self.correlation_id, execution_nonce=self.nonce,
                 higher_authority_authenticated=True, transport_authenticated=True,
+                exposure_facts=adapter.demo_exposure_facts(),
             )
             self.assertFalse(result["executed"], result)
             self.assertEqual("APPROVAL_NOT_CONSUMABLE", result["reason"])
@@ -94,6 +121,7 @@ class GitHubIssueReferenceAdapterTests(unittest.TestCase):
                 contract=self.contract, reference_time=self.now,
                 correlation_id=self.correlation_id, execution_nonce=self.nonce,
                 higher_authority_authenticated=True, transport_authenticated=True,
+                exposure_facts=adapter.demo_exposure_facts(),
             )
             self.assertFalse(result["executed"], result)
             self.assertEqual("APPROVAL_NOT_CONSUMABLE", result["reason"])
@@ -114,6 +142,7 @@ class GitHubIssueReferenceAdapterTests(unittest.TestCase):
                     contract=self.contract, reference_time=self.now,
                     correlation_id=self.correlation_id, execution_nonce=self.nonce,
                     higher_authority_authenticated=case != "trust", transport_authenticated=True,
+                    exposure_facts=adapter.demo_exposure_facts(),
                 )
                 self.assertFalse(result["executed"], result)
                 self.assertEqual(0, len(transport.calls))
@@ -128,7 +157,7 @@ class GitHubIssueReferenceAdapterTests(unittest.TestCase):
                     [],
                     ["github:example/project/issues"],
                     "external",
-                    exposure_facts=adapter.github_exposure_facts(),
+                    exposure_facts=adapter.demo_exposure_facts(),
                     correlation_id="opaque-github-test",
                     execution_nonce="opaque-github-test-nonce-0001",
                     adapter=adapter.ADAPTER,

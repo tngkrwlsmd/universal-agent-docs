@@ -31,13 +31,13 @@
 - 제한된 도구가 정말 필요하면 사용자에게 그 도구의 사용을 별도로 명시해 달라고 요청한다.
 - 도구 금지 범위를 다른 도구에 임의로 확장하지 않는다. 제한 대상은 사용자가 지목한 도구·connector 범위 그대로 해석한다.
 
-범용 기본값으로 `chatgpt-codex-connector`는 명시적 opt-in 도구로 취급한다.
+명시적 opt-in으로 제한된 도구나 connector는 특정 제품명과 무관하게 같은 규칙을 적용한다.
 
 ```text
-chatgpt-codex-connector = DISABLED UNLESS EXPLICITLY REQUESTED
+explicit-opt-in tool/connector = DISABLED UNLESS EXPLICITLY REQUESTED
 ```
 
-따라서 "구현해", "수정해", "코드 리뷰해", "PR 확인해", "테스트해", "다음 작업 진행해" 같은 일반 개발 지시는 `chatgpt-codex-connector` 사용 허가가 아니다. 반대로 이 기본 제한은 일반 GitHub tooling이나 다른 connector를 자동으로 금지하지 않는다.
+따라서 "구현해", "수정해", "코드 리뷰해", "PR 확인해", "테스트해", "다음 작업 진행해" 같은 일반 개발 지시는 opt-in 제한 도구의 사용 허가가 아니다. 반대로 해당 제한을 일반 GitHub tooling이나 다른 connector로 자동 확장하지 않는다.
 
 이 절은 human-facing tool-selection guidance다. 실제 runtime에서 강제된다고 주장하려면 canonical contract, adapter/routing, enforcement test 등 별도의 machine evidence가 필요하다.
 
