@@ -831,6 +831,7 @@ push 전 branch, remote target, remote 최신 상태, 포함 commit, secret/대�
 ### Commit and integration details
 
 - commit message는 프로젝트 convention을 따르며 변경 목적을 설명한다.
+- 별도 프로젝트 convention이나 사용자 지시가 없다면 commit message는 가급적 한국어로 작성한다. 다만 Conventional Commits의 type, 고유 명칭, 코드 식별자처럼 영문 사용이 자연스러운 부분은 그대로 유지한다.
 - generated conflict도 source/generator를 확인한 뒤 해결한다.
 - merge/rebase conflict 해결 후 관련 테스트를 다시 실행한다.
 - force push가 필요한 경우 target branch, remote policy, 다른 사용자의 commit 손실 가능성을 확인한다.
