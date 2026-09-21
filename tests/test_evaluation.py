@@ -22,8 +22,13 @@ class PracticalEvaluationTests(unittest.TestCase):
         for required in {"python", "node-typescript", "go", "jvm", "monorepo", "docker", "github-actions", "terraform-iac", "database-migration"}:
             self.assertIn(required, project_types)
         categories = {item.get("category") for item in scenarios}
-        for required in {"paraphrase", "multilingual", "typo", "negation", "read-only-vs-write", "multi-intent-negation", "untrusted-data", "unknown"}:
+        for required in {"paraphrase", "multilingual", "typo", "negation", "read-only-vs-write", "multi-intent-negation", "mixed-intent-negation", "untrusted-data", "unknown"}:
             self.assertIn(required, categories)
+
+    def test_legacy_scenarios_mirror_smoke(self):
+        legacy = (ROOT / "evaluation" / "scenarios.json").read_text(encoding="utf-8")
+        smoke = (ROOT / "evaluation" / "smoke.json").read_text(encoding="utf-8")
+        self.assertEqual(legacy, smoke, "legacy scenarios.json must mirror smoke.json")
 
     def test_runner_reports_quality_dimensions_separately_from_conformance(self):
         result = evaluation.run_evaluation()

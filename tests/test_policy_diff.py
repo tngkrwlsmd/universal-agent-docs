@@ -130,5 +130,57 @@ class PolicyDiffTests(unittest.TestCase):
         self.assertEqual("compatible_change", result["compatibility"])
 
 
+    def test_schema_type_constraint_add_remove_widen_narrow_and_replace(self):
+        cases = [
+            ({}, {"type": "string"}, "breaking_schema", True),
+            ({"type": "string"}, {}, "backward_compatible", False),
+            ({"type": "string"}, {"type": ["string", "null"]}, "backward_compatible", False),
+            ({"type": ["string", "null"]}, {"type": "string"}, "breaking_schema", True),
+            ({"type": "string"}, {"type": "integer"}, "breaking_schema", True),
+        ]
+        for before_schema, after_schema, classification, migration in cases:
+            with self.subTest(before=before_schema, after=after_schema):
+                result = policy_diff.compare_contracts(
+                    self.contract, self.contract, before_schema=before_schema, after_schema=after_schema
+                )
+                self.assertGreater(result["summary"][classification], 0, result)
+                self.assertEqual(migration, result["requires_consumer_migration"], result)
+                self.assertEqual("breaking" if migration else "compatible_change", result["compatibility"], result)
+
+    def test_schema_enum_constraint_add_remove_widen_narrow_and_mixed(self):
+        cases = [
+            ({"type": "string"}, {"type": "string", "enum": ["a", "b"]}, "breaking_schema", True),
+            ({"enum": ["a", "b"]}, {}, "backward_compatible", False),
+            ({"enum": ["a"]}, {"enum": ["a", "b"]}, "backward_compatible", False),
+            ({"enum": ["a", "b"]}, {"enum": ["a"]}, "breaking_schema", True),
+            ({"enum": ["a", "b"]}, {"enum": ["b", "c"]}, "behavioral", False),
+        ]
+        for before_schema, after_schema, classification, migration in cases:
+            with self.subTest(before=before_schema, after=after_schema):
+                result = policy_diff.compare_contracts(
+                    self.contract, self.contract, before_schema=before_schema, after_schema=after_schema
+                )
+                self.assertGreater(result["summary"][classification], 0, result)
+                self.assertEqual(migration, result["requires_consumer_migration"], result)
+                self.assertEqual("breaking" if migration else "compatible_change", result["compatibility"], result)
+
+    def test_schema_other_constraint_regressions(self):
+        cases = [
+            ({"additionalProperties": True}, {"additionalProperties": False}, "breaking_schema"),
+            ({"type": "string"}, {"type": "string", "pattern": "^a"}, "breaking_schema"),
+            ({"type": "string", "pattern": "^a"}, {"type": "string", "pattern": "^b"}, "behavioral"),
+            ({"type": "object", "required": []}, {"type": "object", "required": ["a"]}, "breaking_schema"),
+            ({"type": "object", "required": ["a"]}, {"type": "object", "required": []}, "backward_compatible"),
+            ({}, {"const": "a"}, "breaking_schema"),
+            ({"const": "a"}, {"const": "b"}, "breaking_schema"),
+        ]
+        for before_schema, after_schema, classification in cases:
+            with self.subTest(before=before_schema, after=after_schema):
+                result = policy_diff.compare_contracts(
+                    self.contract, self.contract, before_schema=before_schema, after_schema=after_schema
+                )
+                self.assertGreater(result["summary"][classification], 0, result)
+
+
 if __name__ == "__main__":
     unittest.main()

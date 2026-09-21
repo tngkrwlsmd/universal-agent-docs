@@ -185,4 +185,4 @@ direct vector는 operation 이름이 corpus에 등장하는지만 확인하는 �
 node conformance/reference-javascript/runner.mjs
 ```
 
-현재 독립 구현 범위는 `routing`, `execution_boundary`, `catalog_invariant` vector다. 이는 Python 구현 세부사항 없이 core contract를 재구현할 수 있음을 확인하는 cross-language evidence이며, approval/override/distribution/extension을 포함한 완전한 대체 runtime 또는 validator를 의미하지 않는다. 전체 normative reference suite의 primary runner는 계속 `scripts/conformance.py`다.
+현재 독립 구현 범위는 `routing`, `execution_boundary`, `catalog_invariant` vector다. 이는 Python 구현 세부사항 없이 core contract를 재구현할 수 있음을 확인하는 cross-language evidence이며, approval/override/distribution/extension을 포함한 완전한 대체 runtime 또는 validator를 의미하지 않는다. 전체 normative reference suite의 primary runner는 계속 `scripts/conformance.py`다. CI는 재현성을 위해 Node.js 24 LTS를 명시적으로 설정하며, JavaScript normalization은 locale 비의존 lowercasing을 사용한다. runner의 vector 수는 corpus에서 실행 시 계산하며 문서에 고정하지 않는다.

@@ -92,10 +92,16 @@ def _compare_schema_node(before: Any, after: Any, path: str, changes: list[dict]
             _schema_change(changes, "backward_compatible", f"{path}.required", sorted(old_required), sorted(new_required), "Previously required fields became optional; existing payloads remain valid with respect to this requirement.")
 
     # Type sets: narrowing is breaking, widening is backward-compatible, replacement is breaking.
-    if before.get("type") != after.get("type"):
+    if before.get("type") != after.get("type") and ("type" in before or "type" in after):
         handled.add("type")
         old_types, new_types = _schema_type_set(before.get("type")), _schema_type_set(after.get("type"))
-        if old_types is not None and new_types is not None:
+        if "type" not in before and "type" in after:
+            classification = "breaking_schema"
+            action = "A type restriction was added; previously valid payload types may be rejected."
+        elif "type" in before and "type" not in after:
+            classification = "backward_compatible"
+            action = "The type restriction was removed; existing payload types remain valid."
+        elif old_types is not None and new_types is not None:
             if old_types <= new_types:
                 classification = "backward_compatible"
                 action = "Accepted JSON types were widened; existing payload types remain accepted."
@@ -111,7 +117,11 @@ def _compare_schema_node(before: Any, after: Any, path: str, changes: list[dict]
     if before.get("enum") != after.get("enum") and ("enum" in before or "enum" in after):
         handled.add("enum")
         old_enum, new_enum = before.get("enum"), after.get("enum")
-        if isinstance(old_enum, list) and isinstance(new_enum, list):
+        if "enum" not in before and isinstance(new_enum, list):
+            classification, action = "breaking_schema", "An enum restriction was added; previously valid values outside the enum will fail."
+        elif isinstance(old_enum, list) and "enum" not in after:
+            classification, action = "backward_compatible", "The enum restriction was removed; existing enum payloads remain valid."
+        elif isinstance(old_enum, list) and isinstance(new_enum, list):
             old_set, new_set = set(map(json.dumps, old_enum)), set(map(json.dumps, new_enum))
             if old_set <= new_set:
                 classification, action = "backward_compatible", "Enum values were added; existing enum payloads remain accepted."
@@ -120,7 +130,7 @@ def _compare_schema_node(before: Any, after: Any, path: str, changes: list[dict]
             else:
                 classification, action = "behavioral", "Enum values changed in both directions; review affected producers and consumers manually."
         else:
-            classification, action = "behavioral", "Enum constraint was added/removed or structurally changed; review compatibility manually."
+            classification, action = "behavioral", "Enum constraint changed structurally; review compatibility manually."
         _schema_change(changes, classification, f"{path}.enum", old_enum, new_enum, action)
 
     # Const replacement always rejects the old constant; removing const widens.
