@@ -66,7 +66,7 @@ distribution vector의 archive entry는 `name`, 선택적 `type`(`file` 또는 `
     "version": "1.2.3",
     "language": "go"
   },
-  "summary": {"total": 69, "passed": 69, "failed": 0},
+  "summary": {"total": 1, "passed": 1, "failed": 0},
   "results": [
     {
       "id": "routing-canonical-plan-enforcement",
@@ -79,6 +79,8 @@ distribution vector의 archive entry는 `name`, 선택적 `type`(`file` 또는 `
 ```
 
 streaming/CI integration이 필요하면 동일 case result object를 vector당 한 줄로 출력하는 JSON Lines도 허용한다. aggregate result가 canonical interchange format이고 JSONL은 transport convenience다.
+
+위 JSON은 protocol shape를 설명하는 최소 예시이며 현재 corpus의 총 vector 수를 고정하는 문서가 아니다. 실제 count는 `python scripts/conformance.py --coverage` 또는 aggregate result의 `summary`를 사용한다.
 
 ## Running the Python reference implementation
 
