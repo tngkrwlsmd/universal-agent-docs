@@ -33,6 +33,8 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Run language-neutral conformance suite
         run: python scripts/conformance.py
+      - name: Report conformance coverage
+        run: python scripts/conformance.py --coverage
       - name: Build canonical distribution
         run: python scripts/package.py --output-dir dist
       - name: Verify canonical distribution

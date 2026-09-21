@@ -121,3 +121,24 @@ vector 삭제는 해당 semantic이 contract에서 제거되거나 새 stable ve
 suite는 모든 operation을 하나씩 인증하려는 목록이 아니다. Effect/Exposure/gate/lifecycle 특성이 다른 operation family와 중요한 trust boundary를 대표한다. 직접 vector가 없는 현재 operation은 `coverage.json`에 exemption reason이 있어야 하며, 이는 해당 operation이 구현체에서 지원된다고 인증하는 의미가 아니다.
 
 현재 corpus는 routing authority, unknown/deprecated lifecycle, Effect floor와 production/context escalation, raw Exposure derivation, plan/actual mismatch, opaque runtime operation, hard action signature, target/environment constraints, action digest, approval/override binding과 replay, readiness states, archive safety, trust/release manifest integrity를 다룬다.
+
+### Representative high-risk direct operation coverage
+
+direct vector는 operation 이름이 corpus에 등장하는지만 확인하는 용도가 아니라, 해당 family에서 사고 영향이 큰 **서로 다른 machine semantics**를 고정하는 데 사용한다.
+
+| Operation | Representative vector | 직접 검증하는 의미 |
+|---|---|---|
+| `cloud.resource_change` | `kubectl-delete-pod-is-bounded-change` | L3 external effect와 concrete target/gate |
+| `cloud.resource_delete` | `terraform-destroy-is-cloud-delete` | destructive cloud delete의 L4 floor |
+| `database.schema_change` | `production-database-schema-change-escalates-l4` | production에서 L3→L4 escalation + X2 approval |
+| `database.destructive_change` | `regulated-database-destructive-change-requires-override` | L4 + regulated X3 → protected override gate |
+| `credential.rotate` | `privileged-credential-rotation-requires-override` | privileged credential X3 + L4 override gate |
+| `iam.change` | `organization-wide-iam-change-requires-override` | organization-wide blast radius X3 + L4 override gate |
+| `external.message_send` | `external-message-send-requires-approval` | concrete external recipient에 대한 L3 approval gate |
+| `service.restart` | `production-service-restart-escalates-l4` | production에서 L3→L4 escalation |
+| `storage.object_delete` | `staging-storage-object-delete-is-l4` | storage delete의 L4 floor와 concrete object target |
+| `network.configuration_change` | `production-network-configuration-change-escalates-l4` | production에서 L3→L4 escalation |
+| `artifact.publish` | `public-artifact-publish-escalates-l4` | public destination context에서 L3→L4 escalation |
+
+`git.merge`와 `git.rebase`도 우선 검토했지만 현재 contract에서 둘은 L2이고 schema v16에 operation-specific production/context escalation 또는 semantic-detail requirement가 없다. 따라서 이번 high-risk direct set에서는 shared Git/runtime invariant exemption을 유지한다. **exemption은 adapter support 인증이 아니며**, 해당 operation 지원을 주장하려면 direct vector를 추가해야 한다.
+
