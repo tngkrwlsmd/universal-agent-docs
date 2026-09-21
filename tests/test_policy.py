@@ -271,8 +271,10 @@ class BundleTests(unittest.TestCase):
         ]
         missing = [item for item in required_policies if item not in policies]
         self.assertEqual([], missing)
-        self.assertIn("업무 의미·권한·파괴 범위를 바꾸는 불확실성", agents)
-        self.assertIn("precondition과 postcondition/business invariant", agents)
+        self.assertIn("[Execution](POLICIES.md#policy-execution)", agents)
+        self.assertIn("[Implementation](POLICIES.md#policy-implementation)", agents)
+        self.assertIn("[Git](POLICIES.md#policy-git)", agents)
+        self.assertLess(len(agents), 6000)
 
     def test_policy_selector_returns_only_primary_owner_section(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
@@ -1393,7 +1395,9 @@ class AdoptionProfileTests(unittest.TestCase):
         for label in ["A — Guidance", "B — Validated", "C — Enforced Runtime"]:
             self.assertIn(label, readme)
         self.assertIn("GitHub Releases", readme)
-        self.assertIn("published GitHub Release와 SemVer tag가 아직 없다", readme)
+        self.assertIn("최신 immutable SemVer Release", readme)
+        self.assertNotIn("현재 상태 (2026-", readme)
+        self.assertNotIn("\\n\\n", readme)
         self.assertIn("동일한 full `.agent-policy/` bundle", readme)
         self.assertIn("canonical project facts 문서는 `.agent-policy/PROJECT.md`", readme)
         self.assertIn("`PROJECT.candidate.md`는 **임시 review artifact**", readme)
@@ -1410,6 +1414,7 @@ class AdoptionProfileTests(unittest.TestCase):
         self.assertIn("설치 artifact의 파일 subset을 뜻하지 않는다", guide)
         self.assertIn("실행을 intercept하지 않는다", guide)
         self.assertIn("Profile C의 runtime enforcement와 동일하지 않다", guide)
+        self.assertNotIn("\\n\\n", guide)
 
     def test_consumer_bundle_is_one_full_artifact_for_all_profiles(self):
         with tempfile.TemporaryDirectory() as td:

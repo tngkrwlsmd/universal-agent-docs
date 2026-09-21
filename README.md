@@ -265,7 +265,9 @@ python scripts/validate.py --routing-mode enforcement \
   --operation database.read
 ```
 
-**주의:** `--routing-mode enforcement`는 routing validation을 fail-closed하는 옵션일 뿐, 그 자체로 tool/API/shell 실행을 intercept하거나 차단하지 않는다. Profile C의 runtime enforcement와는 다른 계층이다.\n\n호환을 위해 `--operation "run tests"` 같은 자연어도 canonical ID로 추론한다. fallback corpus는 `ROUTING_ALIASES.json`에서 관리한다. 기본 `advisory` routing에서는 미분류 task, 미해석 planned operation, task에서 유추된 operation이 plan에 빠진 경우를 `WARN`으로 표면화한다. `enforcement`에서는 **미해석 planned operation과 canonical plan 부재를 `FAIL`**로 처리하지만, 자연어 task 미분류와 task↔plan mismatch는 `WARN`으로 남긴다. 자연어 coverage가 실행 가능성의 단일 병목이 되지 않게 하고, 실제 실행 안전성은 action boundary에서 trusted runtime actual operation과 plan을 대조해 fail-closed한다.
+**주의:** `--routing-mode enforcement`는 routing validation을 fail-closed하는 옵션일 뿐, 그 자체로 tool/API/shell 실행을 intercept하거나 차단하지 않는다. Profile C의 runtime enforcement와는 다른 계층이다.
+
+호환을 위해 `--operation "run tests"` 같은 자연어도 canonical ID로 추론한다. fallback corpus는 `ROUTING_ALIASES.json`에서 관리한다. 기본 `advisory` routing에서는 미분류 task, 미해석 planned operation, task에서 유추된 operation이 plan에 빠진 경우를 `WARN`으로 표면화한다. `enforcement`에서는 **미해석 planned operation과 canonical plan 부재를 `FAIL`**로 처리하지만, 자연어 task 미분류와 task↔plan mismatch는 `WARN`으로 남긴다. 자연어 coverage가 실행 가능성의 단일 병목이 되지 않게 하고, 실제 실행 안전성은 action boundary에서 trusted runtime actual operation과 plan을 대조해 fail-closed한다.
 
 각 canonical operation은 `effect_floor`를 가진다. 이는 실제 Effect 판정의 **최소값**이며 runtime은 target·environment·blast radius에 따라 더 높은 Effect로 올릴 수 있지만 근거 없이 더 낮출 수 없다. Exposure는 adapter가 `X2`처럼 최종 등급을 결정하지 않는다. adapter는 `data_classification`, `credential_class`, `tenant_scope`, `public_visibility`, `estimated_blast_radius`, `estimated_financial_impact`의 **원시 사실**과 environment를 보고하고, policy engine이 각 차원의 floor 중 최댓값을 계산한다. 명시적 `unknown` 값은 낙관하지 않고 보수적 floor를 가진다. 선택적 `declared_exposure`는 계산값을 올릴 수만 있고 낮출 수 없다. 모든 `test.scenario.*` operation은 실제 시나리오 실행을 전제로 `requires_execution_policy=true`이며 Execution policy를 명시적으로 포함한다. production DB read나 observability inspection처럼 read-only operation도 Execution의 Exposure 평가를 함께 받는다.
 
