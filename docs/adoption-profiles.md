@@ -16,7 +16,9 @@ policy model, canonical operation ID, `POLICY_CONTRACT.json`과 language-neutral
 | **B — Validated** | policy bundle과 계획/위험 판정을 자동 검증 | bundle/schema validation, readiness, canonical routing, Effect/Exposure/gate calculation, distribution integrity | trusted actual-operation assertion이 없으면 실행 차단 보장 없음; schema-valid runtime payload만으로 producer authenticity 보장 없음 |
 | **C — Enforced Runtime** | 실제 action/tool boundary에서 fail-closed enforcement | B의 contract/reference validation + 소비 환경에 연결된 trusted interception, exact binding, replay consumption, 실제 allow/block 집행 | bundle만으로 완성된 범용 runtime이 제공되는 것은 아님; interception·identity/transport·shared ledger·executor는 integration 책임 |
 
-Profile은 누적적이다. C는 B와 A의 기반을 포함한다.\n\nProfile은 **설치 artifact의 파일 subset을 뜻하지 않는다.** 공식 consumer ZIP은 A/B/C 모두 같은 full `.agent-policy/` bundle을 제공한다. 차이는 설치 파일을 삭제하는 데 있지 않고, A는 guidance만 사용하고 B는 validator/CI를 활성화하며 C는 runtime boundary까지 실제로 연결하는 데 있다.
+Profile은 누적적이다. C는 B와 A의 기반을 포함한다.
+
+Profile은 **설치 artifact의 파일 subset을 뜻하지 않는다.** 공식 consumer ZIP은 A/B/C 모두 같은 full `.agent-policy/` bundle을 제공한다. 차이는 설치 파일을 삭제하는 데 있지 않고, A는 guidance만 사용하고 B는 validator/CI를 활성화하며 C는 runtime boundary까지 실제로 연결하는 데 있다.
 
 ## Which profile should I use?
 
@@ -184,7 +186,9 @@ python .agent-policy/scripts/validate.py \
   --operation test.execute
 ```
 
-`--routing-mode enforcement`의 **enforcement는 routing validation 범위**다. unknown/unresolved planned operation을 계획 단계에서 fail-closed하지만 tool/API/shell 호출을 직접 intercept하거나 차단하지 않는다. Profile C의 runtime enforcement와 동일하지 않다.\n\nB에서는 canonical plan, Effect/Exposure, gate를 계산하고 malformed/unknown policy input을 fail-closed할 수 있다. 그러나 **trusted runtime/tool adapter가 실제 호출을 독립적으로 보고하지 않는다면 계산된 gate가 실제 side effect를 막는다는 보장은 없다**.
+`--routing-mode enforcement`의 **enforcement는 routing validation 범위**다. unknown/unresolved planned operation을 계획 단계에서 fail-closed하지만 tool/API/shell 호출을 직접 intercept하거나 차단하지 않는다. Profile C의 runtime enforcement와 동일하지 않다.
+
+B에서는 canonical plan, Effect/Exposure, gate를 계산하고 malformed/unknown policy input을 fail-closed할 수 있다. 그러나 **trusted runtime/tool adapter가 실제 호출을 독립적으로 보고하지 않는다면 계산된 gate가 실제 side effect를 막는다는 보장은 없다**.
 
 `RUNTIME_ACTION.schema.json`을 만족하는 JSON을 받았다는 사실만으로 adapter producer identity나 transport integrity가 확립되는 것도 아니다.
 
@@ -291,7 +295,9 @@ Profile C라고 주장하는 intercepted surface에서는 다음을 통과시키
 
 ## Production checklist
 
-published immutable Release가 없는 상태에서 만든 source-built ZIP은 official production release로 취급하지 않는다. release pipeline이 존재하는 것과 실제 trusted release가 존재하는 것은 별개다. official Release를 사용할 수 있는 production에서는 immutable Release + provenance verification 경로를 우선한다.\n\nproduction에서 C를 사용하려면 최소 다음을 별도로 확인한다.
+published immutable Release가 없는 상태에서 만든 source-built ZIP은 official production release로 취급하지 않는다. release pipeline이 존재하는 것과 실제 trusted release가 존재하는 것은 별개다. official Release를 사용할 수 있는 production에서는 immutable Release + provenance verification 경로를 우선한다.
+
+production에서 C를 사용하려면 최소 다음을 별도로 확인한다.
 
 - adapter가 실제 side-effect surface를 빠짐없이 intercept하는가
 - adapter assertion source와 transport가 spoofing되지 않는가
@@ -304,7 +310,9 @@ published immutable Release가 없는 상태에서 만든 source-built ZIP은 of
 - adapter가 지원하지 못하는 action은 명시적으로 fail-closed 또는 non-enforced로 분류되는가
 - emergency/rollback도 기존 tag/approval을 재사용하지 않고 새 action identity를 갖는가
 
-## Minimal project layouts\n\n아래 layout은 profile별 **conceptual minimum**을 보여준다. official consumer ZIP의 physical file set을 profile마다 잘라 설치하라는 뜻이 아니며, 실제 consumer artifact는 모든 profile에 같은 full `.agent-policy/` bundle을 제공한다.
+## Minimal project layouts
+
+아래 layout은 profile별 **conceptual minimum**을 보여준다. official consumer ZIP의 physical file set을 profile마다 잘라 설치하라는 뜻이 아니며, 실제 consumer artifact는 모든 profile에 같은 full `.agent-policy/` bundle을 제공한다.
 
 ### A — Guidance
 
