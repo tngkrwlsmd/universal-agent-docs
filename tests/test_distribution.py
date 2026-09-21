@@ -9,7 +9,7 @@ import warnings
 import zipfile
 from pathlib import Path
 
-from .policy_test_support import ROOT, mod
+from tests.policy_test_support import ROOT, mod
 
 class DistributionTests(unittest.TestCase):
     @classmethod

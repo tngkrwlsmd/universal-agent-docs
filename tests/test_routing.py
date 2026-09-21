@@ -4,7 +4,7 @@ import json
 import unittest
 import warnings
 
-from .policy_test_support import ROOT, mod
+from tests.policy_test_support import ROOT, mod
 
 class RoutingTests(unittest.TestCase):
     @classmethod

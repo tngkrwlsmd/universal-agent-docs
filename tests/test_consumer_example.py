@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from .policy_test_support import ROOT, mod
+from tests.policy_test_support import ROOT, mod
 
 
 EXAMPLE = ROOT / "examples" / "consumer-basic"

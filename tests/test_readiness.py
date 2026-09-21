@@ -6,7 +6,7 @@ import unittest
 import warnings
 from pathlib import Path
 
-from .policy_test_support import ROOT, mod
+from tests.policy_test_support import ROOT, mod
 
 class ReadinessTests(unittest.TestCase):
     def write_project(self, root: Path, data: dict):

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import unittest
 
-from .policy_test_support import ROOT, mod
+from tests.policy_test_support import ROOT, mod
 
 
 class FacadeCompatibilityTests(unittest.TestCase):

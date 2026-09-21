@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from .policy_test_support import ROOT, mod
+from tests.policy_test_support import ROOT, mod
 
 class BundleTests(unittest.TestCase):
     def test_bundle_checks_pass(self):

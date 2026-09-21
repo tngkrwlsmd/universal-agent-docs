@@ -7,7 +7,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from .policy_test_support import ROOT, consumer_mod, mod
+from tests.policy_test_support import ROOT, consumer_mod, mod
 
 class AdoptionProfileTests(unittest.TestCase):
     def test_readme_is_landing_page_and_adoption_guide_owns_detailed_flow(self):
