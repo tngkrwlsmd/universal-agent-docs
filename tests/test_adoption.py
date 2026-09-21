@@ -10,7 +10,7 @@ from pathlib import Path
 from tests.policy_test_support import ROOT, consumer_mod, mod
 
 class AdoptionProfileTests(unittest.TestCase):
-    def test_readme_is_landing_page_and_adoption_guide_owns_detailed_flow(self):
+    def test_readme_exposes_first_use_decision_acquisition_and_stop_boundary(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
         guide = (ROOT / "docs" / "adoption-profiles.md").read_text(encoding="utf-8")
         self.assertLess(readme.index("## 5분 Quick Start"), readme.index("## 문서 지도"))
