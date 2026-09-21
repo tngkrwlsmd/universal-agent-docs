@@ -44,7 +44,6 @@ from validation.approval import _approval_replay_state, _parse_timestamp  # noqa
 from validation.override import *  # noqa: F401,F403,E402
 from validation.override import _override_replay_state  # noqa: F401,E402
 from validation.context import *  # noqa: F401,F403,E402
-
 def print_checks(checks: list[Check]) -> None:
     for c in checks:
         suffix = f" — {c.detail}" if c.detail else ""
