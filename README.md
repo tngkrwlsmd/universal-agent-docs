@@ -115,6 +115,8 @@ A는 guidance, B는 validation이다. **B에서 gate를 계산하거나 `--routi
 
 실제 side effect를 기술적으로 차단하는 Profile C에는 소비 환경이 trusted runtime adapter/interceptor, independently observed actual operation, target/environment/raw exposure facts, higher-authority identity/transport trust, shared atomic replay ledger와 실제 allow/block 집행을 추가로 구현·연결해야 한다. 이 저장소는 그 경계에서 사용할 action digest, approval/override exact binding, gate 계산과 검증 contract/reference implementation을 제공하지만 완성된 범용 runtime executor를 제공하지 않는다.
 
+실행 흐름을 직접 보고 싶다면 source repository에서 [`examples/runtime-adapter/`](examples/runtime-adapter/)의 mock 예제를 실행한다. 외부 side effect 없이 approval exact binding, atomic single-use consumption과 replay 차단을 재현한다.
+
 **첫 설치가 목적이라면 여기까지 진행하고 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)만 읽으면 된다. 아래 내용은 policy/runtime 구현, adapter integration, release/conformance를 개발하거나 감사하는 사용자를 위한 reference다.**
 ## 구성
 
