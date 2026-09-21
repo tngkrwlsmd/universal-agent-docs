@@ -17,6 +17,29 @@ import validate as policy_validate  # noqa: E402
 ROOT = Path(__file__).resolve().parents[1]
 FIXED_ZIP_TIMESTAMP = (1980, 1, 1, 0, 0, 0)
 
+CONSUMER_DOC_REPLACEMENTS = {
+    "README.md": {
+        "[Profile A/B consumer example](examples/consumer-basic/README.md)": "matching canonical source artifact의 `examples/consumer-basic/README.md`",
+        "[runtime adapter examples](examples/runtime-adapter/README.md)": "matching canonical source artifact의 `examples/runtime-adapter/README.md`",
+    },
+    "docs/adoption-profiles.md": {
+        "[Profile A/B consumer example](../examples/consumer-basic/README.md)": "matching canonical source artifact의 `examples/consumer-basic/README.md`",
+    },
+}
+
+
+def render_consumer_vendored_file(rel: str) -> bytes:
+    data = (ROOT / rel).read_bytes()
+    replacements = CONSUMER_DOC_REPLACEMENTS.get(rel)
+    if not replacements:
+        return data
+    text = data.decode("utf-8")
+    for old, new in replacements.items():
+        if old not in text:
+            raise ValueError(f"consumer documentation replacement is stale for {rel}: {old}")
+        text = text.replace(old, new)
+    return text.encode("utf-8")
+
 
 def _sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
@@ -184,7 +207,7 @@ def package_consumer(output_dir: Path) -> dict:
     with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_STORED) as zf:
         _write_entry(zf, f"{root}/AGENTS.md", render_consumer_agents(policy_root))
         for rel in contract["distribution"]["required_files"]:
-            data = (ROOT / rel).read_bytes()
+            data = render_consumer_vendored_file(rel)
             executable = rel.startswith("scripts/") and rel.endswith(".py")
             _write_entry(zf, f"{root}/{policy_root}/{rel}", data, executable)
 

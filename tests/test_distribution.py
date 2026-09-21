@@ -16,11 +16,12 @@ class DistributionTests(unittest.TestCase):
     def setUpClass(cls):
         cls.contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         cls.required = cls.contract["distribution"]["required_files"]
+        cls.allowed = cls.contract["distribution"]["allowed_files"]
         cls.canonical_root = cls.contract["distribution"]["canonical_root"]
 
-    def write_valid_zip(self, path: Path, mutate=None, extras=None):
+    def write_valid_zip(self, path: Path, mutate=None, extras=None, files=None):
         with zipfile.ZipFile(path, "w") as zf:
-            for rel in self.required:
+            for rel in (files or self.required):
                 data = (ROOT / rel).read_bytes()
                 if mutate is not None:
                     data = mutate(rel, data)
@@ -34,6 +35,14 @@ class DistributionTests(unittest.TestCase):
             self.write_valid_zip(z)
             result = mod.validate_distribution(z, self.contract)
             self.assertEqual("PASS", result["status"], result)
+
+    def test_source_examples_are_allowed_but_not_required_policy_files(self):
+        source_only = set(mod.CANONICAL_SOURCE_ONLY_FILES)
+        self.assertTrue(source_only)
+        self.assertEqual(source_only, set(self.allowed) - set(self.required))
+        self.assertTrue(all(path.startswith("examples/") for path in source_only))
+        self.assertIn("examples/consumer-basic/README.md", source_only)
+        self.assertIn("examples/runtime-adapter/README.md", source_only)
 
     def test_partial_zip_fails_missing_manifest(self):
         with tempfile.TemporaryDirectory() as td:
@@ -187,10 +196,12 @@ class DistributionTests(unittest.TestCase):
             root = Path(td)
             z = root / "universal-agent-docs.zip"
             manifest = root / "universal-agent-docs.release.json"
-            self.write_valid_zip(z)
+            self.write_valid_zip(z, files=self.allowed)
             data = mod.write_release_manifest(manifest, z, ROOT)
             self.assertIn("PROJECT.md", data["files"])
             self.assertIn("tests/test_policy.py", data["files"])
+            self.assertIn("examples/consumer-basic/README.md", data["files"])
+            self.assertIn("examples/runtime-adapter/README.md", data["files"])
             result = mod.validate_distribution(z, self.contract, release_manifest=manifest)
             self.assertEqual("PASS", result["status"], result)
 
@@ -199,7 +210,7 @@ class DistributionTests(unittest.TestCase):
             root = Path(td)
             z = root / "universal-agent-docs.zip"
             manifest = root / "universal-agent-docs.release.json"
-            self.write_valid_zip(z)
+            self.write_valid_zip(z, files=self.allowed)
             mod.write_release_manifest(manifest, z, ROOT)
 
             def mutate(rel, data):
@@ -207,7 +218,7 @@ class DistributionTests(unittest.TestCase):
                     return data + b"\n"
                 return data
 
-            self.write_valid_zip(z, mutate=mutate)
+            self.write_valid_zip(z, mutate=mutate, files=self.allowed)
             result = mod.validate_distribution(z, self.contract, release_manifest=manifest)
             self.assertEqual("FAIL", result["status"], result)
             self.assertTrue(result["release_integrity_failures"], result)

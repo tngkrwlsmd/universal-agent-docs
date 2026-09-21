@@ -146,6 +146,13 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertNotIn("universal-agent-docs-consumer/requirements.txt", names)
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/tests/") for x in names))
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.github/") for x in names))
+            self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.agent-policy/examples/") for x in names))
+            readme = zf.read("universal-agent-docs-consumer/.agent-policy/README.md").decode("utf-8")
+            adoption = zf.read("universal-agent-docs-consumer/.agent-policy/docs/adoption-profiles.md").decode("utf-8")
+            self.assertNotIn("blob/main/examples/", readme)
+            self.assertNotIn("blob/main/examples/", adoption)
+            self.assertIn("matching canonical source artifact", readme)
+            self.assertIn("matching canonical source artifact", adoption)
 
     def test_consumer_verifier_rejects_symlink_entry(self):
         with tempfile.TemporaryDirectory() as td:
@@ -201,6 +208,10 @@ class PackagingPropertyTests(unittest.TestCase):
                 names = set(zf.namelist())
                 self.assertTrue(all(info.compress_type == zipfile.ZIP_STORED for info in zf.infolist() if not info.is_dir()))
             self.assertIn("universal-agent-docs/.gitattributes", names)
+            self.assertIn("universal-agent-docs/examples/consumer-basic/README.md", names)
+            self.assertIn("universal-agent-docs/examples/runtime-adapter/README.md", names)
+            self.assertIn("universal-agent-docs/examples/extensions/internal-sandbox-artifact.json", names)
+            self.assertIn("universal-agent-docs/examples/capabilities/reference-sandbox-artifact-adapter.json", names)
             self.assertFalse(any(
                 name.endswith(".trust.json") or name.endswith(".release.json") or name.endswith(".sha256")
                 for name in names

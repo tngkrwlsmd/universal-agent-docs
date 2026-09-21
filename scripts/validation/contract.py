@@ -255,6 +255,31 @@ CANONICAL_REQUIRED_FILES = [
     "tests/test_conformance.py",
 ]
 
+CANONICAL_SOURCE_ONLY_FILES = [
+    "examples/capabilities/reference-sandbox-artifact-adapter.json",
+    "examples/consumer-basic/README.md",
+    "examples/consumer-basic/after/AGENTS.md",
+    "examples/consumer-basic/after/Makefile",
+    "examples/consumer-basic/after/PROJECT.reviewed.md",
+    "examples/consumer-basic/after/pyproject.toml",
+    "examples/consumer-basic/after/src/__init__.py",
+    "examples/consumer-basic/after/src/greeter.py",
+    "examples/consumer-basic/after/tests/__init__.py",
+    "examples/consumer-basic/after/tests/test_greeter.py",
+    "examples/consumer-basic/before/AGENTS.md",
+    "examples/consumer-basic/before/Makefile",
+    "examples/consumer-basic/before/pyproject.toml",
+    "examples/consumer-basic/before/src/__init__.py",
+    "examples/consumer-basic/before/src/greeter.py",
+    "examples/consumer-basic/before/tests/__init__.py",
+    "examples/consumer-basic/before/tests/test_greeter.py",
+    "examples/extensions/internal-sandbox-artifact.json",
+    "examples/runtime-adapter/README.md",
+    "examples/runtime-adapter/mock_runtime.py",
+    "examples/runtime-adapter/sandbox_artifact_adapter.py",
+]
+CANONICAL_ALLOWED_FILES = CANONICAL_REQUIRED_FILES + CANONICAL_SOURCE_ONLY_FILES
+
 @dataclass
 class Check:
     name: str

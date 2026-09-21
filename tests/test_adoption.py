@@ -26,6 +26,13 @@ class AdoptionProfileTests(unittest.TestCase):
         self.assertNotIn("## Distribution validation", readme)
         self.assertNotIn("## Runtime integration", readme)
         self.assertLess(len(readme), 12000)
+        self.assertNotIn("v0.1.0", readme)
+        self.assertNotIn("20d726f845a0e929103a6de57cb1c82eaeffedca", readme)
+        self.assertNotIn("blob/main/examples/", readme)
+        self.assertNotIn("blob/main/examples/", guide)
+        self.assertNotIn("/tmp/uad-consumer", guide)
+        self.assertIn("uad-consumer-stage", guide)
+        self.assertIn("canonical source Release artifact", guide)
 
     def test_adoption_profiles_are_documentation_not_machine_enforcement_state(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
@@ -56,7 +63,7 @@ class AdoptionProfileTests(unittest.TestCase):
                 names = set(zf.namelist())
                 self.assertIn(f"{root}/AGENTS.md", names)
                 self.assertTrue(expected_vendored <= names)
-                self.assertFalse(any(name.startswith(f"{root}/runtime-adapter/") for name in names))
+                self.assertFalse(any(name.startswith(f"{root}/{policy_root}/examples/") for name in names))
                 router = zf.read(f"{root}/AGENTS.md").decode("utf-8")
                 self.assertIn(f"{policy_root}/PROJECT.md", router)
 

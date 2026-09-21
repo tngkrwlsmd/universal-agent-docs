@@ -100,14 +100,38 @@ python scripts/conformance.py
 
 ## Implementing in another language
 
-외부 구현체는 다음 순서만 필요하다.
+외부 구현체는 repository의 Python module을 import하지 않고 JSON contract/schema/corpus만으로 normative result를 구현할 수 있어야 한다. 모든 wire schema가 모든 vector kind에 필요한 것은 아니므로, 먼저 공통 입력을 읽고 해당 kind에 필요한 추가 contract만 사용한다.
 
-1. `POLICY_CONTRACT.json`, `golden.json`, `invalid.json`, `corpus.schema.json`, `result.schema.json`, `coverage.json`을 읽는다.
-2. corpus envelope과 vector를 `corpus.schema.json`으로 검증한다.
+공통 입력:
+
+- `POLICY_CONTRACT.json` + `POLICY_CONTRACT.schema.json`
+- `conformance/golden.json`, `conformance/invalid.json`
+- `conformance/corpus.schema.json`, `conformance/result.schema.json`, `conformance/coverage.json`
+
+Kind별 추가 normative/wire input:
+
+| Conformance kind | Required normative/wire inputs |
+|---|---|
+| `routing` | `ROUTING_ALIASES.json` + `ROUTING_ALIASES.schema.json`, core policy contract |
+| `execution_boundary`, `digest_relation` | core policy contract; structured runtime assertion을 materialize/validate할 때 `RUNTIME_ACTION.schema.json` |
+| `catalog_invariant` | core policy contract |
+| `approval` | core policy contract + `APPROVAL_ASSERTION.schema.json` |
+| `protected_override` | core policy contract + `PROTECTED_OVERRIDE.schema.json` |
+| `extension_contract`, `extension_boundary` | core policy contract + `OPERATION_EXTENSION.schema.json` + `ADAPTER_CAPABILITIES.schema.json`; structured runtime assertion을 사용할 때 `RUNTIME_ACTION.schema.json` |
+| `readiness` | core policy contract + corpus input의 project-fact data |
+| `distribution` | core policy contract의 distribution contract + corpus가 materialize하는 archive entries |
+| `integrity` | core policy contract의 integrity/release-manifest semantics + corpus fixture |
+
+이 표는 navigation aid이며 kind의 authoritative registry를 새로 만들지 않는다. 지원 kind의 Source of Truth는 계속 `corpus.schema.json` enum이다. Trust/release manifest는 현재 별도 JSON Schema 파일이 아니라 `POLICY_CONTRACT.json`의 integrity contract와 conformance vectors가 wire meaning을 고정한다.
+
+구현 순서:
+
+1. `POLICY_CONTRACT.json`을 `POLICY_CONTRACT.schema.json`으로 검증하고 필요한 kind-specific wire schema를 함께 로드한다.
+2. corpus envelope과 vector를 `conformance/corpus.schema.json`으로 검증한다.
 3. vector `kind`별 입력을 자신의 policy engine/runtime adapter에 전달한다.
 4. `expected` 전체가 아니라 `normative_fields` JSON Pointer만 비교한다.
-5. 모든 vector ID에 대해 result를 만들고 `result.schema.json`을 만족하는 aggregate JSON을 출력한다.
-6. `coverage.json`의 `required_semantics`가 vector의 `covers` union에 포함되는지 확인한다.
+5. 모든 vector ID에 대해 result를 만들고 `conformance/result.schema.json`을 만족하는 aggregate JSON을 출력한다.
+6. `conformance/coverage.json`의 `required_semantics`가 vector의 `covers` union에 포함되는지 확인한다.
 7. operation catalog의 모든 ID가 직접 vector input에서 사용되거나 `operation_exemptions`에 명시돼 있는지 확인한다. 새 operation이 추가되면 direct coverage 또는 명시적 exemption 없이는 suite coverage check가 실패해야 한다.
 
 Python exception class, 함수 이름, diagnostic 문자열은 protocol이 아니다.
