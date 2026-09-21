@@ -576,6 +576,65 @@ def load_adapter_capabilities(
     }
 
 
+def load_extension_runtime_inputs(
+    extension_paths: Iterable[Path | str],
+    capability_paths: Iterable[Path | str],
+    contract: dict,
+    expected_extension_digests: Iterable[str] = (),
+    expected_capability_digests: Iterable[str] = (),
+) -> tuple[dict | None, dict | None, dict, int]:
+    """Load optional extension/capability inputs and return CLI-ready status without policy decisions."""
+    result: dict = {}
+    exit_code = 0
+    extension_registry = None
+    adapter_capabilities = None
+    extension_paths = list(extension_paths)
+    capability_paths = list(capability_paths)
+
+    if extension_paths:
+        try:
+            extension_registry = load_operation_extensions(
+                extension_paths, contract, expected_digests=expected_extension_digests
+            )
+            result["operation_extensions"] = {
+                "status": "PASS",
+                "schema": "VALID",
+                "namespaces": extension_registry["namespaces"],
+                "operation_ids": sorted(extension_registry["operations"]),
+                "combined_digest": extension_registry["combined_digest"],
+                "integrity": extension_registry["integrity"],
+                "authority": extension_registry["authority"],
+                "diagnostic_sources": extension_registry["diagnostic_sources"],
+            }
+        except Exception as exc:
+            result["operation_extensions"] = {
+                "status": "FAIL", "schema": "INVALID", "error": str(exc)
+            }
+            exit_code = 1
+
+    if capability_paths:
+        try:
+            adapter_capabilities = load_adapter_capabilities(
+                capability_paths, expected_digests=expected_capability_digests
+            )
+            result["adapter_capabilities"] = {
+                "status": "PASS",
+                "schema": "VALID",
+                "adapter_ids": sorted(adapter_capabilities["adapters"]),
+                "combined_digest": adapter_capabilities["combined_digest"],
+                "integrity": adapter_capabilities["integrity"],
+                "authority": adapter_capabilities["authority"],
+                "diagnostic_sources": adapter_capabilities["diagnostic_sources"],
+            }
+        except Exception as exc:
+            result["adapter_capabilities"] = {
+                "status": "FAIL", "schema": "INVALID", "error": str(exc)
+            }
+            exit_code = 1
+
+    return extension_registry, adapter_capabilities, result, exit_code
+
+
 def canonical_policy_contract_digest(contract: dict) -> str:
     """Return a stable semantic SHA-256 for the machine policy contract.
 

@@ -96,46 +96,15 @@ def main() -> int:
     contract = load_json(CONTRACT_PATH)
     result: dict = {}
     exit_code = 0
-    extension_registry = None
-    adapter_capabilities = None
-    if args.operation_extension:
-        try:
-            extension_registry = load_operation_extensions(
-                args.operation_extension,
-                contract,
-                expected_digests=args.trusted_extension_digest,
-            )
-            result["operation_extensions"] = {
-                "status": "PASS",
-                "schema": "VALID",
-                "namespaces": extension_registry["namespaces"],
-                "operation_ids": sorted(extension_registry["operations"]),
-                "combined_digest": extension_registry["combined_digest"],
-                "integrity": extension_registry["integrity"],
-                "authority": extension_registry["authority"],
-                "diagnostic_sources": extension_registry["diagnostic_sources"],
-            }
-        except Exception as exc:
-            result["operation_extensions"] = {"status": "FAIL", "schema": "INVALID", "error": str(exc)}
-            exit_code = 1
-    if args.adapter_capabilities:
-        try:
-            adapter_capabilities = load_adapter_capabilities(
-                args.adapter_capabilities,
-                expected_digests=args.trusted_capability_digest,
-            )
-            result["adapter_capabilities"] = {
-                "status": "PASS",
-                "schema": "VALID",
-                "adapter_ids": sorted(adapter_capabilities["adapters"]),
-                "combined_digest": adapter_capabilities["combined_digest"],
-                "integrity": adapter_capabilities["integrity"],
-                "authority": adapter_capabilities["authority"],
-                "diagnostic_sources": adapter_capabilities["diagnostic_sources"],
-            }
-        except Exception as exc:
-            result["adapter_capabilities"] = {"status": "FAIL", "schema": "INVALID", "error": str(exc)}
-            exit_code = 1
+    extension_registry, adapter_capabilities, extension_result, extension_exit = load_extension_runtime_inputs(
+        args.operation_extension,
+        args.adapter_capabilities,
+        contract,
+        args.trusted_extension_digest,
+        args.trusted_capability_digest,
+    )
+    result.update(extension_result)
+    exit_code = max(exit_code, extension_exit)
 
     checks = bundle_checks(ROOT)
     bundle_ok = all(c.status == "PASS" for c in checks)

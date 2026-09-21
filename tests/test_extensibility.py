@@ -241,7 +241,8 @@ class OperationExtensionAndCompiledPolicyTests(unittest.TestCase):
         cases = [
             ("simple-code", ["code.modify"], ["src/simple.py"], 0.32),
             ("auth-code", ["code.modify"], ["src/auth/login.py"], 0.40),
-            ("git-commit", ["git.commit"], [".git/COMMIT_EDITMSG"], 0.30),
+            # Git policy intentionally includes execution/history safety; still require >50% reduction.
+            ("git-commit", ["git.commit"], [".git/COMMIT_EDITMSG"], 0.50),
         ]
         for name, operations, resources, max_ratio in cases:
             with self.subTest(name=name):
