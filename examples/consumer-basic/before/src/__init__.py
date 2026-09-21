@@ -1,0 +1,1 @@
+"""consumer-basic example package."""
