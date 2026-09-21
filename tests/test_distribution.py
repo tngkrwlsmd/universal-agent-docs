@@ -32,7 +32,7 @@ class DistributionTests(unittest.TestCase):
     def test_complete_zip_passes(self):
         with tempfile.TemporaryDirectory() as td:
             z = Path(td) / "universal-agent-docs.zip"
-            self.write_valid_zip(z)
+            self.write_valid_zip(z, files=self.allowed)
             result = mod.validate_distribution(z, self.contract)
             self.assertEqual("PASS", result["status"], result)
 
@@ -186,7 +186,7 @@ class DistributionTests(unittest.TestCase):
                 return data
 
             z = Path(td) / "tampered.zip"
-            self.write_valid_zip(z, mutate=mutate)
+            self.write_valid_zip(z, mutate=mutate, files=self.allowed)
             result = mod.validate_distribution(z, self.contract, manifest)
             self.assertEqual("FAIL", result["status"])
             self.assertIn("sha256 mismatch: POLICIES.md", result["integrity_failures"])
@@ -228,7 +228,7 @@ class DistributionTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             root = Path(td) / self.canonical_root
             root.mkdir()
-            for rel in self.required:
+            for rel in self.allowed:
                 target = root / rel
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(ROOT / rel, target)

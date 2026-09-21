@@ -139,6 +139,8 @@ class PackagingPropertyTests(unittest.TestCase):
                 infos = [x for x in zf.infolist() if not x.is_dir()]
                 names = [x.filename for x in infos]
                 self.assertTrue(all(x.compress_type == zipfile.ZIP_STORED for x in infos))
+                readme = zf.read("universal-agent-docs-consumer/.agent-policy/README.md").decode("utf-8")
+                adoption = zf.read("universal-agent-docs-consumer/.agent-policy/docs/adoption-profiles.md").decode("utf-8")
             self.assertIn("universal-agent-docs-consumer/AGENTS.md", names)
             self.assertIn("universal-agent-docs-consumer/.agent-policy/README.md", names)
             self.assertNotIn("universal-agent-docs-consumer/README.md", names)
@@ -147,8 +149,6 @@ class PackagingPropertyTests(unittest.TestCase):
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/tests/") for x in names))
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.github/") for x in names))
             self.assertFalse(any(x.startswith("universal-agent-docs-consumer/.agent-policy/examples/") for x in names))
-            readme = zf.read("universal-agent-docs-consumer/.agent-policy/README.md").decode("utf-8")
-            adoption = zf.read("universal-agent-docs-consumer/.agent-policy/docs/adoption-profiles.md").decode("utf-8")
             self.assertNotIn("blob/main/examples/", readme)
             self.assertNotIn("blob/main/examples/", adoption)
             self.assertIn("matching canonical source artifact", readme)
