@@ -1,4 +1,6 @@
-# PROJECT.md — project facts, architecture, readiness
+# PROJECT.md — consumer project-facts template, architecture, readiness
+
+> **Upstream repository note:** 이 루트 파일은 `universal-agent-docs` 자체의 운영 상태를 기록하는 문서가 아니라 consumer 프로젝트가 복사·검토해 채우는 template이다. 아래 `Unknown` 값은 upstream readiness 실패를 뜻하지 않는다.
 
 이 파일은 `PROJECT_MAP.md`와 `ARCHITECTURE.md` 역할을 통합한 단일 프로젝트 지도다. 상세 제품 명세나 장기 계획을 복제하지 말고 실제 Source of Truth의 위치를 가리킨다.
 

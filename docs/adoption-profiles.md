@@ -34,7 +34,7 @@ production, customer data, privileged credentials, external/public side effects�
 
 먼저 [GitHub Releases](https://github.com/tngkrwlsmd/universal-agent-docs/releases)를 확인한다.
 
-**현재 상태 (2026-09-20): published GitHub Release와 SemVer tag가 없다.** 현재는 upstream source checkout에서 consumer ZIP을 직접 build한다.
+가능하면 [GitHub Releases](https://github.com/tngkrwlsmd/universal-agent-docs/releases)의 최신 immutable SemVer Release에서 consumer ZIP을 사용한다. published Release가 아직 없거나 source checkout 자체를 검증하려는 경우에만 upstream source에서 consumer ZIP을 직접 build한다.
 
 ```bash
 git clone https://github.com/tngkrwlsmd/universal-agent-docs.git
@@ -44,7 +44,7 @@ python scripts/package_consumer.py --output-dir dist
 python -m zipfile -e dist/universal-agent-docs-consumer.zip /tmp/uad-consumer
 ```
 
-이 source-built artifact는 package self-validation과 local adoption에는 사용할 수 있지만, published immutable release의 publisher authenticity/provenance를 대신하지 않는다. 향후 official SemVer Release가 발행되면 production에서는 Release의 consumer ZIP을 우선하고, trusted `release_tag`와 별도 채널에서 확보한 `expected_source_sha`로 `.github/workflows/verify-release.yml`을 실행해 release/build provenance를 확인한다.
+이 source-built artifact는 package self-validation과 local adoption에는 사용할 수 있지만, published immutable release의 publisher authenticity/provenance를 대신하지 않는다. production에서 official SemVer Release를 사용할 수 있다면 Release의 consumer ZIP을 우선하고, trusted `release_tag`와 별도 채널에서 확보한 `expected_source_sha`로 `.github/workflows/verify-release.yml`을 실행해 release/build provenance를 확인한다.
 
 ### Staging and install
 
@@ -289,7 +289,7 @@ Profile C라고 주장하는 intercepted surface에서는 다음을 통과시키
 
 ## Production checklist
 
-현재 repository에는 published immutable Release가 없으므로 source-built ZIP을 official production release로 취급하지 않는다. release pipeline이 존재하는 것과 실제 trusted release가 존재하는 것은 별개다. official Release가 발행된 이후 production에서는 immutable Release + provenance verification 경로를 우선한다.\n\nproduction에서 C를 사용하려면 최소 다음을 별도로 확인한다.
+published immutable Release가 없는 상태에서 만든 source-built ZIP은 official production release로 취급하지 않는다. release pipeline이 존재하는 것과 실제 trusted release가 존재하는 것은 별개다. official Release를 사용할 수 있는 production에서는 immutable Release + provenance verification 경로를 우선한다.\n\nproduction에서 C를 사용하려면 최소 다음을 별도로 확인한다.
 
 - adapter가 실제 side-effect surface를 빠짐없이 intercept하는가
 - adapter assertion source와 transport가 spoofing되지 않는가
