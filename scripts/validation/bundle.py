@@ -88,7 +88,7 @@ def render_generated_policy_reference(contract: dict) -> str:
         "",
     ])
     for field in execution.get("required_inputs", []):
-        lines.append(f"- \`{field}\`")
+        lines.append(f"- `{field}`")
 
     derivation = execution.get("exposure_derivation", {})
     lines.extend([
@@ -100,7 +100,7 @@ def render_generated_policy_reference(contract: dict) -> str:
     ])
     for fact in derivation.get("required_fact_keys", []):
         for value, floor in derivation.get("fact_floors", {}).get(fact, {}).items():
-            lines.append(f"| \`{fact}\` | \`{value}\` | {floor} |")
+            lines.append(f"| `{fact}` | `{value}` | {floor} |")
 
     lines.extend([
         "",
@@ -111,13 +111,13 @@ def render_generated_policy_reference(contract: dict) -> str:
     if not rules:
         lines.append("- none")
     for rule in rules:
-        operations = ", ".join(f"\`{op}\`" for op in rule.get("operations", []))
+        operations = ", ".join(f"`{op}`" for op in rule.get("operations", []))
         matches = []
         for matcher in rule.get("match_any", []):
-            values = ", ".join(f"\`{value}\`" for value in matcher.get("values", []))
+            values = ", ".join(f"`{value}`" for value in matcher.get("values", []))
             matches.append(f"{matcher.get('source', '')}: {values}")
         lines.append(
-            f"- \`{rule.get('id', '')}\`: {operations} -> \`{rule.get('effect', '')}\` when "
+            f"- `{rule.get('id', '')}`: {operations} -> `{rule.get('effect', '')}` when "
             + "; ".join(matches)
         )
 
@@ -130,11 +130,11 @@ def render_generated_policy_reference(contract: dict) -> str:
     if not semantic_rules:
         lines.append("- none")
     for rule in semantic_rules:
-        operations = ", ".join(f"\`{op}\`" for op in rule.get("operations", []))
-        details = ", ".join(f"\`{key}\`" for key in rule.get("required_semantic_details", [])) or "none"
-        environments = ", ".join(f"\`{env}\`" for env in rule.get("allowed_environments", [])) or "any"
+        operations = ", ".join(f"`{op}`" for op in rule.get("operations", []))
+        details = ", ".join(f"`{key}`" for key in rule.get("required_semantic_details", [])) or "none"
+        environments = ", ".join(f"`{env}`" for env in rule.get("allowed_environments", [])) or "any"
         lines.append(
-            f"- \`{rule.get('id', '')}\`: operations {operations}; required details {details}; allowed environments {environments}"
+            f"- `{rule.get('id', '')}`: operations {operations}; required details {details}; allowed environments {environments}"
         )
 
     lines.extend([
