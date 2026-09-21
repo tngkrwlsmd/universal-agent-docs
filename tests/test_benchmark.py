@@ -20,11 +20,12 @@ class PolicyCostBenchmarkTests(unittest.TestCase):
         second = benchmark.collect_static_metrics()
         self.assertEqual(first, second)
         for key in (
-            "full_policy_bundle_bytes", "agents", "compiled_policy", "operation_count",
+            "full_policy_bundle_bytes", "agents", "compiled_policy", "compiled_policy_cases", "operation_count",
             "schema_count", "conformance_vector_count", "consumer_artifact_bytes",
         ):
             self.assertIn(key, first)
         self.assertGreater(first["consumer_artifact_bytes"], 0)
+        self.assertEqual(6, len(first["compiled_policy_cases"]))
         self.assertLess(first["compiled_policy"]["characters"], (ROOT / "POLICIES.md").stat().st_size)
 
 

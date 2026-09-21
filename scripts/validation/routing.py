@@ -15,6 +15,64 @@ def normalize_text(value: str) -> str:
     return re.sub(r"\s+", " ", value).strip()
 
 
+
+def _positive_prefix_before_negated_tail(value: str) -> str:
+    """Keep a clearly positive prefix before a final Korean negated action."""
+    matches = list(re.finditer(r"(?:하고|하고서|한\s*다음(?:에)?)\s*", value))
+    return value[: matches[-1].end()] if matches else ""
+
+
+def _strip_korean_mixed_negation(value: str) -> str:
+    """Remove only high-confidence Korean negated action spans.
+
+    Examples:
+    - "배포하지 말고 테스트해줘" -> "테스트해줘"
+    - "테스트하고 배포는 하지 마" -> "테스트하고"
+    This is intentionally not a general Korean grammar parser.
+    """
+    current = value
+    connective = re.compile(r"하지\s*(?:말고|않고)")
+    while True:
+        match = connective.search(current)
+        if match is None:
+            break
+        left, right = current[: match.start()], current[match.end() :]
+        current = f"{_positive_prefix_before_negated_tail(left)} {right}".strip()
+
+    terminal = re.search(
+        r"(?:하지\s*마(?:세요)?|하지\s*말아(?:줘|주세요)?|실행하지\s*마(?:세요)?)",
+        current,
+    )
+    if terminal is not None:
+        current = _positive_prefix_before_negated_tail(current[: terminal.start()]).strip()
+    return current
+
+
+def strip_negated_action_clauses(value: str) -> str:
+    """Remove obvious action clauses that are explicitly negated/read-only.
+
+    Natural-language routing is advisory; this deliberately handles only high-confidence
+    negation patterns so a phrase such as "do not deploy" is not promoted into an
+    execution hint. Ambiguous text stays unclassified rather than inventing intent.
+    """
+    raw = _strip_korean_mixed_negation(unicodedata.normalize("NFKC", value))
+    clauses = re.split(r"(?:[,;]|\bbut\b|\bhowever\b|하지만)", raw, flags=re.I)
+    kept: list[str] = []
+    negative_markers = (
+        r"\bdo\s+not\b", r"\bdon['’]?t\b", r"\bwithout\s+(?:execut|run|deploy|publish|appl)",
+        r"하지\s*말", r"하지말", r"실행하지", r"하지\s*않",
+    )
+    read_only_markers = (r"\breview\b", r"\bexplain\b", r"\bshow\s+me\b", r"검토", r"리뷰", r"설명", r"내용만", r"설정만")
+    for clause in clauses:
+        if not clause.strip():
+            continue
+        negated = any(re.search(pattern, clause, flags=re.I) for pattern in negative_markers)
+        read_only = any(re.search(pattern, clause, flags=re.I) for pattern in read_only_markers)
+        if negated or (read_only and re.search(r"\b(?:plan|without)\b|실행하지", clause, flags=re.I)):
+            continue
+        kept.append(clause)
+    return " ".join(kept)
+
 def has_hangul(value: str) -> bool:
     return bool(re.search(r"[가-힣]", value))
 
@@ -92,7 +150,7 @@ def load_routing_aliases(contract: dict, root: Path = ROOT) -> dict:
 
 
 def infer_operations(contract: dict, text: str, aliases_doc: dict | None = None) -> list[str]:
-    normalized = normalize_text(text)
+    normalized = normalize_text(strip_negated_action_clauses(text))
     if not normalized:
         return []
     if aliases_doc is None:

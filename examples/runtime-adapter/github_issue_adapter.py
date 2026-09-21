@@ -61,12 +61,8 @@ def _sha256_text(value: str) -> str:
     return "sha256:" + hashlib.sha256(value.encode("utf-8")).hexdigest()
 
 
-def github_exposure_facts() -> dict:
-    """Facts for this fixed reference surface.
-
-    A real adapter must derive these from authenticated account/repository context,
-    not copy these example values blindly.
-    """
+def demo_exposure_facts() -> dict:
+    """Low-risk fixture used only by the local demo/tests; not a production default."""
     return {
         "data_classification": "public",
         "credential_class": "none",
@@ -74,6 +70,18 @@ def github_exposure_facts() -> dict:
         "public_visibility": "none",
         "estimated_blast_radius": "single_resource",
         "estimated_financial_impact": "none",
+    }
+
+
+def unknown_exposure_facts() -> dict:
+    """Conservative explicit unknown facts for callers that genuinely lack context."""
+    return {
+        "data_classification": "unknown",
+        "credential_class": "unknown",
+        "tenant_scope": "unknown",
+        "public_visibility": "unknown",
+        "estimated_blast_radius": "unknown",
+        "estimated_financial_impact": "unknown",
     }
 
 
@@ -95,7 +103,9 @@ def evaluate_issue_create(
 ) -> dict:
     """Independently map the fixed adapter surface to canonical runtime semantics."""
     target = _target(request)
-    facts = github_exposure_facts() if exposure_facts is None else exposure_facts
+    if exposure_facts is None:
+        raise ValueError("exposure_facts must be explicitly supplied by the execution surface")
+    facts = exposure_facts
     return policy_validate.evaluate_execution_boundary(
         contract,
         planned_operations,
@@ -243,6 +253,7 @@ def run_demo() -> dict:
         request,
         correlation_id=correlation_id,
         execution_nonce=execution_nonce,
+        exposure_facts=demo_exposure_facts(),
     )
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -254,13 +265,13 @@ def run_demo() -> dict:
             request, [ACTUAL_OPERATION], approval_path, ledger, transport,
             contract=contract, reference_time=now, correlation_id=correlation_id,
             execution_nonce=execution_nonce, higher_authority_authenticated=True,
-            transport_authenticated=True,
+            transport_authenticated=True, exposure_facts=demo_exposure_facts(),
         )
         replay = dispatch_issue_create(
             request, [ACTUAL_OPERATION], approval_path, ledger, transport,
             contract=contract, reference_time=now, correlation_id=correlation_id,
             execution_nonce=execution_nonce, higher_authority_authenticated=True,
-            transport_authenticated=True,
+            transport_authenticated=True, exposure_facts=demo_exposure_facts(),
         )
         return {
             "boundary_status": boundary["status"],

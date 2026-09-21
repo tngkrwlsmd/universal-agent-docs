@@ -163,7 +163,7 @@ Schema validity, integrity, capability, authority는 서로 다른 보장이다.
 
 ## Language-neutral conformance
 
-`conformance/`는 Python 내부 API가 아니라 JSON corpus/schema/result protocol로 machine semantics를 고정한다. TypeScript/Go/Rust/Java 구현체도 Python module import 없이 같은 normative result를 구현할 수 있어야 한다.
+`conformance/`는 Python 내부 API가 아니라 JSON corpus/schema/result protocol로 machine semantics를 고정한다. Source tree의 dependency-free JavaScript core evaluator는 Python을 호출하지 않고 routing/execution-boundary/catalog vector를 독립 계산해 cross-language 구현 가능성을 검증한다. 이는 전체 대체 runtime을 제공한다는 뜻은 아니다.
 
 Protocol과 구현 절차의 primary owner는 [conformance/README.md](conformance/README.md)다.
 
@@ -178,6 +178,7 @@ python scripts/validate.py
 python -m unittest discover -s tests -v
 python scripts/conformance.py
 python scripts/conformance.py --coverage
+node conformance/reference-javascript/runner.mjs
 python scripts/evaluate.py --fail-on-mismatch
 ```
 

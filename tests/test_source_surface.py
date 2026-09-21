@@ -24,6 +24,9 @@ class CanonicalSourceSurfaceTests(unittest.TestCase):
         expected = {
             "evaluation/README.md",
             "evaluation/scenarios.json",
+            "evaluation/smoke.json",
+            "evaluation/regression.json",
+            "conformance/reference-javascript/runner.mjs",
             "scripts/evaluate.py",
             "scripts/policy_diff.py",
             "scripts/benchmark.py",

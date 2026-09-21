@@ -62,9 +62,7 @@ machine-enforceable contract와 human-facing policy가 enforcement 의미에서 
 
 ## 5. User tool opt-out
 
-사용자가 특정 도구나 connector를 금지하거나 explicit opt-in으로 제한하면 일반 개발 요청을 사용 허가로 확대 해석하지 않는다.
-
-이 저장소의 기본 범용 지침에서는 `chatgpt-codex-connector`를 **명시적으로 요청받은 경우에만** 사용한다. “구현해”, “수정해”, “리뷰해”, “테스트해” 같은 일반 개발 요청은 opt-in이 아니다. 이 제한은 해당 connector에만 적용하며 사용자가 별도로 제한하지 않은 일반 GitHub tooling이나 다른 도구까지 자동으로 금지하지 않는다.
+사용자가 특정 도구나 connector를 금지하거나 explicit opt-in으로 제한하면 일반 개발 요청을 사용 허가로 확대 해석하지 않는다. “구현해”, “수정해”, “리뷰해”, “테스트해” 같은 일반 개발 요청만으로 opt-in 제한이 해제되었다고 간주하지 않는다. 제한 범위는 사용자가 지정한 도구·connector에만 적용하며 다른 도구까지 임의로 확대하지 않는다.
 
 ## 6. Completion
 
