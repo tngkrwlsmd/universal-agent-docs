@@ -293,6 +293,16 @@ Profile C라고 주장하는 intercepted surface에서는 다음을 통과시키
 - 만료된 approval/override, nonce/digest mismatch 또는 replay
 - atomic ledger 장애로 single-use consumption 성공을 확정할 수 없음
 
+## Task-scoped policy context and operation extensions
+
+긴 정책 문서를 매 작업에 그대로 주입하는 대신 `--compiled-policy`를 사용하면 현재 operation/resource에 적용되는 섹션만 canonical source에서 파생해 얻을 수 있다. 이 출력은 별도 정책 파일이 아니며 AGENTS/POLICY_CONTRACT/POLICIES를 재정의하지 않는다.
+
+조직별 operation extension은 `universal-agent-docs-operation-extension-v1` JSON 문서로 제공한다. namespace는 소문자 영숫자와 `_`/`-`를 사용하고 core operation의 첫 namespace와 충돌할 수 없다. 각 operation은 known policy ID, Effect floor, lifecycle, 정확한 `supported_adapters`를 선언해야 한다. 선택적으로 Exposure floor, production Effect, 허용 environment, semantic detail 요구를 추가할 수 있다.
+
+Extension은 의도적으로 **explicit-plan only**다. upstream `ROUTING_ALIASES.json`을 자동 확장하지 않으며 모르는 extension이나 지원하지 않는 adapter는 enforcement에서 fail-closed한다. runtime에 사용된 extension 문서의 canonical digest는 action digest에 결박된다.
+
+source repository의 `examples/runtime-adapter/sandbox_artifact_adapter.py`는 이 흐름을 실제 로컬 sandbox file write까지 수행하는 reference다. 다만 조직 identity 인증, trusted transport, production credential, 분산 durable replay ledger, 모든 tool interception은 제공하지 않는다.
+
 ## Production checklist
 
 published immutable Release가 없는 상태에서 만든 source-built ZIP은 official production release로 취급하지 않는다. release pipeline이 존재하는 것과 실제 trusted release가 존재하는 것은 별개다. official Release를 사용할 수 있는 production에서는 immutable Release + provenance verification 경로를 우선한다.

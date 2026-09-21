@@ -137,8 +137,12 @@ class OperationExtensionAndCompiledPolicyTests(unittest.TestCase):
     def test_generated_machine_reference_matches_contract(self):
         policies = (ROOT / "POLICIES.md").read_text(encoding="utf-8")
         expected = mod.render_generated_policy_reference(self.contract)
-        actual = mod._current_generated_policy_reference(policies)
-        self.assertEqual(expected, actual)
+        start = policies.find(mod.GENERATED_POLICY_START)
+        end = policies.find(mod.GENERATED_POLICY_END)
+        self.assertGreaterEqual(start, 0)
+        self.assertGreaterEqual(end, start)
+        end += len(mod.GENERATED_POLICY_END)
+        self.assertEqual(expected, policies[start:end])
 
 
 if __name__ == "__main__":

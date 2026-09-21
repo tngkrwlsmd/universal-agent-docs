@@ -97,6 +97,12 @@ class LanguageNeutralConformanceTests(unittest.TestCase):
             "storage.object_delete",
             "network.configuration_change",
             "artifact.publish",
+            "data.export",
+            "database.read",
+            "git.branch_change",
+            "git.commit",
+            "git.merge",
+            "git.rebase",
         }
         direct = set()
         for vector in self.vectors:

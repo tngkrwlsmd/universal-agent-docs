@@ -66,6 +66,7 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
                 None,
                 root / "ledger.sqlite3",
                 contract=self.contract,
+                extension_registry=self.extensions,
                 reference_time=self.now,
                 higher_authority_authenticated=True,
                 transport_authenticated=True,

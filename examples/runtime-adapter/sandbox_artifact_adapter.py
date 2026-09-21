@@ -94,6 +94,7 @@ def execute_publish(
     ledger: Path,
     *,
     contract: dict,
+    extension_registry: dict,
     reference_time: datetime,
     higher_authority_authenticated: bool,
     transport_authenticated: bool,
@@ -125,6 +126,7 @@ def execute_publish(
         replay_registry=ledger,
         consume=True,
         reference_time=reference_time,
+        extension_registry=extension_registry,
     )
     audit["approval"] = {
         "object_validity": approval["object_validity"],
@@ -174,6 +176,7 @@ def run_demo() -> dict:
         first = execute_publish(
             source, destination, boundary, approval_path, ledger,
             contract=contract,
+            extension_registry=extensions,
             reference_time=now,
             higher_authority_authenticated=True,
             transport_authenticated=True,
@@ -181,6 +184,7 @@ def run_demo() -> dict:
         replay = execute_publish(
             source, destination, boundary, approval_path, ledger,
             contract=contract,
+            extension_registry=extensions,
             reference_time=now,
             higher_authority_authenticated=True,
             transport_authenticated=True,

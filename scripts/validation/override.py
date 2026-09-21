@@ -59,6 +59,7 @@ def validate_protected_override(
     replay_registry: Path | None = None,
     consume: bool = False,
     reference_time: datetime | None = None,
+    extension_registry: dict | None = None,
 ) -> dict:
     """Validate a protected override and bind it to the exact prohibited action.
 
@@ -89,7 +90,7 @@ def validate_protected_override(
     except Exception as exc:
         return {"object_validity":"INVALID","schema_status":"FAIL","temporal":"NOT_CHECKED","binding":"NOT_CHECKED","authority":"UNVERIFIED","task_approval":"UNVERIFIED","authorization":"NOT_ESTABLISHED","errors":[str(exc)],"warnings":warnings}
 
-    catalog = operation_catalog(contract)
+    catalog = operation_catalog(contract, extension_registry)
     unknown_ops = sorted(set(data["operations"]) - set(catalog))
     if unknown_ops:
         errors.append("override operations must use canonical operation IDs; unknown: " + ", ".join(unknown_ops))

@@ -2465,6 +2465,296 @@
         "/status",
         "/error_count"
       ]
+    },
+    {
+      "id": "data-export-restricted-requires-approval",
+      "description": "restricted data export is L2/X2 and requires explicit approval",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:data.export",
+        "exposure.derivation"
+      ],
+      "input": {
+        "planned_operations": [
+          "data.export"
+        ],
+        "actual_operations": [
+          "data.export"
+        ],
+        "actual_action": "export selected customer records to local review file",
+        "affected_resources": [
+          "exports/customer-review.csv"
+        ],
+        "targets": [
+          "workspace/exports/customer-review.csv"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "confidential",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-data-export-restricted",
+        "execution_nonce": "nonce-data-export-restricted-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "production-database-read-uses-guards-direct",
+      "description": "production database read remains L1 but production exposure floor requires guards",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:database.read",
+        "exposure.derivation"
+      ],
+      "input": {
+        "planned_operations": [
+          "database.read"
+        ],
+        "actual_operations": [
+          "database.read"
+        ],
+        "actual_action": "read production database row for diagnosis",
+        "affected_resources": [
+          "database/users"
+        ],
+        "targets": [
+          "database/prod/users"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-production-db-read-direct",
+        "execution_nonce": "nonce-production-db-read-direct-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L1",
+        "effective_exposure": "X2",
+        "action_gate": "AUTO_WITH_GUARDS"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "git-branch-change-local-direct",
+      "description": "git.branch_change has direct local L2/X0 conformance coverage",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:git.branch_change"
+      ],
+      "input": {
+        "planned_operations": [
+          "git.branch_change"
+        ],
+        "actual_operations": [
+          "git.branch_change"
+        ],
+        "actual_action": "switch local feature branch",
+        "affected_resources": [
+          ".git"
+        ],
+        "targets": [
+          "branch/feature/reference"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-git-branch-change-local-direct",
+        "execution_nonce": "nonce-git-branch-change-local-direct-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "git-commit-local-direct",
+      "description": "git.commit has direct local L2/X0 conformance coverage",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:git.commit"
+      ],
+      "input": {
+        "planned_operations": [
+          "git.commit"
+        ],
+        "actual_operations": [
+          "git.commit"
+        ],
+        "actual_action": "create local commit",
+        "affected_resources": [
+          ".git"
+        ],
+        "targets": [
+          "commit/local/reference"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-git-commit-local-direct",
+        "execution_nonce": "nonce-git-commit-local-direct-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "git-merge-local-direct",
+      "description": "git.merge has direct local L2/X0 conformance coverage",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:git.merge"
+      ],
+      "input": {
+        "planned_operations": [
+          "git.merge"
+        ],
+        "actual_operations": [
+          "git.merge"
+        ],
+        "actual_action": "merge local feature branch",
+        "affected_resources": [
+          ".git"
+        ],
+        "targets": [
+          "branch/feature/reference"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-git-merge-local-direct",
+        "execution_nonce": "nonce-git-merge-local-direct-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "git-rebase-local-direct",
+      "description": "git.rebase has direct local L2/X0 conformance coverage",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:git.rebase"
+      ],
+      "input": {
+        "planned_operations": [
+          "git.rebase"
+        ],
+        "actual_operations": [
+          "git.rebase"
+        ],
+        "actual_action": "rebase local feature branch",
+        "affected_resources": [
+          ".git"
+        ],
+        "targets": [
+          "branch/feature/reference"
+        ],
+        "environment": "local",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "none",
+          "tenant_scope": "single_user",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-git-rebase-local-direct",
+        "execution_nonce": "nonce-git-rebase-local-direct-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X0",
+        "action_gate": "AUTO"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
     }
   ]
 }
