@@ -84,6 +84,33 @@ class LanguageNeutralConformanceTests(unittest.TestCase):
         self.assertEqual(set(), exemptions - catalog)
         self.assertEqual(set(), direct.intersection(exemptions))
 
+    def test_priority_high_risk_operations_have_direct_coverage(self):
+        priority = {
+            "cloud.resource_change",
+            "cloud.resource_delete",
+            "database.schema_change",
+            "database.destructive_change",
+            "credential.rotate",
+            "iam.change",
+            "external.message_send",
+            "service.restart",
+            "storage.object_delete",
+            "network.configuration_change",
+            "artifact.publish",
+        }
+        direct = set()
+        for vector in self.vectors:
+            data = vector["input"]
+            candidates = [data]
+            if isinstance(data.get("base"), dict):
+                candidates.append(data["base"])
+            if isinstance(data.get("boundary"), dict):
+                candidates.append(data["boundary"])
+            for item in candidates:
+                direct.update(item.get("planned_operations", []))
+                direct.update(item.get("actual_operations", []))
+        self.assertEqual(set(), priority - direct)
+
     def test_reference_runner_passes_entire_corpus(self):
         result = runner.run_suite()
         jsonschema.Draft202012Validator.check_schema(self.result_schema)

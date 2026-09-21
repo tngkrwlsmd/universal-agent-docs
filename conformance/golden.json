@@ -1251,6 +1251,446 @@
       ]
     },
     {
+      "id": "production-database-schema-change-escalates-l4",
+      "description": "production database schema change escalates to L4/X2 and requires explicit approval",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:database.schema_change",
+        "effect.production_escalation"
+      ],
+      "input": {
+        "planned_operations": [
+          "database.schema_change"
+        ],
+        "actual_operations": [
+          "database.schema_change"
+        ],
+        "actual_action": "apply database schema migration users_add_index",
+        "affected_resources": [
+          "database/schema/users"
+        ],
+        "targets": [
+          "database/prod/app"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        },
+        "correlation_id": "conformance-production-database-schema-change-escalates-l4",
+        "execution_nonce": "nonce-production-database-schema-change-escalates-l4-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "regulated-database-destructive-change-requires-override",
+      "description": "regulated destructive database change is L4/X3 and requires protected override",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:database.destructive_change",
+        "exposure.derivation"
+      ],
+      "input": {
+        "planned_operations": [
+          "database.destructive_change"
+        ],
+        "actual_operations": [
+          "database.destructive_change"
+        ],
+        "actual_action": "drop archived customer table after migration review",
+        "affected_resources": [
+          "database/table/customer_archive"
+        ],
+        "targets": [
+          "database/staging/app/customer_archive"
+        ],
+        "environment": "staging",
+        "exposure_facts": {
+          "data_classification": "regulated",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "bounded"
+        },
+        "correlation_id": "conformance-regulated-database-destructive-change-requires-override",
+        "execution_nonce": "nonce-regulated-database-destructive-change-requires-override-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X3",
+        "action_gate": "PROHIBITED_WITHOUT_OVERRIDE"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "privileged-credential-rotation-requires-override",
+      "description": "privileged credential rotation is L4/X3 and requires protected override",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:credential.rotate",
+        "exposure.derivation"
+      ],
+      "input": {
+        "planned_operations": [
+          "credential.rotate"
+        ],
+        "actual_operations": [
+          "credential.rotate"
+        ],
+        "actual_action": "rotate privileged deployment credential",
+        "affected_resources": [
+          "credential/deploy-admin"
+        ],
+        "targets": [
+          "credential/staging/deploy-admin"
+        ],
+        "environment": "staging",
+        "exposure_facts": {
+          "data_classification": "restricted",
+          "credential_class": "privileged_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        },
+        "correlation_id": "conformance-privileged-credential-rotation-requires-override",
+        "execution_nonce": "nonce-privileged-credential-rotation-requires-override-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X3",
+        "action_gate": "PROHIBITED_WITHOUT_OVERRIDE"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "organization-wide-iam-change-requires-override",
+      "description": "organization-wide IAM change is L4/X3 and requires protected override",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:iam.change",
+        "exposure.derivation"
+      ],
+      "input": {
+        "planned_operations": [
+          "iam.change"
+        ],
+        "actual_operations": [
+          "iam.change"
+        ],
+        "actual_action": "change organization deployment role policy",
+        "affected_resources": [
+          "iam/role/deployer"
+        ],
+        "targets": [
+          "organization/example/iam/role/deployer"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "restricted",
+          "credential_class": "service_credential",
+          "tenant_scope": "organization_wide",
+          "public_visibility": "none",
+          "estimated_blast_radius": "organization",
+          "estimated_financial_impact": "material"
+        },
+        "correlation_id": "conformance-organization-wide-iam-change-requires-override",
+        "execution_nonce": "nonce-organization-wide-iam-change-requires-override-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X3",
+        "action_gate": "PROHIBITED_WITHOUT_OVERRIDE"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "external-message-send-requires-approval",
+      "description": "external message send is an L3 side effect requiring explicit approval",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:external.message_send"
+      ],
+      "input": {
+        "planned_operations": [
+          "external.message_send"
+        ],
+        "actual_operations": [
+          "external.message_send"
+        ],
+        "actual_action": "send support message to external recipient",
+        "affected_resources": [
+          "message/support-update"
+        ],
+        "targets": [
+          "recipient/external/support-channel-42"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "single_resource",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-external-message-send-requires-approval",
+        "execution_nonce": "nonce-external-message-send-requires-approval-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "production-service-restart-escalates-l4",
+      "description": "production service restart escalates from L3 to L4/X2",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:service.restart",
+        "effect.production_escalation"
+      ],
+      "input": {
+        "planned_operations": [
+          "service.restart"
+        ],
+        "actual_operations": [
+          "service.restart"
+        ],
+        "actual_action": "restart production api service",
+        "affected_resources": [
+          "service/api"
+        ],
+        "targets": [
+          "cluster/prod/service/api"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        },
+        "correlation_id": "conformance-production-service-restart-escalates-l4",
+        "execution_nonce": "nonce-production-service-restart-escalates-l4-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "staging-storage-object-delete-is-l4",
+      "description": "storage object delete retains its L4 floor with a concrete staging target",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:storage.object_delete",
+        "effect.floor"
+      ],
+      "input": {
+        "planned_operations": [
+          "storage.object_delete"
+        ],
+        "actual_operations": [
+          "storage.object_delete"
+        ],
+        "actual_action": "delete storage object obsolete-backup.tar",
+        "affected_resources": [
+          "storage/object/obsolete-backup.tar"
+        ],
+        "targets": [
+          "storage/staging/backups/obsolete-backup.tar"
+        ],
+        "environment": "staging",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "none",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "negligible"
+        },
+        "correlation_id": "conformance-staging-storage-object-delete-is-l4",
+        "execution_nonce": "nonce-staging-storage-object-delete-is-l4-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X1",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "production-network-configuration-change-escalates-l4",
+      "description": "production network configuration change escalates from L3 to L4/X2",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:network.configuration_change",
+        "effect.production_escalation"
+      ],
+      "input": {
+        "planned_operations": [
+          "network.configuration_change"
+        ],
+        "actual_operations": [
+          "network.configuration_change"
+        ],
+        "actual_action": "update production service network policy",
+        "affected_resources": [
+          "network/policy/api-egress"
+        ],
+        "targets": [
+          "cluster/prod/network-policy/api-egress"
+        ],
+        "environment": "production",
+        "exposure_facts": {
+          "data_classification": "internal",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "none",
+          "estimated_blast_radius": "service",
+          "estimated_financial_impact": "bounded"
+        },
+        "correlation_id": "conformance-production-network-configuration-change-escalates-l4",
+        "execution_nonce": "nonce-production-network-configuration-change-escalates-l4-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
+      "id": "public-artifact-publish-escalates-l4",
+      "description": "artifact publish to a public destination escalates from L3 to L4/X2",
+      "category": "execution-boundary",
+      "kind": "execution_boundary",
+      "covers": [
+        "execution_boundary",
+        "operation:artifact.publish",
+        "effect.context_escalation"
+      ],
+      "input": {
+        "planned_operations": [
+          "artifact.publish"
+        ],
+        "actual_operations": [
+          "artifact.publish"
+        ],
+        "actual_action": "publish release artifact universal-agent-docs.zip",
+        "affected_resources": [
+          "dist/universal-agent-docs.zip"
+        ],
+        "targets": [
+          "artifact-registry/public/universal-agent-docs.zip"
+        ],
+        "environment": "external",
+        "exposure_facts": {
+          "data_classification": "public",
+          "credential_class": "service_credential",
+          "tenant_scope": "single_tenant",
+          "public_visibility": "public_destination",
+          "estimated_blast_radius": "bounded_set",
+          "estimated_financial_impact": "none"
+        },
+        "correlation_id": "conformance-public-artifact-publish-escalates-l4",
+        "execution_nonce": "nonce-public-artifact-publish-escalates-l4-00000001"
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
+    },
+    {
       "id": "routing-canonical-plan-enforcement",
       "description": "Canonical planned operation is authoritative in enforcement routing",
       "category": "routing",
