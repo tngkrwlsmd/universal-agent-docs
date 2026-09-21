@@ -50,6 +50,116 @@ def print_checks(checks: list[Check]) -> None:
         print(f"[{c.status}] {c.name}{suffix}")
 
 
+def _extract_always_on_invariants(path: Path = AGENTS_PATH) -> str:
+    text = path.read_text(encoding="utf-8")
+    start_token = "## 2. Always-on invariants"
+    end_token = "\n## 3. "
+    start = text.find(start_token)
+    if start < 0:
+        raise ValueError("AGENTS.md is missing the always-on invariants section")
+    end = text.find(end_token, start)
+    if end < 0:
+        end = len(text)
+    return text[start:end].strip()
+
+
+def compile_policy_view(
+    contract: dict,
+    task_text: str = "",
+    operations: tuple[str, ...] | list[str] = (),
+    resources: tuple[str, ...] | list[str] = (),
+    routing_mode: str = "advisory",
+    extension_registry: dict | None = None,
+) -> dict:
+    """Compile only the canonical policy context needed for one task/plan."""
+    routing = route_policies(
+        contract,
+        task_text,
+        operations,
+        resources,
+        routing_mode,
+        extension_registry=extension_registry,
+    )
+    catalog = operation_catalog(contract, extension_registry)
+    operation_contracts = []
+    for operation_id in routing["canonical_operations"]:
+        operation = catalog[operation_id]
+        operation_contracts.append({
+            key: operation[key]
+            for key in (
+                "id", "policies", "effect_floor", "requires_execution_policy",
+                "lifecycle_status", "extension_namespace", "supported_adapters",
+                "exposure_floor", "production_effect",
+            )
+            if key in operation
+        })
+    policy_sections = extract_policy_sections(contract, routing["policies"], POLICIES_PATH)
+    extension_used = any("extension_namespace" in item for item in operation_contracts)
+    return {
+        "status": routing["routing_status"],
+        "sources": {
+            "always_on_invariants": "AGENTS.md#2-always-on-invariants",
+            "machine_contract": "POLICY_CONTRACT.json",
+            "human_policy": "POLICIES.md",
+        },
+        "always_on_invariants": _extract_always_on_invariants(),
+        "routing": routing,
+        "operations": operation_contracts,
+        "policy_sections": policy_sections,
+        "operation_extension_digest": (
+            extension_registry.get("combined_digest")
+            if extension_registry and extension_used else None
+        ),
+        "operation_extension_sources": (
+            extension_registry.get("sources", [])
+            if extension_registry and extension_used else []
+        ),
+    }
+
+
+def render_compiled_policy_view(view: dict) -> str:
+    lines = [
+        "# Compiled policy view",
+        "",
+        "Sources: AGENTS.md (always-on invariants), POLICY_CONTRACT.json (machine semantics), "
+        "POLICIES.md (selected human primary-owner sections).",
+        "",
+        view["always_on_invariants"],
+        "",
+        "## Contract-derived operation summary",
+    ]
+    if not view["operations"]:
+        lines.append("- No canonical operation resolved.")
+    for operation in view["operations"]:
+        suffix = ""
+        if operation.get("extension_namespace"):
+            suffix = (
+                f"; extension={operation['extension_namespace']}; "
+                f"supported_adapters={','.join(operation.get('supported_adapters', []))}"
+            )
+        lines.append(
+            f"- `{operation['id']}`: effect_floor={operation['effect_floor']}; "
+            f"policies={','.join(operation.get('policies', []))}; "
+            f"requires_execution_policy={str(operation.get('requires_execution_policy', False)).lower()}"
+            f"{suffix}"
+        )
+    if view.get("operation_extension_digest"):
+        lines.extend([
+            "",
+            f"Operation extension digest: `{view['operation_extension_digest']}`",
+        ])
+    warnings = view["routing"].get("warnings", [])
+    errors = view["routing"].get("errors", [])
+    if warnings or errors:
+        lines.extend(["", "## Routing diagnostics"])
+        lines.extend(f"- warning: {item}" for item in warnings)
+        lines.extend(f"- error: {item}" for item in errors)
+    if view["policy_sections"]:
+        lines.extend(["", "## Applicable primary-owner policy sections", ""])
+        lines.append("\n\n".join(view["policy_sections"].values()))
+    return "\n".join(lines).rstrip() + "\n"
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Validate universal-agent-docs")
     parser.add_argument("--route", metavar="TASK", help="route a task through canonical operation normalization")
@@ -68,6 +178,8 @@ def main() -> int:
     parser.add_argument("--execution-nonce", default="", help="single-use runtime nonce (minimum 16 characters) bound into action digest")
     parser.add_argument("--effect", choices=["L1", "L2", "L3", "L4"], help="optional runtime-observed Effect escalation; never lowers operation floors")
     parser.add_argument("--policy", action="append", default=[], metavar="ID", help="print a primary-owner policy section by policy ID; repeatable")
+    parser.add_argument("--compiled-policy", action="store_true", help="compile only the policy context applicable to --operation/--resource/--route inputs")
+    parser.add_argument("--operation-extension", action="append", type=Path, default=[], metavar="JSON", help="validated organization/vendor operation extension document; repeatable")
     parser.add_argument("--readiness", choices=["development", "deployment"])
     parser.add_argument("--project-root", type=Path, help="project repository root for readiness evidence/Git checks; defaults to the selected PROJECT.md parent")
     parser.add_argument("--project-file", type=Path, help="project facts Markdown for --readiness; defaults to the policy bundle PROJECT.md")
@@ -90,6 +202,20 @@ def main() -> int:
     contract = load_json(CONTRACT_PATH)
     result: dict = {}
     exit_code = 0
+    extension_registry = None
+    if args.operation_extension:
+        try:
+            extension_registry = load_operation_extensions(args.operation_extension, contract)
+            result["operation_extensions"] = {
+                "status": "PASS",
+                "namespaces": extension_registry["namespaces"],
+                "operation_ids": sorted(extension_registry["operations"]),
+                "combined_digest": extension_registry["combined_digest"],
+                "sources": extension_registry["sources"],
+            }
+        except Exception as exc:
+            result["operation_extensions"] = {"status": "FAIL", "error": str(exc)}
+            exit_code = 1
 
     checks = bundle_checks(ROOT)
     bundle_ok = all(c.status == "PASS" for c in checks)
@@ -114,8 +240,31 @@ def main() -> int:
             result["policy_error"] = str(exc)
             exit_code = 1
 
-    if args.route is not None:
-        routing = route_policies(contract, args.route, args.operation, args.resource, args.routing_mode)
+    if args.compiled_policy and result.get("operation_extensions", {}).get("status") != "FAIL":
+        try:
+            compiled = compile_policy_view(
+                contract,
+                args.route or "",
+                args.operation,
+                args.resource,
+                args.routing_mode,
+                extension_registry,
+            )
+            result["compiled_policy"] = compiled
+            if compiled["status"] == "FAIL":
+                exit_code = 1
+        except Exception as exc:
+            result["compiled_policy"] = {"status": "FAIL", "error": str(exc)}
+            exit_code = 1
+    elif args.route is not None:
+        routing = route_policies(
+            contract,
+            args.route,
+            args.operation,
+            args.resource,
+            args.routing_mode,
+            extension_registry=extension_registry,
+        )
         result["routing"] = routing
         if routing["routing_status"] == "FAIL":
             exit_code = 1
@@ -145,6 +294,7 @@ def main() -> int:
                 execution_nonce=args.execution_nonce,
                 adapter={"id":"validator-cli","surface":"cli","assertion_source":"human_reviewed"},
                 semantic_details={},
+                extension_registry=extension_registry,
             )
             result["execution_boundary"] = boundary
             approval_boundary = boundary
@@ -152,7 +302,9 @@ def main() -> int:
                 exit_code = 1
 
     if args.runtime_action:
-        runtime_action_result = validate_runtime_action(args.runtime_action, contract, ROOT)
+        runtime_action_result = validate_runtime_action(
+            args.runtime_action, contract, ROOT, extension_registry=extension_registry
+        )
         result["runtime_action"] = runtime_action_result
         boundary = runtime_action_result.get("boundary", {})
         approval_boundary = boundary if boundary else approval_boundary
@@ -222,8 +374,26 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
         return exit_code
 
+    compiled_only = (
+        args.compiled_policy and not args.policy and not args.action_boundary and not args.runtime_action
+        and not args.readiness and not args.project_root and not args.project_file
+        and not args.distribution and not args.trusted_manifest and not args.release_manifest
+        and not args.emit_trust_manifest and not args.approval_assertion and not args.protected_override
+        and not args.override_ledger and not args.consume_override and not args.bootstrap_project
+    )
+    if compiled_only:
+        if result["bundle"]["status"] != "PASS":
+            print("Bundle validation: FAIL", file=sys.stderr)
+            return exit_code
+        compiled = result.get("compiled_policy", {})
+        if compiled.get("status") == "FAIL" and compiled.get("error"):
+            print(compiled["error"], file=sys.stderr)
+            return exit_code
+        print(render_compiled_policy_view(compiled), end="")
+        return exit_code
+
     policy_only = (
-        bool(args.policy) and args.route is None and not args.action_boundary and not args.runtime_action and not args.readiness
+        bool(args.policy) and args.route is None and not args.compiled_policy and not args.action_boundary and not args.runtime_action and not args.readiness
         and not args.project_root and not args.project_file
         and not args.distribution and not args.trusted_manifest and not args.release_manifest and not args.emit_trust_manifest
         and not args.approval_assertion and not args.protected_override and not args.override_ledger and not args.consume_override
@@ -260,6 +430,21 @@ def main() -> int:
             for policy_id, section in result["policy_sections"].items():
                 print(f"Policy section [{policy_id}]:")
                 print(section)
+    if "operation_extensions" in result:
+        ext = result["operation_extensions"]
+        print(f"Operation extensions: {ext.get('status')}")
+        if ext.get("combined_digest"):
+            print("Extension digest:", ext["combined_digest"])
+        if ext.get("operation_ids"):
+            print("Extension operations:", ", ".join(ext["operation_ids"]))
+        if ext.get("error"):
+            print(" - error:", ext["error"])
+    if "compiled_policy" in result and not compiled_only:
+        compiled = result["compiled_policy"]
+        if compiled.get("error"):
+            print("Compiled policy: FAIL —", compiled["error"])
+        else:
+            print(render_compiled_policy_view(compiled), end="")
     if "routing" in result:
         r = result["routing"]
         print("Canonical operations:", ", ".join(r["canonical_operations"]) or "(none)")

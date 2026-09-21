@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Iterable
 
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_PATH = ROOT / "POLICY_CONTRACT.json"
@@ -19,6 +21,10 @@ AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
+OPERATION_EXTENSION_FORMAT = "universal-agent-docs-operation-extension-v1"
+OPERATION_EXTENSION_DIGEST_KEY = "policy_extension_digest"
+_EXTENSION_NAMESPACE_RE = re.compile(r"^[a-z][a-z0-9_-]{0,62}$")
+_EXTENSION_OPERATION_RE = re.compile(r"^[a-z][a-z0-9_.-]*$")
 SUPPORTED_SCHEMA_VERSIONS = {16}
 ROUTING_NORMALIZATION_ID = "nfkc_casefold_token_boundary_v3"
 ROUTING_INPUTS = ["task_text", "planned_operations", "affected_resources"]
@@ -151,6 +157,7 @@ TRUSTED_CORE_FILES = [
     "APPROVAL_ASSERTION.schema.json",
     "PROTECTED_OVERRIDE.schema.json",
     "scripts/validate.py",
+    "scripts/generate_policy_reference.py",
     "scripts/validation/__init__.py",
     "scripts/validation/contract.py",
     "scripts/validation/routing.py",
@@ -191,6 +198,7 @@ CANONICAL_REQUIRED_FILES = [
     "requirements.txt",
     "requirements.lock",
     "scripts/validate.py",
+    "scripts/generate_policy_reference.py",
     "scripts/conformance.py",
     "scripts/validation/__init__.py",
     "scripts/validation/contract.py",
@@ -230,6 +238,227 @@ class Check:
 def load_json(path: Path):
     with path.open("r", encoding="utf-8") as f:
         return json.load(f)
+
+
+def _canonical_json_digest(value: object) -> str:
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return "sha256:" + hashlib.sha256(encoded).hexdigest()
+
+
+def load_operation_extensions(paths: Iterable[Path | str], contract: dict) -> dict:
+    """Load explicit organization/vendor operation extensions without mutating the core contract.
+
+    Extension operations are intentionally explicit-plan only. Natural-language aliases remain
+    owned by the core ROUTING_ALIASES.json so loading an extension cannot silently broaden task
+    interpretation. The returned combined digest is bound into semantic_details whenever an
+    extension operation reaches the execution boundary.
+    """
+    source_paths = [Path(path).resolve() for path in paths]
+    if not source_paths:
+        return {
+            "format": OPERATION_EXTENSION_FORMAT,
+            "namespaces": [],
+            "operations": {},
+            "combined_digest": None,
+            "sources": [],
+        }
+
+    core_operations = {
+        item["id"]: item
+        for item in contract.get("routing", {}).get("operation_catalog", [])
+        if isinstance(item, dict) and isinstance(item.get("id"), str)
+    }
+    core_namespaces = {operation_id.split(".", 1)[0] for operation_id in core_operations}
+    policy_ids = {item["id"] for item in contract.get("policies", []) if isinstance(item, dict)}
+    lifecycle = contract.get("operation_lifecycle", {})
+    allowed_statuses = set(lifecycle.get("allowed_statuses", ["active", "deprecated"]))
+    effect_rank = {"L1": 1, "L2": 2, "L3": 3, "L4": 4}
+    exposure_levels = {"X0", "X1", "X2", "X3"}
+    top_level_allowed = {"format", "namespace", "operations"}
+    operation_allowed = {
+        "id", "policies", "effect_floor", "requires_execution_policy", "lifecycle_status",
+        "replacement_operation", "deprecated_since_schema", "supported_adapters",
+        "exposure_floor", "production_effect", "allowed_environments",
+        "required_semantic_details", "semantic_detail_allowed_values",
+    }
+
+    errors: list[str] = []
+    namespaces: set[str] = set()
+    operations: dict[str, dict] = {}
+    normalized_documents: list[dict] = []
+
+    for source_path in source_paths:
+        try:
+            document = load_json(source_path)
+        except Exception as exc:
+            errors.append(f"{source_path}: {exc}")
+            continue
+        if not isinstance(document, dict):
+            errors.append(f"{source_path}: extension document must be a JSON object")
+            continue
+        extra_top = sorted(set(document) - top_level_allowed)
+        if extra_top:
+            errors.append(f"{source_path}: unsupported top-level field(s): {', '.join(extra_top)}")
+        if document.get("format") != OPERATION_EXTENSION_FORMAT:
+            errors.append(
+                f"{source_path}: format must be {OPERATION_EXTENSION_FORMAT!r}"
+            )
+        namespace = document.get("namespace")
+        if not isinstance(namespace, str) or not _EXTENSION_NAMESPACE_RE.fullmatch(namespace):
+            errors.append(
+                f"{source_path}: namespace must match {_EXTENSION_NAMESPACE_RE.pattern!r}"
+            )
+            continue
+        if namespace in core_namespaces:
+            errors.append(f"{source_path}: namespace {namespace!r} collides with a core operation namespace")
+        if namespace in namespaces:
+            errors.append(f"{source_path}: duplicate extension namespace {namespace!r}")
+        namespaces.add(namespace)
+
+        raw_operations = document.get("operations")
+        if not isinstance(raw_operations, list) or not raw_operations:
+            errors.append(f"{source_path}: operations must be a non-empty array")
+            continue
+        normalized_operations: list[dict] = []
+        for index, raw in enumerate(raw_operations):
+            prefix = f"{source_path}: operations[{index}]"
+            if not isinstance(raw, dict):
+                errors.append(f"{prefix} must be an object")
+                continue
+            extra_fields = sorted(set(raw) - operation_allowed)
+            if extra_fields:
+                errors.append(f"{prefix}: unsupported field(s): {', '.join(extra_fields)}")
+            operation_id = raw.get("id")
+            if (
+                not isinstance(operation_id, str)
+                or not _EXTENSION_OPERATION_RE.fullmatch(operation_id)
+                or not operation_id.startswith(namespace + ".")
+            ):
+                errors.append(
+                    f"{prefix}: id must be a canonical operation under namespace {namespace!r}"
+                )
+                continue
+            if operation_id in core_operations:
+                errors.append(f"{prefix}: id {operation_id!r} collides with a core operation")
+                continue
+            if operation_id in operations:
+                errors.append(f"{prefix}: duplicate extension operation id {operation_id!r}")
+                continue
+
+            policies = raw.get("policies")
+            if not isinstance(policies, list) or not policies or any(
+                not isinstance(item, str) or item not in policy_ids for item in policies
+            ):
+                errors.append(f"{prefix}: policies must contain only known core policy IDs")
+                continue
+            effect_floor = raw.get("effect_floor")
+            if effect_floor not in effect_rank:
+                errors.append(f"{prefix}: effect_floor must be one of {sorted(effect_rank)}")
+                continue
+            requires_execution_policy = raw.get("requires_execution_policy")
+            if not isinstance(requires_execution_policy, bool):
+                errors.append(f"{prefix}: requires_execution_policy must be boolean")
+                continue
+            lifecycle_status = raw.get("lifecycle_status")
+            if lifecycle_status not in allowed_statuses:
+                errors.append(f"{prefix}: lifecycle_status must be one of {sorted(allowed_statuses)}")
+                continue
+            supported_adapters = raw.get("supported_adapters")
+            if (
+                not isinstance(supported_adapters, list)
+                or not supported_adapters
+                or any(not isinstance(item, str) or not item.strip() for item in supported_adapters)
+            ):
+                errors.append(f"{prefix}: supported_adapters must be a non-empty string array")
+                continue
+
+            exposure_floor = raw.get("exposure_floor")
+            if exposure_floor is not None and exposure_floor not in exposure_levels:
+                errors.append(f"{prefix}: exposure_floor must be one of {sorted(exposure_levels)}")
+            production_effect = raw.get("production_effect")
+            if production_effect is not None:
+                if production_effect not in effect_rank:
+                    errors.append(f"{prefix}: production_effect must be one of {sorted(effect_rank)}")
+                elif effect_rank[production_effect] < effect_rank[effect_floor]:
+                    errors.append(f"{prefix}: production_effect cannot lower effect_floor")
+            allowed_environments = raw.get("allowed_environments", [])
+            if (
+                not isinstance(allowed_environments, list)
+                or any(item not in KNOWN_ENVIRONMENTS for item in allowed_environments)
+            ):
+                errors.append(f"{prefix}: allowed_environments contains an unknown environment")
+            required_semantic_details = raw.get("required_semantic_details", [])
+            if (
+                not isinstance(required_semantic_details, list)
+                or any(not isinstance(item, str) or not item for item in required_semantic_details)
+            ):
+                errors.append(f"{prefix}: required_semantic_details must be a string array")
+            semantic_allowed = raw.get("semantic_detail_allowed_values", {})
+            if not isinstance(semantic_allowed, dict) or any(
+                not isinstance(key, str) or not isinstance(values, list)
+                for key, values in semantic_allowed.items()
+            ):
+                errors.append(f"{prefix}: semantic_detail_allowed_values must map names to arrays")
+
+            normalized = {
+                "id": operation_id,
+                "policies": sorted(set(policies)),
+                "effect_floor": effect_floor,
+                "requires_execution_policy": requires_execution_policy,
+                "lifecycle_status": lifecycle_status,
+                "supported_adapters": sorted(set(item.strip() for item in supported_adapters)),
+                "extension_namespace": namespace,
+            }
+            for optional in (
+                "replacement_operation", "deprecated_since_schema", "exposure_floor",
+                "production_effect",
+            ):
+                if optional in raw:
+                    normalized[optional] = raw[optional]
+            if allowed_environments:
+                normalized["allowed_environments"] = sorted(set(allowed_environments))
+            if required_semantic_details:
+                normalized["required_semantic_details"] = sorted(set(required_semantic_details))
+            if semantic_allowed:
+                normalized["semantic_detail_allowed_values"] = {
+                    key: sorted(values, key=lambda value: json.dumps(value, ensure_ascii=False, sort_keys=True))
+                    for key, values in sorted(semantic_allowed.items())
+                }
+
+            operations[operation_id] = normalized
+            normalized_operations.append({k: v for k, v in normalized.items() if k != "extension_namespace"})
+
+        normalized_documents.append({
+            "format": OPERATION_EXTENSION_FORMAT,
+            "namespace": namespace,
+            "operations": sorted(normalized_operations, key=lambda item: item["id"]),
+        })
+
+    all_operation_ids = set(core_operations) | set(operations)
+    for operation_id, operation in operations.items():
+        if operation.get("lifecycle_status") == "deprecated":
+            replacement = operation.get("replacement_operation")
+            deprecated_since = operation.get("deprecated_since_schema")
+            if not isinstance(replacement, str) or replacement not in all_operation_ids:
+                errors.append(
+                    f"{operation_id}: deprecated extension operation requires a known replacement_operation"
+                )
+            if not isinstance(deprecated_since, int) or deprecated_since < 1:
+                errors.append(
+                    f"{operation_id}: deprecated extension operation requires deprecated_since_schema >= 1"
+                )
+
+    if errors:
+        raise ValueError("operation extension validation failed: " + "; ".join(errors))
+
+    normalized_documents.sort(key=lambda item: item["namespace"])
+    return {
+        "format": OPERATION_EXTENSION_FORMAT,
+        "namespaces": sorted(namespaces),
+        "operations": operations,
+        "combined_digest": _canonical_json_digest(normalized_documents),
+        "sources": [str(path) for path in source_paths],
+    }
 
 
 def canonical_policy_contract_digest(contract: dict) -> str:

@@ -15,6 +15,7 @@ from .contract import (
     CONTEXT_EFFECT_ESCALATION_RULES,
     KNOWN_ENVIRONMENTS,
     OPERATION_SEMANTIC_REQUIREMENTS,
+    OPERATION_EXTENSION_DIGEST_KEY,
     PRODUCTION_EFFECT_ESCALATION_OPERATIONS,
     ROOT,
     TARGET_REQUIRED_EFFECT_LEVELS,
@@ -101,6 +102,7 @@ def evaluate_execution_boundary(
     execution_nonce: str = "",
     adapter: dict | None = None,
     semantic_details: dict | None = None,
+    extension_registry: dict | None = None,
 ) -> dict:
     """Evaluate the policy gate for an imminent action.
 
@@ -110,7 +112,7 @@ def evaluate_execution_boundary(
     The function computes the minimum gate but deliberately does not authenticate an
     approval issuer or protected-override authority.
     """
-    catalog = operation_catalog(contract)
+    catalog = operation_catalog(contract, extension_registry)
     cfg = contract.get("execution_boundary", {})
     errors: list[str] = []
     warnings: list[str] = []
@@ -185,7 +187,23 @@ def evaluate_execution_boundary(
     errors.extend(target_errors)
 
     valid_actual = [op for op in actual if op in catalog]
-    route = route_policies(contract, "", valid_actual, resource_list, "enforcement", aliases_doc)
+    extension_operations = extension_registry.get("operations", {}) if extension_registry else {}
+    used_extension_operations = [
+        operation_id for operation_id in valid_actual if operation_id in extension_operations
+    ]
+    adapter_id = str((adapter or {}).get("id", "")).strip()
+    for operation_id in used_extension_operations:
+        supported_adapters = extension_operations[operation_id].get("supported_adapters", [])
+        if adapter_id not in supported_adapters:
+            errors.append(
+                f"extension operation {operation_id!r} is not declared for adapter {adapter_id!r}; "
+                f"supported adapters: {supported_adapters!r}"
+            )
+
+    route = route_policies(
+        contract, "", valid_actual, resource_list, "enforcement", aliases_doc,
+        extension_registry=extension_registry,
+    )
     if route["routing_status"] == "FAIL":
         errors.extend(route["errors"])
 
@@ -197,12 +215,40 @@ def evaluate_execution_boundary(
         if effective_effect is None or _EFFECT_RANK[effective_effect] < _EFFECT_RANK["L4"]:
             effective_effect = "L4"
         escalations.append("production environment escalated state-changing operation to L4")
+    if env == "production":
+        extension_production_effect = _max_level(
+            [
+                extension_operations[operation_id].get("production_effect")
+                for operation_id in used_extension_operations
+                if extension_operations[operation_id].get("production_effect") in _EFFECT_RANK
+            ],
+            _EFFECT_RANK,
+        )
+        if (
+            extension_production_effect is not None
+            and (
+                effective_effect is None
+                or _EFFECT_RANK[extension_production_effect] > _EFFECT_RANK[effective_effect]
+            )
+        ):
+            effective_effect = extension_production_effect
+            escalations.append(
+                f"operation extension escalated production Effect to {extension_production_effect}"
+            )
     if runtime_effect in _EFFECT_RANK:
         if effective_effect is None or _EFFECT_RANK[runtime_effect] > _EFFECT_RANK[effective_effect]:
             effective_effect = runtime_effect
             escalations.append(f"runtime_effect raised effective Effect to {runtime_effect}")
 
-    semantic_values = semantic_details if isinstance(semantic_details, dict) else {}
+    supplied_semantic_values = semantic_details if isinstance(semantic_details, dict) else {}
+    semantic_values = dict(supplied_semantic_values)
+    if used_extension_operations:
+        if OPERATION_EXTENSION_DIGEST_KEY in semantic_values:
+            errors.append(
+                f"semantic_details.{OPERATION_EXTENSION_DIGEST_KEY} is reserved for policy extension binding"
+            )
+        semantic_values[OPERATION_EXTENSION_DIGEST_KEY] = extension_registry["combined_digest"]
+
     semantic_rules = cfg.get("operation_semantic_requirements", OPERATION_SEMANTIC_REQUIREMENTS)
     for rule in semantic_rules:
         if not set(rule.get("operations", [])).intersection(valid_actual):
@@ -223,11 +269,56 @@ def evaluate_execution_boundary(
                     f"operation semantic requirement {rule.get('id')!r} requires semantic_details.{key} in {allowed!r}"
                 )
 
+    for operation_id in used_extension_operations:
+        extension_operation = extension_operations[operation_id]
+        allowed_environments = extension_operation.get("allowed_environments", [])
+        if allowed_environments and env not in allowed_environments:
+            errors.append(
+                f"extension operation {operation_id!r} does not allow environment {env!r}; "
+                f"allowed={allowed_environments!r}"
+            )
+        for key in extension_operation.get("required_semantic_details", []):
+            value = semantic_values.get(key)
+            if value is None or (isinstance(value, str) and not value.strip()):
+                errors.append(
+                    f"extension operation {operation_id!r} requires semantic_details.{key}"
+                )
+        for key, allowed in extension_operation.get("semantic_detail_allowed_values", {}).items():
+            if key in semantic_values and semantic_values[key] not in allowed:
+                errors.append(
+                    f"extension operation {operation_id!r} requires semantic_details.{key} in {allowed!r}"
+                )
+
     exposure_result = derive_exposure_floor(contract, env, exposure_facts, declared_exposure)
     errors.extend(exposure_result["errors"])
     warnings.extend(exposure_result["warnings"])
     effective_exposure = exposure_result["effective_exposure"]
-    for item in exposure_result["contributions"]:
+    exposure_contributions = list(exposure_result["contributions"])
+    extension_exposure_floor = _max_level(
+        [
+            extension_operations[operation_id].get("exposure_floor")
+            for operation_id in used_extension_operations
+            if extension_operations[operation_id].get("exposure_floor") in _EXPOSURE_RANK
+        ],
+        _EXPOSURE_RANK,
+    )
+    if (
+        extension_exposure_floor is not None
+        and (
+            effective_exposure is None
+            or _EXPOSURE_RANK[extension_exposure_floor] > _EXPOSURE_RANK[effective_exposure]
+        )
+    ):
+        effective_exposure = extension_exposure_floor
+        exposure_contributions.append({
+            "source": "operation_extension",
+            "value": ",".join(sorted(used_extension_operations)),
+            "floor": extension_exposure_floor,
+        })
+        escalations.append(
+            f"operation extension raised Exposure floor to {extension_exposure_floor}"
+        )
+    for item in exposure_contributions:
         if effective_exposure == item["floor"] and item["source"] != "environment":
             escalations.append(f"Exposure floor {item['floor']} derived from {item['source']}={item['value']}")
 
@@ -297,7 +388,7 @@ def evaluate_execution_boundary(
             declared_exposure=declared_exposure,
             runtime_effect=runtime_effect,
             actual_action=actual_action,
-            semantic_details=semantic_details,
+            semantic_details=semantic_values,
         )
 
     return {
@@ -312,7 +403,7 @@ def evaluate_execution_boundary(
         "unplanned_actual_operations": unplanned_actual,
         "actual_action": actual_action,
         "adapter": adapter or {},
-        "semantic_details": semantic_details or {},
+        "semantic_details": semantic_values,
         "action_hints": action_hints,
         "action_hint_gaps": action_hint_gaps,
         "hard_action_hints": hard_action_hints,
@@ -322,7 +413,7 @@ def evaluate_execution_boundary(
         "targets": concrete_targets,
         "environment": env,
         "exposure_facts": normalized_exposure_facts,
-        "exposure_contributions": exposure_result["contributions"],
+        "exposure_contributions": exposure_contributions,
         "declared_exposure": declared_exposure,
         "derived_exposure": exposure_result["derived_exposure"],
         "runtime_effect": runtime_effect,
@@ -337,7 +428,12 @@ def evaluate_execution_boundary(
     }
 
 
-def validate_runtime_action(path: Path, contract: dict, root: Path = ROOT) -> dict:
+def validate_runtime_action(
+    path: Path,
+    contract: dict,
+    root: Path = ROOT,
+    extension_registry: dict | None = None,
+) -> dict:
     """Validate a structured runtime-adapter assertion and evaluate its action boundary.
 
     Schema validity does not authenticate the adapter. The higher-authority runtime must
@@ -382,6 +478,7 @@ def validate_runtime_action(path: Path, contract: dict, root: Path = ROOT) -> di
         execution_nonce=action["execution_nonce"],
         adapter=adapter,
         semantic_details=action.get("semantic_details", {}),
+        extension_registry=extension_registry,
     )
     errors.extend(boundary["errors"])
     return {
