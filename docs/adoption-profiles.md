@@ -2,13 +2,19 @@
 
 `universal-agent-docs`는 하나의 "보안 모드"가 아니라, 같은 policy bundle을 어디까지 실제 runtime에 연결했는지에 따라 보장이 달라지는 도입 경로를 제공한다. 이 문서의 profile 이름은 **도입 설명을 위한 문서 분류**이며 `POLICY_CONTRACT.json`의 machine-enforceable state가 아니다.
 
+## 구현 중립성의 범위
+
+policy model, canonical operation ID, `POLICY_CONTRACT.json`과 language-neutral conformance corpus는 특정 구현 언어를 전제로 하지 않는다. 다른 언어의 policy engine은 repository의 Python module을 import하지 않고 JSON contract/corpus를 구현해 동일 normative result를 낼 수 있다.
+
+현재 저장소가 제공하는 **reference implementation과 packaging tooling은 Python 3.10+ 기반**이다. 또한 공식 release/provenance의 reference workflow는 GitHub Actions, GitHub Release와 attestation을 사용한다. 다른 CI/CD 또는 artifact repository도 같은 trust property를 구현할 수 있지만, 해당 플랫폼용 adapter/workflow가 이 저장소에 포함되거나 qualification되었다는 뜻은 아니다.
+
 ## Profiles at a glance
 
 | Profile | 목적 | 제공하는 보장 | 제공하지 않는 보장 |
 |---|---|---|---|
 | **A — Guidance** | 개발 에이전트에게 일관된 지침과 프로젝트 사실 제공 | agent instruction hierarchy, human-readable policy, project fact discipline | tool interception, actual-operation verification, approval enforcement, replay protection |
 | **B — Validated** | policy bundle과 계획/위험 판정을 자동 검증 | bundle/schema validation, readiness, canonical routing, Effect/Exposure/gate calculation, distribution integrity | trusted actual-operation assertion이 없으면 실행 차단 보장 없음; schema-valid runtime payload만으로 producer authenticity 보장 없음 |
-| **C — Enforced Runtime** | 실제 action/tool boundary에서 fail-closed enforcement | trusted runtime adapter, actual-vs-planned check, action digest, approval/override exact binding, replay protection, provenance verification | vendor/runtime이 intercept하지 못하는 side effect까지 자동 통제한다는 보장 없음; issuer/adapter trust는 higher-authority integration이 확립해야 함 |
+| **C — Enforced Runtime** | 실제 action/tool boundary에서 fail-closed enforcement | B의 contract/reference validation + 소비 환경에 연결된 trusted interception, exact binding, replay consumption, 실제 allow/block 집행 | bundle만으로 완성된 범용 runtime이 제공되는 것은 아님; interception·identity/transport·shared ledger·executor는 integration 책임 |
 
 Profile은 누적적이다. C는 B와 A의 기반을 포함한다.\n\nProfile은 **설치 artifact의 파일 subset을 뜻하지 않는다.** 공식 consumer ZIP은 A/B/C 모두 같은 full `.agent-policy/` bundle을 제공한다. 차이는 설치 파일을 삭제하는 데 있지 않고, A는 guidance만 사용하고 B는 validator/CI를 활성화하며 C는 runtime boundary까지 실제로 연결하는 데 있다.
 
@@ -188,40 +194,98 @@ python .agent-policy/scripts/validate.py \
 
 ## Profile C — Enforced Runtime
 
+Profile C는 별도 ZIP이나 완성된 범용 runtime 제품이 아니라, 이 저장소의 policy/runtime contract를 **실제 side-effect boundary에 신뢰 가능하게 연결한 통합 상태**다. bundle을 설치하고 validator를 실행하는 것만으로 C가 되지 않는다.
+
 ### Required pieces
 
 B에 더해 최소 다음이 필요하다.
 
-- 실제 tool/action을 intercept하는 runtime adapter 또는 equivalent trusted boundary
-- independently derived `actual_operations`
+- 실제 tool/API/action을 실행 전에 intercept하는 runtime adapter 또는 equivalent trusted boundary
+- planner와 독립적으로 관찰·분류한 `actual_operations`
 - affected resources, concrete targets, environment, raw exposure facts
-- unique correlation ID와 single-use execution nonce
-- action digest 계산
-- explicit approval assertion + atomic replay ledger
-- protected override assertion + atomic replay ledger
-- adapter producer/transport trust
-- release/provenance verification
-- fail-closed handling for unknown/unclassifiable operations
+- unique correlation ID와 imminent action별 single-use execution nonce
+- 현재 runtime assertion으로 계산한 action digest
+- higher-authority identity/authorization으로 인증된 explicit approval / protected override issuer
+- approval/override를 실행 직전에 원자적으로 소비하는 shared replay ledger
+- adapter assertion producer와 transport integrity에 대한 신뢰 경계
+- 최종 gate 결과를 실제 tool 실행에 반영하는 executor/dispatcher
+- 지원하지 않거나 충분히 분류할 수 없는 action의 fail-closed 처리
+- production 사용 시 trusted release/provenance verification
+
+### Bundle과 integrator의 책임 분리
+
+| 책임 | 이 저장소의 contract/reference implementation | 소비 환경 / higher-authority runtime |
+|---|---|---|
+| planned operation | canonical operation catalog와 routing/validation semantics 제공 | planner가 task를 canonical plan으로 구성 |
+| actual operation | actual-vs-planned 검증 규칙과 wire schema 제공 | interceptor가 imminent action을 독립적으로 관찰·분류 |
+| Effect / Exposure / gate | raw facts에서 Effect/Exposure/gate를 계산·검증 | target/environment/raw facts를 신뢰 가능한 source에서 수집 |
+| action digest | deterministic digest format과 reference 계산 제공 | 실행 직전 assertion을 고정하고 digest가 바뀌면 approval을 새로 획득 |
+| approval / override | exact binding, TTL, schema와 validation semantics 제공 | issuer identity/authority를 인증하고 assertion을 발급 |
+| replay | single-use/replay semantics와 conformance 제공 | 여러 worker에서 공유되는 atomic consumption ledger 운영 |
+| enforcement | allow/block 판단을 계산하는 reference validator 제공 | gate가 충족되기 전 실제 tool/API/action 호출을 물리적으로 막음 |
+| producer/transport trust | schema로 필요한 payload shape를 정의 | adapter producer 인증, transport integrity/freshness 보장 |
+| provenance | GitHub 기반 reference verification workflow 제공 | 배포 채널에 맞는 trusted expectation과 provenance trust를 확립 |
+
+reference validator가 `PASS`를 반환하거나 approval object가 schema/binding validation을 통과했다는 사실은 **`AUTHORIZED`라는 identity/organization 판단을 뜻하지 않는다.** producer와 issuer authority, transport, replay store, 실제 interception은 higher-authority runtime 책임이다.
 
 ### Enforcement flow
 
 ```text
-planned canonical operations
-        ↓
-trusted runtime observes imminent action
-        ↓
-actual operations + resources + targets + environment + exposure facts
-        ↓
-execution boundary → Effect × Exposure → gate + action digest
-        ↓
+user/task
+    ↓
+planner
+    ↓
+canonical planned operations
+    ↓
+runtime/tool adapter intercepts imminent action
+    ↓
+independently observed actual operation
++ resources + targets + environment + raw exposure facts
+    ↓
+runtime action assertion
+    ↓
+policy engine/reference validator
+    ↓
+Effect × Exposure → gate + action digest
+    ↓
 AUTO / guards / exact approval / protected override
-        ↓
-atomic consume → tool execution
+    ↓
+higher-authority issuer authentication
+    ↓
+atomic single-use consumption
+    ↓
+actual tool/API/action execution
 ```
 
-`command.execute` 같은 opaque runtime operation으로 모든 shell command를 통과시키지 않는다. 의미를 구체 operation으로 분류할 수 없으면 fail-closed하는 것이 기본이다.
+action digest는 adapter가 imminent action을 관찰하고 assertion을 확정한 **뒤**, approval/override를 요청하기 **전에** 계산한다. 이후 operation, target, environment, exposure facts, semantic details 또는 actual action이 달라지면 digest와 nonce를 새로 만들고 과거 approval/override를 재사용하지 않는다.
 
-approval/override schema validation만으로 issuer authority를 확립하지 않는다. 실제 production enforcement에서는 조직/runtime의 higher-authority identity/authorization mechanism이 issuer와 adapter transport를 인증해야 한다.
+`command.execute` 같은 opaque runtime operation으로 모든 shell command를 통과시키지 않는다. operation을 canonical semantics로 충분히 분류할 수 없거나 required target/fact가 없으면 enforced surface에서는 fail-closed한다.
+
+### Minimal end-to-end example — external message
+
+아래는 실제 메시지를 보내지 않는 conceptual integration example이다.
+
+1. planner가 `external.message_send`를 planned operation으로 선언한다.
+2. runtime adapter가 실제 send API 호출 직전에 이를 intercept하고, `actual_operations=["external.message_send"]`, recipient target, `environment=external`, raw exposure facts와 새 execution nonce를 독립적으로 구성한다.
+3. policy engine이 assertion을 평가한다. 예를 들어 service credential이 포함된 외부 메시지는 operation floor L3와 Exposure X2가 되어 `REQUIRE_EXPLICIT_APPROVAL`이며, 현재 assertion에 대한 action digest가 생성된다.
+4. higher-authority approval service가 human/organization issuer를 **별도로 인증한 뒤**, operation·target·environment·correlation ID·nonce·action digest에 정확히 결박된 approval assertion을 발급한다.
+5. runtime은 approval의 schema/binding/expiry를 검증하고 shared ledger에서 approval identity와 nonce를 원자적으로 한 번 소비한다.
+6. consumption이 성공한 경우에만 interceptor가 보류했던 send API를 실제 실행한다.
+7. 같은 approval과 nonce를 다시 제출하면 ledger가 replay로 거부하고 두 번째 메시지는 실행하지 않는다.
+
+이 예제에서 reference validator는 3번과 5번의 policy/binding 판단을 구현하는 기준이 될 수 있지만, 1) 실제 send call interception, 2) adapter producer/transport 인증, 3) issuer authority 인증, 4) production-grade shared atomic ledger, 5) 최종 tool dispatch 차단은 소비 runtime이 제공해야 한다.
+
+### Fail-closed conditions
+
+Profile C라고 주장하는 intercepted surface에서는 다음을 통과시키지 않는다.
+
+- unknown/non-canonical 또는 plan 밖 actual operation
+- 지원되지 않거나 의미를 충분히 분류할 수 없는 imminent action
+- required target/environment/raw fact/semantic detail 누락
+- 신뢰할 수 없는 adapter producer 또는 transport
+- 필요한 approval/override의 issuer authority 또는 exact binding 불일치
+- 만료된 approval/override, nonce/digest mismatch 또는 replay
+- atomic ledger 장애로 single-use consumption 성공을 확정할 수 없음
 
 ## Production checklist
 
