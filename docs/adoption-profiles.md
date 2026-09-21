@@ -275,6 +275,8 @@ action digest는 adapter가 imminent action을 관찰하고 assertion을 확정�
 
 이 예제에서 reference validator는 3번과 5번의 policy/binding 판단을 구현하는 기준이 될 수 있지만, 1) 실제 send call interception, 2) adapter producer/transport 인증, 3) issuer authority 인증, 4) production-grade shared atomic ledger, 5) 최종 tool dispatch 차단은 소비 runtime이 제공해야 한다.
 
+같은 흐름을 실제 reference code로 실행하려면 source repository의 [`examples/runtime-adapter/mock_runtime.py`](../examples/runtime-adapter/mock_runtime.py)를 사용한다. 이 예제는 외부 시스템을 호출하지 않고 첫 approval consumption은 성공하고 동일 approval replay는 차단되는 것을 검증한다.
+
 ### Fail-closed conditions
 
 Profile C라고 주장하는 intercepted surface에서는 다음을 통과시키지 않는다.
