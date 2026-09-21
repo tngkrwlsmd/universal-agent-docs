@@ -44,7 +44,7 @@
 
 `expected` 전체를 exact-match하지 않는다. `normative_fields`의 JSON Pointer만 비교한다. 따라서 diagnostic 문자열, 경로, stack trace, warning wording처럼 implementation-specific인 출력은 호환성 기준이 아니다. `/errors`와 `/warnings` 자체를 normative exact-match field로 사용하지 않는다.
 
-지원 `kind`는 다음과 같다: `routing`, `execution_boundary`, `digest_relation`, `catalog_invariant`, `approval`, `protected_override`, `readiness`, `distribution`, `integrity`.
+지원 `kind`의 **authoritative 목록은 `corpus.schema.json`의 `properties.vectors.items.properties.kind.enum`**이다. README에는 그 enum의 수동 exhaustive copy를 유지하지 않는다. Python reference runner의 `RUNNERS` registry는 이 schema enum과 exact parity를 가져야 하며 테스트가 이를 검증한다.
 
 각 kind의 `input`은 JSON data만 사용한다. approval/override fixture의 `$ACTION_DIGEST`, `$CORRELATION_ID`, `$EXECUTION_NONCE`, `$ACTUAL_OPERATIONS`, `$TARGETS`, `$ENVIRONMENT` 토큰은 같은 vector의 execution-boundary 결과로 치환하는 language-neutral fixture token이다.
 

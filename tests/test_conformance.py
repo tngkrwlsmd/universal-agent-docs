@@ -117,6 +117,13 @@ class LanguageNeutralConformanceTests(unittest.TestCase):
                 direct.update(item.get("actual_operations", []))
         self.assertEqual(set(), priority - direct)
 
+    def test_runner_kind_registry_matches_schema_and_readme_delegates_registry(self):
+        schema_kinds = set(self.schema["properties"]["vectors"]["items"]["properties"]["kind"]["enum"])
+        self.assertEqual(schema_kinds, set(runner.RUNNERS))
+        readme = (ROOT / "conformance" / "README.md").read_text(encoding="utf-8")
+        self.assertIn("authoritative 목록은 `corpus.schema.json`", readme)
+        self.assertNotIn("지원 `kind`는 다음과 같다:", readme)
+
     def test_reference_runner_passes_entire_corpus(self):
         result = runner.run_suite()
         jsonschema.Draft202012Validator.check_schema(self.result_schema)
