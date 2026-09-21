@@ -167,7 +167,7 @@ python scripts/conformance.py --coverage
 
 CI는 Linux/macOS/Windows × Python 3.10/3.14에서 bundle validation, tests, conformance, canonical/consumer distribution build와 verification을 수행한다.
 
-Release는 `.github/workflows/release.yml`의 SemVer tag flow를 사용하며 immutable Release와 provenance verification을 우회하지 않는다.
+Release는 `.github/workflows/release.yml`의 SemVer tag flow를 사용하며 immutable Release와 provenance verification을 우회하지 않는다. Canonical source artifact 이름은 `universal-agent-docs.zip`, consumer artifact 이름은 `universal-agent-docs-consumer.zip`이다.
 
 ## 설계 불변조건
 
