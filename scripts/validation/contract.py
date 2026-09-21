@@ -212,6 +212,7 @@ CANONICAL_REQUIRED_FILES = [
     "docs/adoption-profiles.md",
     "docs/extensions.md",
     "docs/generated-policy-reference.md",
+    "docs/threat-model.md",
     "LICENSE",
     "requirements.txt",
     "requirements.lock",
@@ -247,13 +248,14 @@ CANONICAL_REQUIRED_FILES = [
     ".github/workflows/ci.yml",
     ".github/workflows/release.yml",
     ".github/workflows/verify-release.yml",
+    "evaluation/README.md",
     "conformance/README.md",
     "conformance/corpus.schema.json",
     "conformance/result.schema.json",
     "conformance/coverage.json",
     "conformance/golden.json",
     "conformance/invalid.json",
-    "tests/test_conformance.py",
+    "tests/test_conformance.py"
 ]
 
 CANONICAL_SOURCE_ONLY_FILES = [
@@ -279,6 +281,20 @@ CANONICAL_SOURCE_ONLY_FILES = [
     "examples/runtime-adapter/README.md",
     "examples/runtime-adapter/mock_runtime.py",
     "examples/runtime-adapter/sandbox_artifact_adapter.py",
+    "evaluation/scenarios.json",
+    "scripts/evaluate.py",
+    "scripts/policy_diff.py",
+    "scripts/benchmark.py",
+    "examples/runtime-adapter/github_issue_adapter.py",
+    "tests/test_consumer_example.py",
+    "tests/test_extensibility.py",
+    "tests/test_runtime_adapter_example.py",
+    "tests/test_sandbox_adapter.py",
+    "tests/test_github_reference_adapter.py",
+    "tests/test_evaluation.py",
+    "tests/test_policy_diff.py",
+    "tests/test_benchmark.py",
+    "tests/test_source_surface.py"
 ]
 CANONICAL_ALLOWED_FILES = CANONICAL_REQUIRED_FILES + CANONICAL_SOURCE_ONLY_FILES
 

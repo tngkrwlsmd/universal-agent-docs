@@ -44,7 +44,14 @@ class DistributionTests(unittest.TestCase):
         self.assertIn("templates/PROJECT.md", source_only)
         self.assertIn("examples/consumer-basic/README.md", source_only)
         self.assertIn("examples/runtime-adapter/README.md", source_only)
-        self.assertTrue(all(path == "templates/PROJECT.md" or path.startswith("examples/") for path in source_only))
+        self.assertIn("evaluation/scenarios.json", source_only)
+        self.assertIn("scripts/evaluate.py", source_only)
+        self.assertIn("tests/test_github_reference_adapter.py", source_only)
+        self.assertTrue(all(
+            path == "templates/PROJECT.md"
+            or path.startswith(("examples/", "evaluation/", "scripts/", "tests/"))
+            for path in source_only
+        ))
 
     def test_partial_zip_fails_missing_manifest(self):
         with tempfile.TemporaryDirectory() as td:
