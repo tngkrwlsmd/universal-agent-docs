@@ -59,7 +59,7 @@ Consumer artifact의 policy bundle은 프로젝트의 `.agent-policy/` 아래에
 
 Canonical project facts의 기본 위치는 `.agent-policy/PROJECT.md`다. 설치 직후에는 template이므로 readiness PASS를 기대하지 않는다.
 
-처음 적용하는 흐름은 [Profile A/B consumer example](examples/consumer-basic/README.md)에서 before → after 형태로 볼 수 있다.
+처음 적용하는 흐름은 [Profile A/B consumer example](https://github.com/tngkrwlsmd/universal-agent-docs/blob/main/examples/consumer-basic/README.md)에서 before → after 형태로 볼 수 있다.
 
 ### 3. Profile B validation
 
@@ -87,7 +87,7 @@ python .agent-policy/scripts/validate.py \
 
 실제 tool/API/action 앞에 trusted runtime boundary를 연결해야 한다. Planner와 독립적으로 관찰된 actual operation, concrete target/environment/exposure facts, exact approval/override binding, atomic replay consumption, issuer/transport trust, final allow/block dispatcher가 필요하다.
 
-Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 source-only [runtime adapter examples](examples/runtime-adapter/README.md)를 본다.
+Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 source-only [runtime adapter examples](https://github.com/tngkrwlsmd/universal-agent-docs/blob/main/examples/runtime-adapter/README.md)를 본다.
 
 ## 문서 지도
 

@@ -2,7 +2,7 @@
 
 `universal-agent-docs`는 하나의 "보안 모드"가 아니라, 같은 policy bundle을 어디까지 실제 runtime에 연결했는지에 따라 보장이 달라지는 도입 경로를 제공한다. 이 문서의 profile 이름은 **도입 설명을 위한 문서 분류**이며 `POLICY_CONTRACT.json`의 machine-enforceable state가 아니다.
 
-이 문서는 **consumer installation, PROJECT bootstrap/readiness, A→B→C adoption 절차의 primary owner**다. README는 방향 선택과 최소 시작점만 제공하며, 실제 도입 절차는 이 문서를 기준으로 유지한다. 처음 적용하는 작은 before/after 흐름은 [Profile A/B consumer example](../examples/consumer-basic/README.md)을 함께 볼 수 있다.
+이 문서는 **consumer installation, PROJECT bootstrap/readiness, A→B→C adoption 절차의 primary owner**다. README는 방향 선택과 최소 시작점만 제공하며, 실제 도입 절차는 이 문서를 기준으로 유지한다. 처음 적용하는 작은 before/after 흐름은 [Profile A/B consumer example](https://github.com/tngkrwlsmd/universal-agent-docs/blob/main/examples/consumer-basic/README.md)을 함께 볼 수 있다.
 
 ## 구현 중립성의 범위
 
