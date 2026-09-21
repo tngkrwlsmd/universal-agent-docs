@@ -27,6 +27,8 @@ jobs:
           cache: pip
       - name: Install validation dependency
         run: python -m pip install --require-hashes --requirement requirements.lock
+      - name: Check generated policy reference
+        run: python scripts/generate_policy_reference.py --check
       - name: Validate policy bundle
         run: python scripts/validate.py
       - name: Run tests

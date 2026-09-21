@@ -71,6 +71,7 @@ def validate_approval_assertion(
     replay_registry: Path | None = None,
     consume: bool = False,
     reference_time: datetime | None = None,
+    extension_registry: dict | None = None,
 ) -> dict:
     """Validate an explicit-approval object and, when supplied, bind it to one action.
 
@@ -118,7 +119,7 @@ def validate_approval_assertion(
         }
 
     approval = payload["approval"]
-    catalog = operation_catalog(contract)
+    catalog = operation_catalog(contract, extension_registry)
     unknown_ops = sorted(set(approval["operations"]) - set(catalog))
     if unknown_ops:
         errors.append("approval operations must use canonical operation IDs; unknown: " + ", ".join(unknown_ops))

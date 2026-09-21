@@ -238,6 +238,34 @@ python -m unittest -v
 
 `tests`가 Python package이므로 기본 unittest discovery에서도 전체 suite를 찾는다.
 
+## 파생 정책 뷰와 조직별 operation 확장
+
+작업마다 전체 `POLICIES.md`를 넣을 필요가 없다. canonical source를 다시 정의하지 않고 필요한 always-on invariant, operation contract, primary-owner policy만 결정적으로 조합할 수 있다.
+
+```bash
+python scripts/validate.py --compiled-policy \
+  --operation code.modify \
+  --resource src/auth/login.py
+
+# 같은 결과 구조를 JSON으로 소비
+python scripts/validate.py --compiled-policy \
+  --operation code.modify \
+  --resource src/auth/login.py \
+  --json
+```
+
+조직/vendor 전용 operation은 core catalog를 수정하지 않고 명시적 extension JSON으로 등록할 수 있다. namespace는 core namespace와 충돌할 수 없고, extension operation은 자연어 alias로 암묵 추론하지 않으며 explicit planned operation으로만 사용한다. runtime에서는 extension이 선언한 `supported_adapters`와 실제 adapter ID가 일치해야 한다. extension semantics의 canonical digest는 action digest가 이미 결박하는 `semantic_details`에 자동 포함되어 승인/override가 다른 extension 의미로 재사용되지 않는다.
+
+```bash
+python scripts/validate.py \
+  --operation-extension examples/extensions/internal-sandbox-artifact.json \
+  --compiled-policy \
+  --routing-mode enforcement \
+  --operation internal.sandbox_artifact_publish
+```
+
+machine-owned 표와 operation catalog는 `POLICY_CONTRACT.json`에서 `POLICIES.md`의 generated block으로 파생한다. 변경 후 `python scripts/generate_policy_reference.py`로 갱신하고 CI의 `--check`가 stale 상태를 거부한다. rationale, 절차, 예제 같은 human-facing prose는 계속 `POLICIES.md`가 소유한다.
+
 ## 라우팅 모델
 
 정책은 자연어 alias가 직접 결정하지 않는다. 먼저 계획을 stable한 **canonical operation ID**로 정규화한 뒤 operation catalog가 정책을 결정한다. canonical operation은 `POLICY_CONTRACT.json`, 자연어 phrase/stem/pattern fallback은 별도 `ROUTING_ALIASES.json`이 담당한다. 따라서 언어별 힌트를 확장해도 canonical semantics와 정책 계약은 불필요하게 바뀌지 않는다. 충분한 문맥이 없는 단일 일반어는 고유 Git/release 작업으로 승격하지 않는다.

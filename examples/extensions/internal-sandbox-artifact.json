@@ -1,0 +1,33 @@
+{
+  "format": "universal-agent-docs-operation-extension-v1",
+  "namespace": "internal",
+  "operations": [
+    {
+      "id": "internal.sandbox_artifact_publish",
+      "policies": [
+        "deployment",
+        "execution"
+      ],
+      "effect_floor": "L3",
+      "requires_execution_policy": true,
+      "lifecycle_status": "active",
+      "supported_adapters": [
+        "reference-sandbox-artifact-adapter",
+        "validator-cli"
+      ],
+      "exposure_floor": "X0",
+      "allowed_environments": [
+        "local",
+        "test"
+      ],
+      "required_semantic_details": [
+        "artifact_kind"
+      ],
+      "semantic_detail_allowed_values": {
+        "artifact_kind": [
+          "reference_fixture"
+        ]
+      }
+    }
+  ]
+}

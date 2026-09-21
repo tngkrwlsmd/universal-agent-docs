@@ -76,8 +76,14 @@ def stem_matches(normalized: str, stem: str) -> bool:
     return bool(re.search(pattern, normalized))
 
 
-def operation_catalog(contract: dict) -> dict[str, dict]:
-    return {item["id"]: item for item in contract["routing"]["operation_catalog"]}
+def operation_catalog(contract: dict, extension_registry: dict | None = None) -> dict[str, dict]:
+    catalog = {item["id"]: item for item in contract["routing"]["operation_catalog"]}
+    if extension_registry:
+        for operation_id, operation in extension_registry.get("operations", {}).items():
+            if operation_id in catalog:
+                raise ValueError(f"extension operation collides with core catalog: {operation_id}")
+            catalog[operation_id] = operation
+    return catalog
 
 
 def load_routing_aliases(contract: dict, root: Path = ROOT) -> dict:
@@ -117,6 +123,7 @@ def route_policies(
     resources: Iterable[str] = (),
     routing_mode: str = "advisory",
     aliases_doc: dict | None = None,
+    extension_registry: dict | None = None,
 ) -> dict:
     """Route through canonical IDs; natural-language aliases are advisory hints only.
 
@@ -125,7 +132,7 @@ def route_policies(
     not outrank a canonical plan. The execution boundary remains fail-closed by comparing
     trusted runtime actual operations against that plan.
     """
-    catalog = operation_catalog(contract)
+    catalog = operation_catalog(contract, extension_registry)
     modes = contract.get("routing", {}).get("modes", {})
     if routing_mode not in modes:
         raise ValueError(f"unknown routing mode: {routing_mode}")
@@ -236,6 +243,9 @@ def route_policies(
         "operation_sources": operation_sources,
         "unresolved_operations": unresolved_operations,
         "effect_floors": risk_floors,
+        "operation_extension_digest": (
+            extension_registry.get("combined_digest") if extension_registry else None
+        ),
         "policies": policies,
         "matched_resources": matched_resources,
         "warnings": warnings,

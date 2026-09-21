@@ -21,6 +21,113 @@ def parse_policy_matrix(markdown: str) -> dict:
     return matrix
 
 
+GENERATED_POLICY_START = "<!-- generated-policy-reference:start -->"
+GENERATED_POLICY_END = "<!-- generated-policy-reference:end -->"
+
+
+def _markdown_cell(value: object) -> str:
+    return str(value).replace("|", "\\|").replace("\n", " ")
+
+
+def render_generated_policy_reference(contract: dict) -> str:
+    """Render machine-owned policy facts from POLICY_CONTRACT.json deterministically."""
+    risk = contract["risk_model"]
+    execution = contract["execution_boundary"]
+    protected = contract["protected_override"]
+    lines = [
+        GENERATED_POLICY_START,
+        "> 이 블록은 `POLICY_CONTRACT.json`에서 자동 생성한다. 직접 수정하지 말고 "
+        "`python scripts/generate_policy_reference.py`로 갱신한다.",
+        "",
+        "**Effect levels (machine-owned)**",
+        "",
+        "| Level | Meaning |",
+        "|---|---|",
+    ]
+    for level, meaning in risk["effect_levels"].items():
+        lines.append(f"| {level} | {_markdown_cell(meaning)} |")
+
+    lines.extend([
+        "",
+        "**Exposure levels (machine-owned)**",
+        "",
+        "| Level | Meaning |",
+        "|---|---|",
+    ])
+    for level, meaning in risk["exposure_levels"].items():
+        lines.append(f"| {level} | {_markdown_cell(meaning)} |")
+
+    exposure_levels = list(risk["exposure_levels"])
+    lines.extend([
+        "",
+        "**Effect × Exposure minimum gate**",
+        "",
+        "| Effect \\ Exposure | " + " | ".join(exposure_levels) + " |",
+        "|---|" + "|".join("---" for _ in exposure_levels) + "|",
+    ])
+    for effect, row in risk["decision_matrix"].items():
+        lines.append(
+            "| " + effect + " | "
+            + " | ".join(_markdown_cell(row[level]) for level in exposure_levels)
+            + " |"
+        )
+
+    lines.extend([
+        "",
+        "**Environment Exposure floors**",
+        "",
+        "| Environment | Minimum Exposure |",
+        "|---|---|",
+    ])
+    for environment, floor in execution["environment_exposure_floors"].items():
+        lines.append(f"| {environment} | {floor} |")
+
+    lines.extend([
+        "",
+        "**Canonical operation catalog**",
+        "",
+        "| Operation | Policies | Effect floor | Execution policy | Lifecycle |",
+        "|---|---|---|---|---|",
+    ])
+    for operation in sorted(contract["routing"]["operation_catalog"], key=lambda item: item["id"]):
+        lifecycle = operation.get("lifecycle_status", "")
+        if lifecycle == "deprecated":
+            replacement = operation.get("replacement_operation", "")
+            lifecycle = f"deprecated -> {replacement}" if replacement else "deprecated"
+        lines.append(
+            f"| `{operation['id']}` | "
+            f"{_markdown_cell(', '.join(operation.get('policies', [])))} | "
+            f"{operation.get('effect_floor', '')} | "
+            f"{'yes' if operation.get('requires_execution_policy') else 'no'} | "
+            f"{_markdown_cell(lifecycle)} |"
+        )
+
+    lines.extend([
+        "",
+        "**Approval / override binding**",
+        "",
+        f"- approval gate: `{execution['approval_binding_required_for_gate']}`",
+        f"- approval schema: `{execution['approval_assertion_schema']}`",
+        f"- approval max TTL: `{execution['approval_max_ttl_seconds']}` seconds",
+        f"- protected override gate: `{protected['binding_required_for_gate']}`",
+        f"- protected override schema: `{protected['schema']}`",
+        f"- protected override max TTL: `{protected['max_ttl_seconds']}` seconds",
+        f"- action digest format: `{execution['action_digest_format']}`",
+        "",
+        GENERATED_POLICY_END,
+    ])
+    return "\n".join(lines)
+
+
+def _current_generated_policy_reference(markdown: str) -> str | None:
+    start = markdown.find(GENERATED_POLICY_START)
+    end = markdown.find(GENERATED_POLICY_END)
+    if start < 0 or end < start:
+        return None
+    end += len(GENERATED_POLICY_END)
+    return markdown[start:end]
+
+
 def compile_python_sources(root: Path) -> list[Check]:
     checks: list[Check] = []
     failures: list[str] = []
@@ -319,6 +426,15 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
 
     if contract is not None and (root / "POLICIES.md").is_file():
         policies_md = (root / "POLICIES.md").read_text(encoding="utf-8")
+        generated_expected = render_generated_policy_reference(contract)
+        generated_actual = _current_generated_policy_reference(policies_md)
+        checks.append(Check(
+            "generated_policy_reference",
+            "PASS" if generated_actual == generated_expected else "FAIL",
+            "generated machine-policy reference is current"
+            if generated_actual == generated_expected
+            else "run python scripts/generate_policy_reference.py",
+        ))
         ids = [p["id"] for p in contract.get("policies", [])]
         anchors = [p["anchor"] for p in contract.get("policies", [])]
         checks.append(Check("policy_ids_unique", "PASS" if len(ids) == len(set(ids)) else "FAIL", ", ".join(ids)))

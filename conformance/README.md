@@ -118,6 +118,10 @@ vector `id`는 public compatibility identifier로 취급한다. 기존 ID를 다
 
 vector 삭제는 해당 semantic이 contract에서 제거되거나 새 stable vector로 명시적으로 supersede되는 경우에만 허용한다. operation rename은 contract의 lifecycle 규칙과 동일하게 새 canonical ID/vector 추가 후 기존 의미의 migration을 명시한다.
 
+## Direct high-risk operation evidence
+
+공통 invariant만으로 adapter 지원을 주장하지 않는다. 현재 direct vectors는 우선순위가 높은 database, Git state mutation, credential/IAM, external side effect, cloud mutation/delete, data export operation을 직접 입력에 포함한다. direct vector가 없는 operation은 `coverage.json`의 구체적 exemption을 유지해야 하며, exemption은 adapter support 인증을 의미하지 않는다.
+
 ## Coverage scope
 
 suite는 모든 operation을 하나씩 인증하려는 목록이 아니다. Effect/Exposure/gate/lifecycle 특성이 다른 operation family와 중요한 trust boundary를 대표한다. 직접 vector가 없는 현재 operation은 `coverage.json`에 exemption reason이 있어야 하며, 이는 해당 operation이 구현체에서 지원된다고 인증하는 의미가 아니다.
