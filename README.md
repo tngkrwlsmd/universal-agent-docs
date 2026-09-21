@@ -13,6 +13,8 @@
 
 처음 도입하는 사용자는 아래 Quick Start와 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)만 먼저 읽으면 된다. 정책 구현·감사·다른 언어 구현이 목적일 때만 이후의 contract, runtime, conformance reference로 내려간다.
 
+> **Release channel note:** 현재 published immutable Release인 `v0.1.0`은 `20d726f845a0e929103a6de57cb1c82eaeffedca`를 가리키며, 아래의 operation-extension trust/capability contract와 강화된 compiled-policy surface는 아직 포함하지 않는다. 이 기능들은 현재 `main`에서 검증되었고 다음 SemVer Release부터 consumer artifact에 포함될 예정이다. Release artifact가 필요한 사용자는 `v0.1.0`의 실제 기능 범위를 따르고, unreleased 기능을 시험할 때만 source checkout의 `main`을 사용한다. 기존 immutable Release를 수정하거나 덮어쓰지 않는다.
+
 ## 5분 Quick Start
 
 처음 도입할 때는 **정책을 읽히는 것**, **정책 판단을 검증하는 것**, **실제 tool 실행을 차단하는 것**을 같은 수준으로 보지 않는다.
