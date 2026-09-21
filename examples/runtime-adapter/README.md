@@ -41,7 +41,6 @@ explicit plan
 - production에서는 실제 tool/API 호출 앞의 trusted interception, 조직 identity/authorization, shared durable atomic ledger, trusted transport와 final dispatcher enforcement가 별도로 필요하다.
 - 이 예제는 특정 vendor/cloud/runtime 전체 지원을 주장하지 않는다.
 
-
 ## GitHub issue production-shaped reference adapter
 
 `github_issue_adapter.py`는 core canonical operation `external.api_write`를 GitHub issue-create surface에 고정해 **실제 production integration에서 필요한 경계 순서**를 보여준다. 테스트와 demo는 `RecordingGitHubTransport`만 사용하며 네트워크나 실제 GitHub side effect를 발생시키지 않는다.
