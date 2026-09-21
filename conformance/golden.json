@@ -2755,6 +2755,444 @@
         "/effective_exposure",
         "/action_gate"
       ]
+    },
+    {
+      "id": "extension-contract-deterministic",
+      "description": "valid extension and capability declarations have path-independent deterministic digests",
+      "category": "extension-contract",
+      "kind": "extension_contract",
+      "covers": [
+        "extension.schema",
+        "extension.digest_determinism",
+        "adapter.capability_schema",
+        "adapter.capability_digest_determinism"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "version": "1",
+            "supported_operations": [
+              "internal.sandbox_artifact_publish"
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "status": "PASS",
+        "extension_digest_stable": true,
+        "capability_digest_stable": true,
+        "extension_integrity": "UNVERIFIED",
+        "capability_integrity": "UNVERIFIED"
+      },
+      "normative_fields": [
+        "/status",
+        "/extension_digest_stable",
+        "/capability_digest_stable",
+        "/extension_integrity",
+        "/capability_integrity"
+      ]
+    },
+    {
+      "id": "extension-trusted-digest-match",
+      "description": "separately supplied expected digests establish integrity matching but not authority",
+      "category": "extension-contract",
+      "kind": "extension_contract",
+      "covers": [
+        "extension.integrity",
+        "adapter.capability_integrity",
+        "extension.authority_separation"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "version": "1",
+            "supported_operations": [
+              "internal.sandbox_artifact_publish"
+            ]
+          }
+        ],
+        "trust_expected": true
+      },
+      "expected": {
+        "status": "PASS",
+        "extension_integrity": "MATCHED",
+        "capability_integrity": "MATCHED"
+      },
+      "normative_fields": [
+        "/status",
+        "/extension_integrity",
+        "/capability_integrity"
+      ]
+    },
+    {
+      "id": "extension-local-capability-intersection",
+      "description": "local extension execution requires both extension allowlist and adapter capability declaration",
+      "category": "extension-runtime",
+      "kind": "extension_boundary",
+      "covers": [
+        "extension.runtime",
+        "adapter.capability_intersection",
+        "effect.floor",
+        "action_digest.semantic_details_binding"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "version": "1",
+            "supported_operations": [
+              "internal.sandbox_artifact_publish"
+            ]
+          }
+        ],
+        "boundary": {
+          "planned_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "actual_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "conformance-extension-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {
+            "artifact_kind": "reference_fixture"
+          }
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L3",
+        "effective_exposure": "X0",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL",
+        "extension_integrity": "UNVERIFIED",
+        "adapter_capability_integrity": "UNVERIFIED",
+        "extension_authority": "NOT_ESTABLISHED",
+        "adapter_capability_authority": "NOT_ESTABLISHED"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate",
+        "/extension_integrity",
+        "/adapter_capability_integrity",
+        "/extension_authority",
+        "/adapter_capability_authority"
+      ]
+    },
+    {
+      "id": "extension-production-trusted-escalation",
+      "description": "trusted extension/capability pair may execute in production and applies extension production Effect",
+      "category": "extension-runtime",
+      "kind": "extension_boundary",
+      "covers": [
+        "extension.production_escalation",
+        "extension.integrity",
+        "adapter.capability_intersection"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "acme",
+            "operations": [
+              {
+                "id": "acme.release_rollout",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "production_effect": "L4",
+                "allowed_environments": [
+                  "production"
+                ]
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "supported_operations": [
+              "acme.release_rollout"
+            ]
+          }
+        ],
+        "trust_expected": true,
+        "boundary": {
+          "planned_operations": [
+            "acme.release_rollout"
+          ],
+          "actual_operations": [
+            "acme.release_rollout"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "production",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "conformance-extension-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {}
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L4",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL",
+        "extension_integrity": "MATCHED",
+        "adapter_capability_integrity": "MATCHED"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate",
+        "/extension_integrity",
+        "/adapter_capability_integrity"
+      ]
+    },
+    {
+      "id": "extension-exposure-floor-direct",
+      "description": "extension exposure floor raises effective Exposure without changing core contract",
+      "category": "extension-runtime",
+      "kind": "extension_boundary",
+      "covers": [
+        "extension.exposure_floor",
+        "exposure.derivation"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "acme",
+            "operations": [
+              {
+                "id": "acme.internal_export",
+                "policies": [
+                  "file_handling",
+                  "execution"
+                ],
+                "effect_floor": "L2",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X2",
+                "allowed_environments": [
+                  "local"
+                ]
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "supported_operations": [
+              "acme.internal_export"
+            ]
+          }
+        ],
+        "boundary": {
+          "planned_operations": [
+            "acme.internal_export"
+          ],
+          "actual_operations": [
+            "acme.internal_export"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "local",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "conformance-extension-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {}
+        }
+      },
+      "expected": {
+        "status": "PASS",
+        "effective_effect": "L2",
+        "effective_exposure": "X2",
+        "action_gate": "REQUIRE_EXPLICIT_APPROVAL"
+      },
+      "normative_fields": [
+        "/status",
+        "/effective_effect",
+        "/effective_exposure",
+        "/action_gate"
+      ]
     }
   ]
 }

@@ -41,7 +41,19 @@
     "distribution.symlink",
     "distribution.resource_limits",
     "integrity.trust_manifest",
-    "integrity.release_manifest"
+    "integrity.release_manifest",
+    "extension.schema",
+    "extension.namespace_collision",
+    "extension.digest_determinism",
+    "extension.integrity",
+    "extension.authority_separation",
+    "extension.runtime",
+    "extension.exposure_floor",
+    "extension.production_escalation",
+    "adapter.capability_schema",
+    "adapter.capability_digest_determinism",
+    "adapter.capability_integrity",
+    "adapter.capability_intersection"
   ],
   "operation_exemptions": {
     "code.refactor": "Covered by shared routing/risk/lifecycle invariants; add a direct vector before claiming adapter support for this operation.",

@@ -122,6 +122,10 @@ vector 삭제는 해당 semantic이 contract에서 제거되거나 새 stable ve
 
 공통 invariant만으로 adapter 지원을 주장하지 않는다. 현재 direct vectors는 우선순위가 높은 database, Git state mutation, credential/IAM, external side effect, cloud mutation/delete, data export operation을 직접 입력에 포함한다. direct vector가 없는 operation은 `coverage.json`의 구체적 exemption을 유지해야 하며, exemption은 adapter support 인증을 의미하지 않는다.
 
+## Extension and capability contract
+
+`OPERATION_EXTENSION.schema.json`과 `ADAPTER_CAPABILITIES.schema.json`은 Python 구현 밖에서도 소비할 수 있는 wire contract다. corpus의 `extension_contract` / `extension_boundary` kind는 namespace 충돌, deterministic digest, integrity expectation, bilateral adapter capability, production fail-closed, extension Effect/Exposure semantics를 normative fields로 검증한다. Digest match는 authority 인증으로 해석하지 않는다.
+
 ## Coverage scope
 
 suite는 모든 operation을 하나씩 인증하려는 목록이 아니다. Effect/Exposure/gate/lifecycle 특성이 다른 operation family와 중요한 trust boundary를 대표한다. 직접 vector가 없는 현재 operation은 `coverage.json`에 exemption reason이 있어야 하며, 이는 해당 operation이 구현체에서 지원된다고 인증하는 의미가 아니다.

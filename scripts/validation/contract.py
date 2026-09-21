@@ -7,6 +7,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
+try:
+    import jsonschema
+except ImportError:  # pragma: no cover - exercised by CLI environments without deps
+    jsonschema = None
+
 ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_PATH = ROOT / "POLICY_CONTRACT.json"
 SCHEMA_PATH = ROOT / "POLICY_CONTRACT.schema.json"
@@ -15,6 +20,8 @@ ALIASES_SCHEMA_PATH = ROOT / "ROUTING_ALIASES.schema.json"
 RUNTIME_ACTION_SCHEMA_PATH = ROOT / "RUNTIME_ACTION.schema.json"
 APPROVAL_ASSERTION_SCHEMA_PATH = ROOT / "APPROVAL_ASSERTION.schema.json"
 PROTECTED_OVERRIDE_SCHEMA_PATH = ROOT / "PROTECTED_OVERRIDE.schema.json"
+OPERATION_EXTENSION_SCHEMA_PATH = ROOT / "OPERATION_EXTENSION.schema.json"
+ADAPTER_CAPABILITIES_SCHEMA_PATH = ROOT / "ADAPTER_CAPABILITIES.schema.json"
 PROJECT_PATH = ROOT / "PROJECT.md"
 POLICIES_PATH = ROOT / "POLICIES.md"
 AGENTS_PATH = ROOT / "AGENTS.md"
@@ -22,7 +29,10 @@ PROJECT_START = "<!-- project-facts:start -->"
 PROJECT_END = "<!-- project-facts:end -->"
 CANONICAL_ROOT = "universal-agent-docs"
 OPERATION_EXTENSION_FORMAT = "universal-agent-docs-operation-extension-v1"
+ADAPTER_CAPABILITIES_FORMAT = "universal-agent-docs-adapter-capabilities-v1"
 OPERATION_EXTENSION_DIGEST_KEY = "policy_extension_digest"
+ADAPTER_CAPABILITY_DIGEST_KEY = "adapter_capability_digest"
+EXTENSION_TRUST_REQUIRED_ENVIRONMENTS = {"production", "public", "external"}
 _EXTENSION_NAMESPACE_RE = re.compile(r"^[a-z][a-z0-9_-]{0,62}$")
 _EXTENSION_OPERATION_RE = re.compile(r"^[a-z][a-z0-9_.-]*$")
 SUPPORTED_SCHEMA_VERSIONS = {16}
@@ -156,6 +166,8 @@ TRUSTED_CORE_FILES = [
     "RUNTIME_ACTION.schema.json",
     "APPROVAL_ASSERTION.schema.json",
     "PROTECTED_OVERRIDE.schema.json",
+    "OPERATION_EXTENSION.schema.json",
+    "ADAPTER_CAPABILITIES.schema.json",
     "scripts/validate.py",
     "scripts/generate_policy_reference.py",
     "scripts/validation/__init__.py",
@@ -193,8 +205,12 @@ CANONICAL_REQUIRED_FILES = [
     "RUNTIME_ACTION.schema.json",
     "APPROVAL_ASSERTION.schema.json",
     "PROTECTED_OVERRIDE.schema.json",
+    "OPERATION_EXTENSION.schema.json",
+    "ADAPTER_CAPABILITIES.schema.json",
     "README.md",
     "docs/adoption-profiles.md",
+    "docs/extensions.md",
+    "docs/generated-policy-reference.md",
     "LICENSE",
     "requirements.txt",
     "requirements.lock",
@@ -247,7 +263,19 @@ def _canonical_json_digest(value: object) -> str:
     return "sha256:" + hashlib.sha256(encoded).hexdigest()
 
 
-def load_operation_extensions(paths: Iterable[Path | str], contract: dict) -> dict:
+def _logical_source_name(path: Path, root: Path = ROOT) -> str:
+    try:
+        return path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return path.name
+
+
+def load_operation_extensions(
+    paths: Iterable[Path | str],
+    contract: dict,
+    expected_digests: Iterable[str] = (),
+    root: Path = ROOT,
+) -> dict:
     """Load explicit organization/vendor operation extensions without mutating the core contract.
 
     Extension operations are intentionally explicit-plan only. Natural-language aliases remain
@@ -256,13 +284,17 @@ def load_operation_extensions(paths: Iterable[Path | str], contract: dict) -> di
     extension operation reaches the execution boundary.
     """
     source_paths = [Path(path).resolve() for path in paths]
+    expected_digest_set = {str(value).strip() for value in expected_digests if str(value).strip()}
+    extension_schema = load_json(root / "OPERATION_EXTENSION.schema.json")
     if not source_paths:
         return {
             "format": OPERATION_EXTENSION_FORMAT,
             "namespaces": [],
             "operations": {},
             "combined_digest": None,
-            "sources": [],
+            "integrity": "UNVERIFIED",
+            "authority": "NOT_ESTABLISHED",
+            "diagnostic_sources": [],
         }
 
     core_operations = {
@@ -292,6 +324,8 @@ def load_operation_extensions(paths: Iterable[Path | str], contract: dict) -> di
     for source_path in source_paths:
         try:
             document = load_json(source_path)
+            if jsonschema is not None:
+                jsonschema.validate(document, extension_schema)
         except Exception as exc:
             errors.append(f"{source_path}: {exc}")
             continue
@@ -454,13 +488,151 @@ def load_operation_extensions(paths: Iterable[Path | str], contract: dict) -> di
         raise ValueError("operation extension validation failed: " + "; ".join(errors))
 
     normalized_documents.sort(key=lambda item: item["namespace"])
+    combined_digest = _canonical_json_digest(normalized_documents)
     return {
         "format": OPERATION_EXTENSION_FORMAT,
         "namespaces": sorted(namespaces),
         "operations": operations,
-        "combined_digest": _canonical_json_digest(normalized_documents),
-        "sources": [str(path) for path in source_paths],
+        "combined_digest": combined_digest,
+        "integrity": "MATCHED" if combined_digest in expected_digest_set else "UNVERIFIED",
+        "authority": "NOT_ESTABLISHED",
+        "diagnostic_sources": [_logical_source_name(path, root) for path in source_paths],
     }
+
+
+def load_adapter_capabilities(
+    paths: Iterable[Path | str],
+    expected_digests: Iterable[str] = (),
+    root: Path = ROOT,
+) -> dict:
+    """Load explicit adapter capability declarations.
+
+    A capability declaration is independent evidence from the extension-side adapter
+    allowlist. Digest matching proves exact semantics against a separately supplied
+    expectation; it does not authenticate organization authority.
+    """
+    source_paths = [Path(path).resolve() for path in paths]
+    expected_digest_set = {str(value).strip() for value in expected_digests if str(value).strip()}
+    if not source_paths:
+        return {
+            "format": ADAPTER_CAPABILITIES_FORMAT,
+            "adapters": {},
+            "combined_digest": None,
+            "integrity": "UNVERIFIED",
+            "authority": "NOT_ESTABLISHED",
+            "diagnostic_sources": [],
+        }
+
+    schema = load_json(root / "ADAPTER_CAPABILITIES.schema.json")
+    errors: list[str] = []
+    adapters: dict[str, dict] = {}
+    normalized_documents: list[dict] = []
+    for source_path in source_paths:
+        try:
+            document = load_json(source_path)
+            if jsonschema is not None:
+                jsonschema.validate(document, schema)
+        except Exception as exc:
+            errors.append(f"{source_path}: {exc}")
+            continue
+        if document.get("format") != ADAPTER_CAPABILITIES_FORMAT:
+            errors.append(f"{source_path}: format must be {ADAPTER_CAPABILITIES_FORMAT!r}")
+            continue
+        adapter_id = str(document.get("adapter_id", "")).strip()
+        if not adapter_id:
+            errors.append(f"{source_path}: adapter_id must be non-empty")
+            continue
+        if adapter_id in adapters:
+            errors.append(f"{source_path}: duplicate adapter capability declaration {adapter_id!r}")
+            continue
+        supported_operations = sorted(set(document.get("supported_operations", [])))
+        normalized = {
+            "format": ADAPTER_CAPABILITIES_FORMAT,
+            "adapter_id": adapter_id,
+            "supported_operations": supported_operations,
+        }
+        if document.get("version"):
+            normalized["version"] = str(document["version"])
+        normalized["document_digest"] = _canonical_json_digest({
+            key: normalized[key] for key in normalized if key != "document_digest"
+        })
+        adapters[adapter_id] = normalized
+        normalized_documents.append({
+            key: normalized[key] for key in normalized if key != "document_digest"
+        })
+
+    if errors:
+        raise ValueError("adapter capability validation failed: " + "; ".join(errors))
+
+    normalized_documents.sort(key=lambda item: item["adapter_id"])
+    combined_digest = _canonical_json_digest(normalized_documents)
+    return {
+        "format": ADAPTER_CAPABILITIES_FORMAT,
+        "adapters": adapters,
+        "combined_digest": combined_digest,
+        "integrity": "MATCHED" if combined_digest in expected_digest_set else "UNVERIFIED",
+        "authority": "NOT_ESTABLISHED",
+        "diagnostic_sources": [_logical_source_name(path, root) for path in source_paths],
+    }
+
+
+def load_extension_runtime_inputs(
+    extension_paths: Iterable[Path | str],
+    capability_paths: Iterable[Path | str],
+    contract: dict,
+    expected_extension_digests: Iterable[str] = (),
+    expected_capability_digests: Iterable[str] = (),
+) -> tuple[dict | None, dict | None, dict, int]:
+    """Load optional extension/capability inputs and return CLI-ready status without policy decisions."""
+    result: dict = {}
+    exit_code = 0
+    extension_registry = None
+    adapter_capabilities = None
+    extension_paths = list(extension_paths)
+    capability_paths = list(capability_paths)
+
+    if extension_paths:
+        try:
+            extension_registry = load_operation_extensions(
+                extension_paths, contract, expected_digests=expected_extension_digests
+            )
+            result["operation_extensions"] = {
+                "status": "PASS",
+                "schema": "VALID",
+                "namespaces": extension_registry["namespaces"],
+                "operation_ids": sorted(extension_registry["operations"]),
+                "combined_digest": extension_registry["combined_digest"],
+                "integrity": extension_registry["integrity"],
+                "authority": extension_registry["authority"],
+                "diagnostic_sources": extension_registry["diagnostic_sources"],
+            }
+        except Exception as exc:
+            result["operation_extensions"] = {
+                "status": "FAIL", "schema": "INVALID", "error": str(exc)
+            }
+            exit_code = 1
+
+    if capability_paths:
+        try:
+            adapter_capabilities = load_adapter_capabilities(
+                capability_paths, expected_digests=expected_capability_digests
+            )
+            result["adapter_capabilities"] = {
+                "status": "PASS",
+                "schema": "VALID",
+                "adapter_ids": sorted(adapter_capabilities["adapters"]),
+                "combined_digest": adapter_capabilities["combined_digest"],
+                "integrity": adapter_capabilities["integrity"],
+                "authority": adapter_capabilities["authority"],
+                "diagnostic_sources": adapter_capabilities["diagnostic_sources"],
+            }
+        except Exception as exc:
+            result["adapter_capabilities"] = {
+                "status": "FAIL", "schema": "INVALID", "error": str(exc)
+            }
+            exit_code = 1
+
+    return extension_registry, adapter_capabilities, result, exit_code
 
 
 def canonical_policy_contract_digest(contract: dict) -> str:

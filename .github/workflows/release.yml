@@ -81,13 +81,33 @@ jobs:
 
       - name: Validate and test
         run: |
+          python scripts/generate_policy_reference.py --check
           python scripts/validate.py
           python -m unittest discover -s tests -v
+          python scripts/conformance.py
+          python scripts/conformance.py --coverage
 
       - name: Build canonical source and consumer artifacts
         run: |
           python scripts/package.py --output-dir dist
           python scripts/package_consumer.py --output-dir dist
+
+      - name: Verify released public feature surface
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf release-smoke
+          mkdir release-smoke
+          python -m zipfile -e dist/universal-agent-docs-consumer.zip release-smoke
+          policy_root="release-smoke/universal-agent-docs-consumer/.agent-policy"
+          python "$policy_root/scripts/validate.py" --help > release-smoke/help.txt
+          grep -F -- "--compiled-policy" release-smoke/help.txt
+          grep -F -- "--operation-extension" release-smoke/help.txt
+          grep -F -- "--adapter-capabilities" release-smoke/help.txt
+          test -f "$policy_root/OPERATION_EXTENSION.schema.json"
+          test -f "$policy_root/ADAPTER_CAPABILITIES.schema.json"
+          test -f "$policy_root/docs/extensions.md"
+          test -f "$policy_root/docs/generated-policy-reference.md"
 
       - name: Upload canonical source artifacts for workflow retention
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4

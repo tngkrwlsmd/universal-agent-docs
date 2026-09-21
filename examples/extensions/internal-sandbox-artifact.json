@@ -12,8 +12,7 @@
       "requires_execution_policy": true,
       "lifecycle_status": "active",
       "supported_adapters": [
-        "reference-sandbox-artifact-adapter",
-        "validator-cli"
+        "reference-sandbox-artifact-adapter"
       ],
       "exposure_floor": "X0",
       "allowed_environments": [

@@ -16,6 +16,8 @@ from .contract import (
     KNOWN_ENVIRONMENTS,
     OPERATION_SEMANTIC_REQUIREMENTS,
     OPERATION_EXTENSION_DIGEST_KEY,
+    ADAPTER_CAPABILITY_DIGEST_KEY,
+    EXTENSION_TRUST_REQUIRED_ENVIRONMENTS,
     PRODUCTION_EFFECT_ESCALATION_OPERATIONS,
     ROOT,
     TARGET_REQUIRED_EFFECT_LEVELS,
@@ -103,6 +105,7 @@ def evaluate_execution_boundary(
     adapter: dict | None = None,
     semantic_details: dict | None = None,
     extension_registry: dict | None = None,
+    adapter_capabilities: dict | None = None,
 ) -> dict:
     """Evaluate the policy gate for an imminent action.
 
@@ -192,12 +195,32 @@ def evaluate_execution_boundary(
         operation_id for operation_id in valid_actual if operation_id in extension_operations
     ]
     adapter_id = str((adapter or {}).get("id", "")).strip()
+    capability_adapters = adapter_capabilities.get("adapters", {}) if adapter_capabilities else {}
+    adapter_capability = capability_adapters.get(adapter_id)
     for operation_id in used_extension_operations:
         supported_adapters = extension_operations[operation_id].get("supported_adapters", [])
         if adapter_id not in supported_adapters:
             errors.append(
                 f"extension operation {operation_id!r} is not declared for adapter {adapter_id!r}; "
                 f"supported adapters: {supported_adapters!r}"
+            )
+        if adapter_capability is None:
+            errors.append(
+                f"extension operation {operation_id!r} requires an explicit capability declaration "
+                f"for adapter {adapter_id!r}"
+            )
+        elif operation_id not in set(adapter_capability.get("supported_operations", [])):
+            errors.append(
+                f"adapter {adapter_id!r} capability does not declare extension operation {operation_id!r}"
+            )
+    if used_extension_operations and env in EXTENSION_TRUST_REQUIRED_ENVIRONMENTS:
+        if not extension_registry or extension_registry.get("integrity") != "MATCHED":
+            errors.append(
+                f"extension integrity must be MATCHED against a separately supplied expected digest in environment {env!r}"
+            )
+        if not adapter_capabilities or adapter_capabilities.get("integrity") != "MATCHED":
+            errors.append(
+                f"adapter capability integrity must be MATCHED against a separately supplied expected digest in environment {env!r}"
             )
 
     route = route_policies(
@@ -243,11 +266,14 @@ def evaluate_execution_boundary(
     supplied_semantic_values = semantic_details if isinstance(semantic_details, dict) else {}
     semantic_values = dict(supplied_semantic_values)
     if used_extension_operations:
-        if OPERATION_EXTENSION_DIGEST_KEY in semantic_values:
-            errors.append(
-                f"semantic_details.{OPERATION_EXTENSION_DIGEST_KEY} is reserved for policy extension binding"
-            )
+        for reserved_key in (OPERATION_EXTENSION_DIGEST_KEY, ADAPTER_CAPABILITY_DIGEST_KEY):
+            if reserved_key in semantic_values:
+                errors.append(
+                    f"semantic_details.{reserved_key} is reserved for policy extension/capability binding"
+                )
         semantic_values[OPERATION_EXTENSION_DIGEST_KEY] = extension_registry["combined_digest"]
+        if adapter_capabilities is not None:
+            semantic_values[ADAPTER_CAPABILITY_DIGEST_KEY] = adapter_capabilities.get("combined_digest")
 
     semantic_rules = cfg.get("operation_semantic_requirements", OPERATION_SEMANTIC_REQUIREMENTS)
     for rule in semantic_rules:
@@ -422,6 +448,18 @@ def evaluate_execution_boundary(
         "action_gate": gate,
         "escalations": list(dict.fromkeys(escalations)),
         "approval": "NOT_ESTABLISHED",
+        "extension_integrity": (
+            extension_registry.get("integrity") if used_extension_operations and extension_registry else "NOT_APPLICABLE"
+        ),
+        "extension_authority": (
+            extension_registry.get("authority") if used_extension_operations and extension_registry else "NOT_APPLICABLE"
+        ),
+        "adapter_capability_integrity": (
+            adapter_capabilities.get("integrity") if used_extension_operations and adapter_capabilities else "NOT_APPLICABLE"
+        ),
+        "adapter_capability_authority": (
+            adapter_capabilities.get("authority") if used_extension_operations and adapter_capabilities else "NOT_APPLICABLE"
+        ),
         "protected_override_authorization": "NOT_ESTABLISHED",
         "errors": errors,
         "warnings": warnings,
@@ -433,6 +471,7 @@ def validate_runtime_action(
     contract: dict,
     root: Path = ROOT,
     extension_registry: dict | None = None,
+    adapter_capabilities: dict | None = None,
 ) -> dict:
     """Validate a structured runtime-adapter assertion and evaluate its action boundary.
 
@@ -479,6 +518,7 @@ def validate_runtime_action(
         adapter=adapter,
         semantic_details=action.get("semantic_details", {}),
         extension_registry=extension_registry,
+        adapter_capabilities=adapter_capabilities,
     )
     errors.extend(boundary["errors"])
     return {
