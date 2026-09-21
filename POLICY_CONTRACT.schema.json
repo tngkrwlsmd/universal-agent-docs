@@ -47,6 +47,7 @@
           "minLength": 1
         },
         "project_facts_source": {
+          "description": "Consumer-visible canonical project-facts filename. The upstream source authoring template may live at a separate source-only path.",
           "type": "string",
           "minLength": 1
         },
@@ -592,6 +593,7 @@
           "const": "universal-agent-docs"
         },
         "required_files": {
+          "description": "Files that form the vendored consumer policy/runtime surface and must also exist in the canonical source distribution.",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
@@ -601,6 +603,7 @@
           }
         },
         "allowed_files": {
+          "description": "Complete canonical source artifact allowlist: required consumer files plus approved source-only material such as templates and examples.",
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,

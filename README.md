@@ -20,7 +20,7 @@
 
 | Profile | 필요한 경우 | 이 저장소가 제공하는 것 | 추가 integration 필요 |
 |---|---|---|---|
-| **A — Guidance** | 에이전트에게 일관된 규칙과 project facts를 읽히고 싶다 | `AGENTS.md`, `POLICIES.md`, `PROJECT.md` discipline | runtime 차단 없음 |
+| **A — Guidance** | 에이전트에게 일관된 규칙과 project facts를 읽히고 싶다 | `AGENTS.md`, `POLICIES.md`, consumer `PROJECT.md` discipline | runtime 차단 없음 |
 | **B — Validated** | CI에서 routing/risk/readiness/integrity를 검증하고 싶다 | A + validator, Effect/Exposure/gate 계산, distribution/conformance validation | actual tool 호출 interception 없음 |
 | **C — Enforced Runtime** | 실제 side effect 직전에 allow/block/approval/override를 강제해야 한다 | B + runtime/approval/override contract와 reference semantics | trusted adapter/interceptor, issuer authz, transport, shared replay ledger, final dispatcher |
 
@@ -51,7 +51,7 @@ python -m pip install --require-hashes --requirement requirements.lock
 python scripts/package_consumer.py --output-dir dist
 ```
 
-Source-built ZIP은 local validation에는 사용할 수 있지만 published Release의 publisher authenticity/provenance를 대신하지 않는다. Canonical source artifact `universal-agent-docs.zip`에는 `examples/`가 포함되며, consumer artifact는 runtime policy bundle을 작게 유지하기 위해 source examples를 포함하지 않는다.
+Source-built ZIP은 local validation에는 사용할 수 있지만 published Release의 publisher authenticity/provenance를 대신하지 않는다. Canonical source artifact `universal-agent-docs.zip`에는 source docs, `templates/PROJECT.md`, `examples/`가 포함된다. Consumer artifact `universal-agent-docs-consumer.zip`은 `.agent-policy/` policy/runtime surface를 제공하며 source-only template/example 경로는 포함하지 않는다.
 
 ### 2. 소비 프로젝트에 연결
 
@@ -93,6 +93,7 @@ Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 [runtime ad
 | [conformance/README.md](conformance/README.md) | language-neutral conformance protocol |
 | [AGENTS.md](AGENTS.md) | 항상 읽는 작은 root router와 공통 invariant |
 | [POLICIES.md](POLICIES.md) | human-facing policy rationale/procedure |
+| `templates/PROJECT.md` | canonical source template for consumer project facts; root `PROJECT.md` is a compatibility mirror |
 | [POLICY_CONTRACT.json](POLICY_CONTRACT.json) | machine-enforceable semantics의 normative Source of Truth |
 | [docs/generated-policy-reference.md](docs/generated-policy-reference.md) | `POLICY_CONTRACT.json`의 generated non-normative reference |
 
@@ -104,7 +105,9 @@ Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 [runtime ad
 universal-agent-docs/
 ├── AGENTS.md
 ├── POLICIES.md
-├── PROJECT.md
+├── PROJECT.md                 # compatibility mirror
+├── templates/
+│   └── PROJECT.md             # canonical source template
 ├── POLICY_CONTRACT.json
 ├── POLICY_CONTRACT.schema.json
 ├── OPERATION_EXTENSION.schema.json
@@ -132,7 +135,7 @@ universal-agent-docs/
 └── .github/workflows/
 ```
 
-`PROJECT.md`는 upstream 저장소의 운영 readiness 보고서가 아니라 **consumer project-facts template**이다.
+Canonical source template은 `templates/PROJECT.md`다. Root `PROJECT.md`는 기존 source/validator compatibility를 위해 byte-for-byte mirror로 유지하고, consumer artifact에서는 이 template content가 `.agent-policy/PROJECT.md`로 제공된다.
 
 ## Extension과 capability
 

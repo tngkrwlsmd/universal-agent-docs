@@ -88,7 +88,7 @@ streaming/CI integration이 필요하면 동일 case result object를 vector당 
 python scripts/conformance.py
 python scripts/conformance.py --coverage
 python scripts/conformance.py --jsonl
-python scripts/conformance.py --output /tmp/uad-conformance-result.json
+python scripts/conformance.py --output conformance-result.json
 ```
 
 CI에서는 unit test와 별도로 reference runner 전체를 독립 실행한다.

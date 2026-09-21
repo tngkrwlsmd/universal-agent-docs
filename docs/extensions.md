@@ -36,23 +36,13 @@ For `production`, `public`, and `external` environments, the reference validator
 ## CLI example
 
 ```bash
-python scripts/validate.py \
-  --operation-extension examples/extensions/internal-sandbox-artifact.json \
-  --adapter-capabilities examples/capabilities/reference-sandbox-artifact-adapter.json \
-  --compiled-policy \
-  --routing-mode enforcement \
-  --operation internal.sandbox_artifact_publish
+python scripts/validate.py --operation-extension examples/extensions/internal-sandbox-artifact.json --adapter-capabilities examples/capabilities/reference-sandbox-artifact-adapter.json --compiled-policy --routing-mode enforcement --operation internal.sandbox_artifact_publish
 ```
 
 For a production runtime, pin the independently obtained expected digests:
 
 ```bash
-python scripts/validate.py \
-  --operation-extension /protected/policy/internal.json \
-  --trusted-extension-digest sha256:... \
-  --adapter-capabilities /protected/runtime/adapter-capabilities.json \
-  --trusted-capability-digest sha256:... \
-  --runtime-action ./runtime-action.json
+python scripts/validate.py --operation-extension trusted/policy/internal.json --trusted-extension-digest sha256:... --adapter-capabilities trusted/runtime/adapter-capabilities.json --trusted-capability-digest sha256:... --runtime-action runtime-action.json
 ```
 
 The paths themselves are diagnostic/local metadata. Semantic compiled-policy output binds logical namespaces and canonical digests, not absolute filesystem locations.

@@ -139,6 +139,16 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
         if not ok:
             missing.append(rel)
 
+    template_project = root / "templates" / "PROJECT.md"
+    compatibility_project = root / "PROJECT.md"
+    if template_project.is_file():
+        parity = compatibility_project.is_file() and compatibility_project.read_bytes() == template_project.read_bytes()
+        checks.append(Check(
+            "project_template_compatibility_parity",
+            "PASS" if parity else "FAIL",
+            "root PROJECT.md matches templates/PROJECT.md" if parity else "root PROJECT.md must be a byte-for-byte compatibility mirror of templates/PROJECT.md",
+        ))
+
     contract = None
     schema = None
     aliases_doc = None

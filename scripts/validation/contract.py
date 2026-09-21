@@ -23,6 +23,7 @@ PROTECTED_OVERRIDE_SCHEMA_PATH = ROOT / "PROTECTED_OVERRIDE.schema.json"
 OPERATION_EXTENSION_SCHEMA_PATH = ROOT / "OPERATION_EXTENSION.schema.json"
 ADAPTER_CAPABILITIES_SCHEMA_PATH = ROOT / "ADAPTER_CAPABILITIES.schema.json"
 PROJECT_PATH = ROOT / "PROJECT.md"
+PROJECT_TEMPLATE_PATH = ROOT / "templates" / "PROJECT.md"
 POLICIES_PATH = ROOT / "POLICIES.md"
 AGENTS_PATH = ROOT / "AGENTS.md"
 PROJECT_START = "<!-- project-facts:start -->"
@@ -256,6 +257,7 @@ CANONICAL_REQUIRED_FILES = [
 ]
 
 CANONICAL_SOURCE_ONLY_FILES = [
+    "templates/PROJECT.md",
     "examples/capabilities/reference-sandbox-artifact-adapter.json",
     "examples/consumer-basic/README.md",
     "examples/consumer-basic/after/AGENTS.md",

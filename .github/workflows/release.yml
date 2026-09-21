@@ -102,6 +102,11 @@ jobs:
           python -m zipfile -e dist/universal-agent-docs-consumer.zip release-smoke/consumer
           source_root="release-smoke/source/universal-agent-docs"
           policy_root="release-smoke/consumer/universal-agent-docs-consumer/.agent-policy"
+          test -f "$source_root/templates/PROJECT.md"
+          test -f "$source_root/PROJECT.md"
+          cmp "$source_root/templates/PROJECT.md" "$source_root/PROJECT.md"
+          test -f "$policy_root/PROJECT.md"
+          cmp "$source_root/templates/PROJECT.md" "$policy_root/PROJECT.md"
           test -f "$source_root/examples/consumer-basic/README.md"
           test -f "$source_root/examples/runtime-adapter/README.md"
           test -f "$source_root/examples/extensions/internal-sandbox-artifact.json"

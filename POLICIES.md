@@ -116,7 +116,7 @@ Profile C enforced surface에서는 최소한 다음 조건을 fail-closed로 �
 
 정책 번들이 자기 자신만 검증해서는 원본 정책 의미를 증명할 수 없다. `POLICIES.md`, contract/schema, validator가 함께 바뀌면 내부 consistency check만으로는 악의적 변경과 정상 release를 구분할 수 없기 때문이다. 무결성 계약은 두 층을 분리한다.
 
-- **core trust manifest**는 `AGENTS.md`, `POLICIES.md`, contract/schema, routing/runtime/approval/protected-override schema, validator/packager 등 정책 의미와 enforcement를 소유하는 core bytes를 SHA-256으로 고정한다. 소비 프로젝트가 수정하는 `PROJECT.md`는 제외한다.
+- **core trust manifest**는 `AGENTS.md`, `POLICIES.md`, contract/schema, routing/runtime/approval/protected-override schema, validator/packager 등 정책 의미와 enforcement를 소유하는 core bytes를 SHA-256으로 고정한다. 소비 프로젝트가 수정하는 `.agent-policy/PROJECT.md`는 제외한다. Upstream source template은 `templates/PROJECT.md`이며 root `PROJECT.md`는 compatibility mirror다.
 - **full release manifest**는 canonical distribution의 모든 파일과 ZIP artifact 자체를 SHA-256으로 고정한다. README/test 변조나 ZIP 재조립도 이 층에서 탐지한다.
 - 두 manifest는 검증 대상 ZIP 내부가 아니라 protected CI/release artifact, 조직 정책 저장소, 외부 서명 등 독립된 신뢰 경로에서 획득한다.
 - manifest hash 일치는 bytes integrity를 증명하지만 publisher identity나 조직 승인 자체를 증명하지 않는다. GitHub release workflow는 사전에 push된 strict SemVer tag를 release identity로 사용하고, full commit SHA로 pin한 `actions/attest`의 OIDC/Sigstore build provenance와 GitHub immutable release attestation을 함께 사용한다. 다른 배포 채널에서는 동등한 trusted channel 또는 cryptographic signature가 필요하다.
@@ -179,7 +179,7 @@ canonical operation ID는 adapter/runtime 소비자에게 공개되는 안정 AP
 
 ### Bootstrap
 
-`PROJECT.md`가 비어 있거나 stale하면 추측으로 `Confirmed`를 채우지 않는다. manifest/lockfile, build scripts, CI, container, migration/infrastructure, application entrypoint, tests, 공식 프로젝트 문서에서 근거를 수집한다. `scripts/validate.py --bootstrap-project <repo>`는 이 탐색을 보조해 별도 `PROJECT.inferred.md` 후보를 만들 수 있지만 자동 발견 fact는 모두 `Inferred`로 남고 기존 `PROJECT.md`를 기본적으로 덮어쓰지 않는다.
+Consumer의 canonical project facts 문서(`.agent-policy/PROJECT.md` 또는 `--project-file`로 지정한 문서)가 비어 있거나 stale하면 추측으로 `Confirmed`를 채우지 않는다. manifest/lockfile, build scripts, CI, container, migration/infrastructure, application entrypoint, tests, 공식 프로젝트 문서에서 근거를 수집한다. `scripts/validate.py --bootstrap-project <repo>`는 이 탐색을 보조해 별도 `PROJECT.inferred.md` 후보를 만들 수 있지만 자동 발견 fact는 모두 `Inferred`로 남고 기존 `PROJECT.md`를 기본적으로 덮어쓰지 않는다.
 
 프로젝트 fact는 `Confirmed / Inferred / Unknown / N/A`를 구분한다. 사람이 `Confirmed`라고 쓴 사실과 validator가 source evidence를 확인한 사실을 같은 것으로 취급하지 않는다. `reviewed_revision`과 `reviewed_at`을 함께 유지하며, 오래된 review timestamp는 구조가 맞더라도 freshness warning의 근거로 취급한다. facts가 의존하는 경로를 `reviewed_paths`에 명시한 경우에는 HEAD가 바뀌어도 그 경로들이 reviewed revision 이후 변하지 않았는지 확인해 무관한 commit 때문에 readiness가 불필요하게 깨지는 것을 줄일 수 있다. malformed project-facts 구조는 추측으로 보정하지 않고 명시적 validation failure로 표면화한다.
 

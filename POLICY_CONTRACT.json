@@ -1094,6 +1094,7 @@
       "conformance/golden.json",
       "conformance/invalid.json",
       "tests/test_conformance.py",
+      "templates/PROJECT.md",
       "examples/capabilities/reference-sandbox-artifact-adapter.json",
       "examples/consumer-basic/README.md",
       "examples/consumer-basic/after/AGENTS.md",

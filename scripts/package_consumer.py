@@ -29,7 +29,8 @@ CONSUMER_DOC_REPLACEMENTS = {
 
 
 def render_consumer_vendored_file(rel: str) -> bytes:
-    data = (ROOT / rel).read_bytes()
+    source_path = ROOT / "templates" / "PROJECT.md" if rel == "PROJECT.md" else ROOT / rel
+    data = source_path.read_bytes()
     replacements = CONSUMER_DOC_REPLACEMENTS.get(rel)
     if not replacements:
         return data

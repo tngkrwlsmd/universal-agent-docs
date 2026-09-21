@@ -34,6 +34,33 @@ class AdoptionProfileTests(unittest.TestCase):
         self.assertIn("uad-consumer-stage", guide)
         self.assertIn("canonical source Release artifact", guide)
 
+    def test_distribution_docs_explain_source_template_and_file_roles(self):
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        guide = (ROOT / "docs" / "adoption-profiles.md").read_text(encoding="utf-8")
+        agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        self.assertIn("templates/PROJECT.md", readme)
+        self.assertIn("templates/PROJECT.md", guide)
+        self.assertIn("templates/PROJECT.md", agents)
+        self.assertIn("distribution.required_files", guide)
+        self.assertIn("distribution.allowed_files", guide)
+        self.assertIn("consumer packager는 `required_files`", guide)
+        self.assertIn("canonical source packager는 `allowed_files`", guide)
+
+    def test_user_facing_commands_do_not_depend_on_known_posix_only_examples(self):
+        docs = [
+            ROOT / "README.md",
+            ROOT / "docs" / "adoption-profiles.md",
+            ROOT / "docs" / "extensions.md",
+            ROOT / "conformance" / "README.md",
+            ROOT / "examples" / "consumer-basic" / "README.md",
+            ROOT / "examples" / "runtime-adapter" / "README.md",
+        ]
+        for path in docs:
+            content = path.read_text(encoding="utf-8")
+            self.assertNotIn("/tmp/", content, path)
+            self.assertNotIn("cp -R", content, path)
+            self.assertNotIn("rm -rf", content, path)
+
     def test_adoption_profiles_are_documentation_not_machine_enforcement_state(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
         self.assertNotIn("adoption_profile", contract)

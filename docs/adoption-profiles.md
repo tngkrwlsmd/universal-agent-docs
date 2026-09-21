@@ -51,6 +51,10 @@ python -m zipfile -e dist/universal-agent-docs-consumer.zip uad-consumer-stage
 
 이 source-built artifact는 package self-validation과 local adoption에는 사용할 수 있지만, published immutable release의 publisher authenticity/provenance를 대신하지 않는다. production에서 official SemVer Release를 사용할 수 있다면 Release의 consumer ZIP을 우선하고, trusted `release_tag`와 별도 채널에서 확보한 `expected_source_sha`로 `.github/workflows/verify-release.yml`을 실행해 release/build provenance를 확인한다.
 
+### Distribution file ownership
+
+`distribution.required_files`는 consumer `.agent-policy/`에 vendoring되는 필수 policy/runtime surface이며 canonical source artifact에도 반드시 존재한다. `distribution.allowed_files`는 canonical source artifact의 전체 allowlist로, required consumer files에 `templates/PROJECT.md`, examples 같은 승인된 source-only material을 더한 superset이다. 따라서 consumer packager는 `required_files`를 사용하고 canonical source packager는 `allowed_files`를 사용한다. Source template의 primary path는 `templates/PROJECT.md`이며 root `PROJECT.md`는 compatibility mirror다; consumer package는 primary template content를 `.agent-policy/PROJECT.md`로 materialize한다.
+
 ### Staging and install
 
 공식 source bundle을 소비 프로젝트 root에 그대로 overlay하지 않는다. consumer ZIP을 staging 위치에 푼 뒤 `.agent-policy/`와 generated root `AGENTS.md`를 검토하여 적용한다.
@@ -74,7 +78,7 @@ uad-consumer-stage/
 1. `.agent-policy/`가 이미 있으면 덮어쓰지 말고 기존 설치와 version/provenance를 먼저 확인한다.
 2. root `AGENTS.md`가 없으면 generated router를 복사할 수 있다.
 3. root `AGENTS.md`가 이미 있으면 **자동 overwrite하거나 단순 append하지 않는다**. 기존 project-specific instructions를 보존하고 두 instruction hierarchy를 사람이 검토해 병합한다.
-4. vendored `.agent-policy/PROJECT.md`는 template이므로 그대로 두고 readiness PASS를 기대하지 않는다.
+4. vendored `.agent-policy/PROJECT.md`는 upstream `templates/PROJECT.md`에서 materialize된 template이므로 그대로 두고 readiness PASS를 기대하지 않는다.
 
 기존 root `AGENTS.md` 병합의 최소 예:
 
