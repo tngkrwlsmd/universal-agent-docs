@@ -100,7 +100,9 @@ machine-enforceable 규칙은 `POLICY_CONTRACT.json`이 normative owner이고 `P
 ```text
 baseline 확인 → 관련 구현/contract 확인 → policy routing
 → Effect + Exposure 평가 → 최소 변경 → 좁은 검증
-→ 위험 기반 추가 검증 → diff/revision 재확인 → evidence 수준에 맞는 보고
+→ 위험 기반 추가 검증 → 문서 정합성 확인·필요한 문서 즉시 수정
+→ branch CI 성공 → 최신 main/fast-forward 재확인
+→ main 반영 → main CI 재확인 → evidence 수준에 맞는 보고
 ```
 
 버그 수정은 가능하면 재현 가능한 regression test를 남긴다. build, mock, 일부 suite, 실제 integration의 evidence 수준을 구분한다.
@@ -136,6 +138,8 @@ chatgpt-codex-connector = DISABLED UNLESS EXPLICITLY REQUESTED
 - 기존 caller/consumer와 canonical path를 필요한 범위에서 확인함
 - placeholder/TODO/stub, unused/dead code, debug artifact, 의도하지 않은 diff 없음
 - contract 변경 시 canonical documentation도 필요한 범위에서 동기화함
+- 작업 종료 전에 실제 코드·테스트·CI와 지속 문서의 정합성을 다시 확인하고, 완료된 작업이 다음 작업으로 남아 있거나 낡은 절차가 남아 있으면 같은 작업에서 즉시 수정함
+- repository-specific 또는 higher-authority 규칙이 PR을 요구하지 않는 한 새 PR을 기본적으로 만들지 않고, branch CI 성공 후 최신 `main`과 fast-forward 가능 여부를 재확인한 뒤 `main`에 반영하고 `main` CI를 다시 확인함
 - 수행한 검증과 수행하지 못한 검증 구분
 - 외부 반영·배포·push 여부를 실제 상태대로 보고
 - 남은 위험과 blocker를 숨기지 않음

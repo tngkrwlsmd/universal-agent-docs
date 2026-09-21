@@ -774,6 +774,40 @@ Regression / Coverage:
 - checkpoint 분할을 approval, protected override, branch protection, required CI 같은 gate를 우회하는 수단으로 사용하지 않는다. 각 push는 해당 시점의 실제 Effect/Exposure와 repository policy를 그대로 따른다.
 - 다음 단계 시작 전에는 필요한 경우 remote 최신 상태와 현재 HEAD를 다시 확인해 이전 checkpoint 이후의 동시 변경을 stale context로 덮어쓰지 않는다.
 
+### 기본 branch 통합 workflow
+
+repository-specific instruction, branch protection, required review 같은 더 구체적인 규칙이 별도로 요구하지 않는 한 **새 Pull Request를 기본적으로 만들지 않는다.** 사용자가 PR을 명시적으로 요청했거나 저장소 정책이 PR을 필수로 요구하는 경우에만 PR workflow를 사용한다.
+
+기본 통합 순서는 다음과 같다.
+
+```text
+최신 main 확인
+→ 새 작업 branch
+→ 구현/조사 + 관련 검증
+→ 문서 정합성 확인 및 필요한 문서 즉시 수정
+→ branch push
+→ branch CI 성공 확인
+→ 최신 main 재조회
+→ branch가 behind 0이고 fast-forward 가능한지 확인
+→ force 없이 main 반영
+→ main CI 재확인
+```
+
+- branch CI가 실패하면 main에 반영하지 않는다.
+- branch CI 이후 `main`이 앞서 나갔다면 stale branch를 그대로 반영하지 않는다. 최신 `main`에 맞춰 동기화한 뒤 필요한 검증과 branch CI를 다시 수행한다.
+- `main` 반영 후 CI가 실패하면 작업을 완료로 보고하지 않는다. 원인을 수정하고 다시 branch/main 검증을 수행한다.
+- branch protection이나 repository ruleset이 direct fast-forward를 막고 PR을 요구하면 이를 우회하지 않는다. 해당 저장소의 더 구체적인 규칙을 따르고, 필요한 권한·승인·검토를 명시적으로 처리한다.
+- workflow 파일이 branch push CI를 지원하지 않는 상태라면 "branch CI 성공"을 가정하지 않는다. 저장소 요구사항에 맞게 CI trigger를 먼저 정합화하거나 실제 실행 가능한 검증 경로를 사용한다.
+
+### 작업 종료 전 문서 정합성
+
+코드·테스트가 끝난 것만으로 작업을 완료로 보지 않는다. 최종 branch CI 전에 실제 코드, 테스트, CI 구성과 canonical/지속 문서가 같은 상태를 설명하는지 다시 확인한다.
+
+- 구현 상태, 검증 결과, unresolved, 다음 작업, 실행 절차가 바뀌었으면 해당 primary owner 문서를 같은 작업에서 갱신한다.
+- 새 설명을 추가하는 것뿐 아니라 이제 틀린 과거 설명, 이미 완료된 작업을 계속 다음 작업으로 가리키는 문구, 서로 충돌하는 Git/CI 절차도 제거하거나 교정한다.
+- 빠르게 변하는 상태를 여러 문서에 불필요하게 복제하지 않고 기존 primary-owner 원칙을 유지한다.
+- 필요한 문서 수정이 빠진 상태에서는 완료 보고나 main 반영을 진행하지 않는다.
+
 ### 위험한 Git 작업
 
 명확한 필요와 안전 확인 없이 `git reset --hard`, `git clean -fd`, 강제 checkout, history rewrite, force push, 대규모 자동 conflict resolution을 기본값으로 사용하지 않는다.
