@@ -21,8 +21,7 @@ def parse_policy_matrix(markdown: str) -> dict:
     return matrix
 
 
-GENERATED_POLICY_START = "<!-- generated-policy-reference:start -->"
-GENERATED_POLICY_END = "<!-- generated-policy-reference:end -->"
+GENERATED_POLICY_PATH = "docs/generated-policy-reference.md"
 
 
 def _markdown_cell(value: object) -> str:
@@ -35,9 +34,10 @@ def render_generated_policy_reference(contract: dict) -> str:
     execution = contract["execution_boundary"]
     protected = contract["protected_override"]
     lines = [
-        GENERATED_POLICY_START,
-        "> 이 블록은 `POLICY_CONTRACT.json`에서 자동 생성한다. 직접 수정하지 말고 "
-        "`python scripts/generate_policy_reference.py`로 갱신한다.",
+        "# Generated policy reference",
+        "",
+        "> 이 문서는 `POLICY_CONTRACT.json`에서 자동 생성된 deterministic projection이다. "
+        "Source of Truth가 아니며 직접 수정하지 말고 `python scripts/generate_policy_reference.py`로 갱신한다.",
         "",
         "**Effect levels (machine-owned)**",
         "",
@@ -114,18 +114,8 @@ def render_generated_policy_reference(contract: dict) -> str:
         f"- protected override max TTL: `{protected['max_ttl_seconds']}` seconds",
         f"- action digest format: `{execution['action_digest_format']}`",
         "",
-        GENERATED_POLICY_END,
     ])
     return "\n".join(lines)
-
-
-def _current_generated_policy_reference(markdown: str) -> str | None:
-    start = markdown.find(GENERATED_POLICY_START)
-    end = markdown.find(GENERATED_POLICY_END)
-    if start < 0 or end < start:
-        return None
-    end += len(GENERATED_POLICY_END)
-    return markdown[start:end]
 
 
 def compile_python_sources(root: Path) -> list[Check]:
@@ -156,6 +146,8 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
     runtime_action_schema = None
     approval_assertion_schema = None
     protected_override_schema = None
+    operation_extension_schema = None
+    adapter_capabilities_schema = None
     try:
         contract = load_json(root / "POLICY_CONTRACT.json")
     except Exception as exc:
@@ -184,6 +176,14 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
         protected_override_schema = load_json(root / "PROTECTED_OVERRIDE.schema.json")
     except Exception as exc:
         checks.append(Check("protected_override_schema_json", "FAIL", str(exc)))
+    try:
+        operation_extension_schema = load_json(root / "OPERATION_EXTENSION.schema.json")
+    except Exception as exc:
+        checks.append(Check("operation_extension_schema_json", "FAIL", str(exc)))
+    try:
+        adapter_capabilities_schema = load_json(root / "ADAPTER_CAPABILITIES.schema.json")
+    except Exception as exc:
+        checks.append(Check("adapter_capabilities_schema_json", "FAIL", str(exc)))
 
     if contract is not None and schema is not None:
         if jsonschema is None:
@@ -220,6 +220,18 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
                     checks.append(Check("protected_override_schema", "PASS", "protected override schema validates"))
                 except Exception as exc:
                     checks.append(Check("protected_override_schema", "FAIL", str(exc)))
+            if operation_extension_schema is not None:
+                try:
+                    jsonschema.Draft202012Validator.check_schema(operation_extension_schema)
+                    checks.append(Check("operation_extension_schema", "PASS", "operation extension schema validates"))
+                except Exception as exc:
+                    checks.append(Check("operation_extension_schema", "FAIL", str(exc)))
+            if adapter_capabilities_schema is not None:
+                try:
+                    jsonschema.Draft202012Validator.check_schema(adapter_capabilities_schema)
+                    checks.append(Check("adapter_capabilities_schema", "PASS", "adapter capabilities schema validates"))
+                except Exception as exc:
+                    checks.append(Check("adapter_capabilities_schema", "FAIL", str(exc)))
 
         schema_version = contract.get("schema_version")
         checks.append(Check(
@@ -427,7 +439,8 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
     if contract is not None and (root / "POLICIES.md").is_file():
         policies_md = (root / "POLICIES.md").read_text(encoding="utf-8")
         generated_expected = render_generated_policy_reference(contract)
-        generated_actual = _current_generated_policy_reference(policies_md)
+        generated_path = root / GENERATED_POLICY_PATH
+        generated_actual = generated_path.read_text(encoding="utf-8") if generated_path.is_file() else None
         checks.append(Check(
             "generated_policy_reference",
             "PASS" if generated_actual == generated_expected else "FAIL",
@@ -443,7 +456,7 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
             count = policies_md.count(f'id="{p["anchor"]}"')
             checks.append(Check(f"policy_anchor:{p['id']}", "PASS" if count == 1 else "FAIL", f"count={count}"))
 
-        markdown_matrix = parse_policy_matrix(policies_md)
+        markdown_matrix = parse_policy_matrix(generated_actual or "")
         checks.append(Check("risk_matrix_parity", "PASS" if markdown_matrix == contract["risk_model"]["decision_matrix"] else "FAIL", json.dumps(markdown_matrix, ensure_ascii=False)))
 
         known = set(ids)

@@ -1189,6 +1189,792 @@
       "normative_fields": [
         "/status"
       ]
+    },
+    {
+      "id": "extension-core-namespace-collision",
+      "description": "extension namespace may not collide with a core canonical namespace",
+      "category": "extension-contract-invalid",
+      "kind": "extension_contract",
+      "covers": [
+        "extension.namespace_collision"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "git",
+            "operations": [
+              {
+                "id": "git.custom",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-duplicate-namespace",
+      "description": "two extension documents may not claim the same namespace",
+      "category": "extension-contract-invalid",
+      "kind": "extension_contract",
+      "covers": [
+        "extension.namespace_collision"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          },
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.second",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-malformed-operation-id",
+      "description": "extension operation ID must be a canonical token under its declared namespace",
+      "category": "extension-contract-invalid",
+      "kind": "extension_contract",
+      "covers": [
+        "extension.schema",
+        "extension.operation_id"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal/invalid",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-unknown-policy-reference",
+      "description": "extension operation policy references must resolve to core policy IDs",
+      "category": "extension-contract-invalid",
+      "kind": "extension_contract",
+      "covers": [
+        "extension.policy_reference"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "not_a_policy"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-production-effect-underflow",
+      "description": "extension production Effect may never be lower than the operation floor",
+      "category": "extension-contract-invalid",
+      "kind": "extension_contract",
+      "covers": [
+        "extension.production_escalation"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L4",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                },
+                "production_effect": "L3"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "status": "FAIL",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-adapter-not-allowed",
+      "description": "adapter capability cannot override the extension-side adapter allowlist",
+      "category": "extension-runtime-invalid",
+      "kind": "extension_boundary",
+      "covers": [
+        "adapter.capability_intersection"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "version": "1",
+            "supported_operations": [
+              "internal.sandbox_artifact_publish"
+            ]
+          }
+        ],
+        "boundary": {
+          "planned_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "actual_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "different-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {
+            "artifact_kind": "reference_fixture"
+          }
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/decision",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-capability-missing-operation",
+      "description": "extension allowlist alone is insufficient when adapter capability omits the operation",
+      "category": "extension-runtime-invalid",
+      "kind": "extension_boundary",
+      "covers": [
+        "adapter.capability_intersection"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "version": "1",
+            "supported_operations": [
+              "internal.other_operation"
+            ]
+          }
+        ],
+        "boundary": {
+          "planned_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "actual_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "conformance-extension-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {
+            "artifact_kind": "reference_fixture"
+          }
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/decision",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-production-untrusted",
+      "description": "production extension execution fails closed without separately matched extension and capability digests",
+      "category": "extension-runtime-invalid",
+      "kind": "extension_boundary",
+      "covers": [
+        "extension.integrity",
+        "adapter.capability_integrity",
+        "runtime.fail_closed"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "acme",
+            "operations": [
+              {
+                "id": "acme.release_rollout",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "allowed_environments": [
+                  "production"
+                ]
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "supported_operations": [
+              "acme.release_rollout"
+            ]
+          }
+        ],
+        "boundary": {
+          "planned_operations": [
+            "acme.release_rollout"
+          ],
+          "actual_operations": [
+            "acme.release_rollout"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "production",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "conformance-extension-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {}
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "extension_integrity": "UNVERIFIED",
+        "adapter_capability_integrity": "UNVERIFIED",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/decision",
+        "/extension_integrity",
+        "/adapter_capability_integrity",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-reserved-binding-field-injection",
+      "description": "caller cannot inject extension/capability digest semantic binding fields",
+      "category": "extension-runtime-invalid",
+      "kind": "extension_boundary",
+      "covers": [
+        "action_digest.semantic_details_binding"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "version": "1",
+            "supported_operations": [
+              "internal.sandbox_artifact_publish"
+            ]
+          }
+        ],
+        "boundary": {
+          "planned_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "actual_operations": [
+            "internal.sandbox_artifact_publish"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "conformance-extension-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {
+            "artifact_kind": "reference_fixture",
+            "policy_extension_digest": "sha256:0000000000000000000000000000000000000000000000000000000000000000"
+          }
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/decision",
+        "/error_present"
+      ]
+    },
+    {
+      "id": "extension-unknown-runtime-operation",
+      "description": "unknown extension runtime operation remains fail-closed",
+      "category": "extension-runtime-invalid",
+      "kind": "extension_boundary",
+      "covers": [
+        "routing.unknown_operation_rejection",
+        "runtime.fail_closed"
+      ],
+      "input": {
+        "extensions": [
+          {
+            "format": "universal-agent-docs-operation-extension-v1",
+            "namespace": "internal",
+            "operations": [
+              {
+                "id": "internal.sandbox_artifact_publish",
+                "policies": [
+                  "deployment",
+                  "execution"
+                ],
+                "effect_floor": "L3",
+                "requires_execution_policy": true,
+                "lifecycle_status": "active",
+                "supported_adapters": [
+                  "conformance-extension-adapter"
+                ],
+                "exposure_floor": "X0",
+                "allowed_environments": [
+                  "local",
+                  "test"
+                ],
+                "required_semantic_details": [
+                  "artifact_kind"
+                ],
+                "semantic_detail_allowed_values": {
+                  "artifact_kind": [
+                    "reference_fixture"
+                  ]
+                }
+              }
+            ]
+          }
+        ],
+        "capabilities": [
+          {
+            "format": "universal-agent-docs-adapter-capabilities-v1",
+            "adapter_id": "conformance-extension-adapter",
+            "version": "1",
+            "supported_operations": [
+              "internal.sandbox_artifact_publish"
+            ]
+          }
+        ],
+        "boundary": {
+          "planned_operations": [
+            "internal.unknown"
+          ],
+          "actual_operations": [
+            "internal.unknown"
+          ],
+          "affected_resources": [
+            "artifact.txt"
+          ],
+          "targets": [
+            "sandbox:artifact.txt"
+          ],
+          "environment": "test",
+          "exposure_facts": {
+            "data_classification": "public",
+            "credential_class": "none",
+            "tenant_scope": "single_user",
+            "public_visibility": "none",
+            "estimated_blast_radius": "single_resource",
+            "estimated_financial_impact": "none"
+          },
+          "correlation_id": "conformance-extension-boundary",
+          "execution_nonce": "conformance-extension-nonce-0001",
+          "adapter": {
+            "id": "conformance-extension-adapter",
+            "surface": "language-neutral-suite",
+            "assertion_source": "human_reviewed",
+            "version": "1"
+          },
+          "semantic_details": {}
+        }
+      },
+      "expected": {
+        "status": "FAIL",
+        "decision": "BLOCK_POLICY_ERROR",
+        "error_present": true
+      },
+      "normative_fields": [
+        "/status",
+        "/decision",
+        "/error_present"
+      ]
     }
   ]
 }

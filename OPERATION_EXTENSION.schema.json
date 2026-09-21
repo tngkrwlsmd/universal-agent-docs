@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/tngkrwlsmd/universal-agent-docs/OPERATION_EXTENSION.schema.json",
+  "title": "universal-agent-docs operation extension",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "format",
+    "namespace",
+    "operations"
+  ],
+  "properties": {
+    "format": {
+      "const": "universal-agent-docs-operation-extension-v1"
+    },
+    "namespace": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,62}$"
+    },
+    "operations": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "policies",
+          "effect_floor",
+          "requires_execution_policy",
+          "lifecycle_status",
+          "supported_adapters"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          },
+          "policies": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "effect_floor": {
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4"
+            ]
+          },
+          "requires_execution_policy": {
+            "type": "boolean"
+          },
+          "lifecycle_status": {
+            "enum": [
+              "active",
+              "deprecated"
+            ]
+          },
+          "replacement_operation": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9_.-]*$"
+          },
+          "deprecated_since_schema": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "supported_adapters": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "exposure_floor": {
+            "enum": [
+              "X0",
+              "X1",
+              "X2",
+              "X3"
+            ]
+          },
+          "production_effect": {
+            "enum": [
+              "L1",
+              "L2",
+              "L3",
+              "L4"
+            ]
+          },
+          "allowed_environments": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "local",
+                "test",
+                "staging",
+                "production",
+                "public",
+                "external",
+                "unknown"
+              ]
+            }
+          },
+          "required_semantic_details": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "semantic_detail_allowed_values": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true
+            }
+          }
+        }
+      }
+    }
+  }
+}

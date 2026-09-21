@@ -14,41 +14,37 @@ import validate as policy_validate  # noqa: E402
 ROOT = SCRIPT_DIR.parent
 
 
-def render_updated_policies() -> str:
+def render_generated_reference() -> str:
     contract = policy_validate.load_json(ROOT / "POLICY_CONTRACT.json")
-    path = ROOT / "POLICIES.md"
-    text = path.read_text(encoding="utf-8")
-    generated = policy_validate.render_generated_policy_reference(contract)
-    start = text.find(policy_validate.GENERATED_POLICY_START)
-    end = text.find(policy_validate.GENERATED_POLICY_END)
-    if start < 0 or end < start:
-        raise RuntimeError("POLICIES.md is missing generated-policy-reference markers")
-    end += len(policy_validate.GENERATED_POLICY_END)
-    return text[:start] + generated + text[end:]
+    return policy_validate.render_generated_policy_reference(contract)
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Regenerate or verify machine-owned POLICY_CONTRACT.json reference inside POLICIES.md"
+        description="Regenerate or verify the generated POLICY_CONTRACT.json reference"
     )
-    parser.add_argument("--check", action="store_true", help="fail if the generated block is stale")
-    parser.add_argument("--stdout", action="store_true", help="print the updated POLICIES.md instead of writing it")
+    parser.add_argument("--check", action="store_true", help="fail if the generated reference is stale")
+    parser.add_argument("--stdout", action="store_true", help="print generated reference instead of writing it")
     args = parser.parse_args()
 
-    path = ROOT / "POLICIES.md"
-    current = path.read_text(encoding="utf-8")
-    updated = render_updated_policies()
+    path = ROOT / policy_validate.GENERATED_POLICY_PATH
+    generated = render_generated_reference()
+    current = path.read_text(encoding="utf-8") if path.is_file() else None
     if args.check:
-        if current != updated:
-            print("Generated policy reference is stale; run python scripts/generate_policy_reference.py", file=sys.stderr)
+        if current != generated:
+            print(
+                "Generated policy reference is stale; run python scripts/generate_policy_reference.py",
+                file=sys.stderr,
+            )
             return 1
         print("Generated policy reference: PASS")
         return 0
     if args.stdout:
-        print(updated, end="")
+        print(generated, end="")
         return 0
-    path.write_text(updated, encoding="utf-8")
-    print("Updated POLICIES.md generated policy reference")
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(generated, encoding="utf-8")
+    print(f"Updated {policy_validate.GENERATED_POLICY_PATH}")
     return 0
 
 

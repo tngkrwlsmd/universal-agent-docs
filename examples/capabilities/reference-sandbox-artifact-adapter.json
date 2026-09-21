@@ -1,0 +1,8 @@
+{
+  "format": "universal-agent-docs-adapter-capabilities-v1",
+  "adapter_id": "reference-sandbox-artifact-adapter",
+  "version": "1",
+  "supported_operations": [
+    "internal.sandbox_artifact_publish"
+  ]
+}

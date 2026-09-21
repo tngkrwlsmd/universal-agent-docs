@@ -295,13 +295,13 @@ Profile C라고 주장하는 intercepted surface에서는 다음을 통과시키
 
 ## Task-scoped policy context and operation extensions
 
-긴 정책 문서를 매 작업에 그대로 주입하는 대신 `--compiled-policy`를 사용하면 현재 operation/resource에 적용되는 섹션만 canonical source에서 파생해 얻을 수 있다. 이 출력은 별도 정책 파일이 아니며 AGENTS/POLICY_CONTRACT/POLICIES를 재정의하지 않는다.
+긴 정책 문서를 매 작업에 그대로 주입하는 대신 `--compiled-policy`를 사용하면 canonical source의 always-on invariant, operation summary와 관련 primary-owner prose만 deterministic하게 조합한다. completion-report subsection은 task context에서 제외되며 machine output은 extension의 logical namespace/digest를 사용하므로 동일 semantics가 filesystem 절대경로에 따라 바뀌지 않는다.
 
-조직별 operation extension은 `universal-agent-docs-operation-extension-v1` JSON 문서로 제공한다. namespace는 소문자 영숫자와 `_`/`-`를 사용하고 core operation의 첫 namespace와 충돌할 수 없다. 각 operation은 known policy ID, Effect floor, lifecycle, 정확한 `supported_adapters`를 선언해야 한다. 선택적으로 Exposure floor, production Effect, 허용 environment, semantic detail 요구를 추가할 수 있다.
+조직별 extension은 `OPERATION_EXTENSION.schema.json`, adapter capability는 `ADAPTER_CAPABILITIES.schema.json`을 따른다. Extension의 `supported_adapters`는 allowlist이고, 실제 runtime support는 별도 capability declaration이 exact operation을 포함해야 한다. 두 조건 중 하나라도 없으면 fail-closed한다.
 
-Extension은 의도적으로 **explicit-plan only**다. upstream `ROUTING_ALIASES.json`을 자동 확장하지 않으며 모르는 extension이나 지원하지 않는 adapter는 enforcement에서 fail-closed한다. runtime에 사용된 extension 문서의 canonical digest는 action digest에 결박된다.
+Extension/capability digest match는 **integrity evidence**다. 조직 authority를 인증하지 않는다. Profile A/B에서는 local 문서를 `UNVERIFIED` integrity 상태로 inspect/validate할 수 있지만, Profile C의 production/public/external extension execution에서는 higher-authority channel이 제공한 expected extension/capability digest와의 `MATCHED` 상태가 필요하다. 그 expectation의 조직 권한과 transport 신뢰는 integrating runtime 책임이다.
 
-source repository의 `examples/runtime-adapter/sandbox_artifact_adapter.py`는 이 흐름을 실제 로컬 sandbox file write까지 수행하는 reference다. 다만 조직 identity 인증, trusted transport, production credential, 분산 durable replay ledger, 모든 tool interception은 제공하지 않는다.
+상세 contract, CLI와 trust/capability vocabulary는 [extensions.md](extensions.md)를 따른다. source repository의 `examples/runtime-adapter/sandbox_artifact_adapter.py`는 capability 확인 → boundary → approval exact binding → atomic consume → local sandbox write를 보여주는 reference이며 production identity/transport/interception을 제공하지 않는다.
 
 ## Production checklist
 

@@ -21,6 +21,22 @@ def extract_always_on_invariants(path: Path = AGENTS_PATH) -> str:
     return text[start:end].strip()
 
 
+def _compact_policy_section(section: str) -> str:
+    """Drop task-irrelevant completion-report subsections without rewriting policy prose."""
+    lines = section.splitlines()
+    kept: list[str] = []
+    skipping = False
+    for line in lines:
+        if line.startswith("### "):
+            heading = line[4:].strip().casefold()
+            skipping = "completion report" in heading
+        elif line.startswith("## "):
+            skipping = False
+        if not skipping:
+            kept.append(line)
+    return "\n".join(kept).strip()
+
+
 def compile_policy_view(
     contract: dict,
     task_text: str = "",
@@ -51,7 +67,11 @@ def compile_policy_view(
             )
             if key in operation
         })
-    policy_sections = extract_policy_sections(contract, routing["policies"], POLICIES_PATH)
+    raw_policy_sections = extract_policy_sections(contract, routing["policies"], POLICIES_PATH)
+    policy_sections = {
+        policy_id: _compact_policy_section(section)
+        for policy_id, section in raw_policy_sections.items()
+    }
     extension_used = any("extension_namespace" in item for item in operation_contracts)
     return {
         "status": routing["routing_status"],
@@ -64,14 +84,20 @@ def compile_policy_view(
         "routing": routing,
         "operations": operation_contracts,
         "policy_sections": policy_sections,
-        "operation_extension_digest": (
-            extension_registry.get("combined_digest")
+        "operation_extension": (
+            {
+                "digest": extension_registry.get("combined_digest"),
+                "namespaces": extension_registry.get("namespaces", []),
+                "integrity": extension_registry.get("integrity", "UNVERIFIED"),
+                "authority": extension_registry.get("authority", "NOT_ESTABLISHED"),
+            }
             if extension_registry and extension_used else None
         ),
-        "operation_extension_sources": (
-            extension_registry.get("sources", [])
-            if extension_registry and extension_used else []
-        ),
+        "context_metrics": {
+            "full_policy_chars": len(POLICIES_PATH.read_text(encoding="utf-8")),
+            "selected_policy_chars": sum(len(section) for section in policy_sections.values()),
+            "always_on_chars": len(extract_always_on_invariants()),
+        },
     }
 
 
@@ -101,10 +127,12 @@ def render_compiled_policy_view(view: dict) -> str:
             f"requires_execution_policy={str(operation.get('requires_execution_policy', False)).lower()}"
             f"{suffix}"
         )
-    if view.get("operation_extension_digest"):
+    if view.get("operation_extension"):
+        extension = view["operation_extension"]
         lines.extend([
             "",
-            f"Operation extension digest: `{view['operation_extension_digest']}`",
+            f"Operation extension digest: `{extension['digest']}`",
+            f"Operation extension integrity: {extension['integrity']}; authority: {extension['authority']}",
         ])
     warnings = view["routing"].get("warnings", [])
     errors = view["routing"].get("errors", [])

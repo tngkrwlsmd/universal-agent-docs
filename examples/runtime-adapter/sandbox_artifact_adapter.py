@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import validate as policy_validate  # noqa: E402
 
 EXTENSION_PATH = ROOT / "examples" / "extensions" / "internal-sandbox-artifact.json"
+CAPABILITIES_PATH = ROOT / "examples" / "capabilities" / "reference-sandbox-artifact-adapter.json"
 ADAPTER = {
     "id": "reference-sandbox-artifact-adapter",
     "surface": "local-sandbox-artifact-publish",
@@ -39,6 +40,7 @@ def exposure_facts() -> dict:
 def evaluate_publish(
     contract: dict,
     extension_registry: dict,
+    adapter_capabilities: dict,
     planned_operations: list[str],
     source: Path,
     destination: Path,
@@ -61,6 +63,7 @@ def evaluate_publish(
         adapter=ADAPTER,
         semantic_details={"artifact_kind": "reference_fixture"},
         extension_registry=extension_registry,
+        adapter_capabilities=adapter_capabilities,
     )
 
 
@@ -157,6 +160,7 @@ def execute_publish(
 def run_demo() -> dict:
     contract = policy_validate.load_json(ROOT / "POLICY_CONTRACT.json")
     extensions = policy_validate.load_operation_extensions([EXTENSION_PATH], contract)
+    capabilities = policy_validate.load_adapter_capabilities([CAPABILITIES_PATH])
     now = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
     with tempfile.TemporaryDirectory() as td:
         sandbox = Path(td)
@@ -167,7 +171,7 @@ def run_demo() -> dict:
         source.write_text("reference artifact\n", encoding="utf-8")
 
         boundary = evaluate_publish(
-            contract, extensions, [ACTUAL_OPERATION], source, destination
+            contract, extensions, capabilities, [ACTUAL_OPERATION], source, destination
         )
         approval_path.write_text(
             json.dumps(build_approval(boundary, now), ensure_ascii=False, indent=2),

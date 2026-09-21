@@ -24,6 +24,9 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
         cls.extensions = adapter.policy_validate.load_operation_extensions(
             [adapter.EXTENSION_PATH], cls.contract
         )
+        cls.capabilities = adapter.policy_validate.load_adapter_capabilities(
+            [adapter.CAPABILITIES_PATH]
+        )
         cls.now = datetime(2026, 1, 1, 12, 0, tzinfo=timezone.utc)
 
     def test_demo_executes_once_and_blocks_replay(self):
@@ -43,6 +46,7 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
             boundary = adapter.evaluate_publish(
                 self.contract,
                 self.extensions,
+                self.capabilities,
                 ["documentation.modify"],
                 root / "source.txt",
                 root / "published.txt",
@@ -57,7 +61,8 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
             destination = root / "published.txt"
             source.write_text("artifact", encoding="utf-8")
             boundary = adapter.evaluate_publish(
-                self.contract, self.extensions, [adapter.ACTUAL_OPERATION], source, destination
+                self.contract, self.extensions, self.capabilities,
+                [adapter.ACTUAL_OPERATION], source, destination
             )
             result = adapter.execute_publish(
                 source,
@@ -84,6 +89,7 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
             original = adapter.evaluate_publish(
                 self.contract,
                 self.extensions,
+                self.capabilities,
                 [adapter.ACTUAL_OPERATION],
                 source,
                 destination,
@@ -95,6 +101,7 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
                 changed = adapter.evaluate_publish(
                     self.contract,
                     self.extensions,
+                    self.capabilities,
                     [adapter.ACTUAL_OPERATION],
                     source,
                     root / "other.txt",
@@ -105,6 +112,7 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
                 changed = adapter.evaluate_publish(
                     self.contract,
                     self.extensions,
+                    self.capabilities,
                     [adapter.ACTUAL_OPERATION],
                     source,
                     destination,
@@ -140,7 +148,8 @@ class SandboxArtifactReferenceAdapterTests(unittest.TestCase):
             destination = root / "published.txt"
             source.write_text("artifact", encoding="utf-8")
             boundary = adapter.evaluate_publish(
-                self.contract, self.extensions, [adapter.ACTUAL_OPERATION], source, destination
+                self.contract, self.extensions, self.capabilities,
+                [adapter.ACTUAL_OPERATION], source, destination
             )
             assertion = adapter.build_approval(
                 boundary, self.now, expires_delta=timedelta(seconds=-30)

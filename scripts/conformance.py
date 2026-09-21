@@ -122,6 +122,102 @@ def evaluate_boundary(contract: dict, data: dict) -> dict:
     )
 
 
+def _write_fixture_documents(root: Path, prefix: str, documents: list[dict]) -> list[Path]:
+    paths: list[Path] = []
+    for index, document in enumerate(documents):
+        path = root / f"{prefix}-{index}.json"
+        _write_json(path, document)
+        paths.append(path)
+    return paths
+
+
+def _extension_registries(contract: dict, data: dict, root: Path) -> tuple[dict, dict | None]:
+    extension_paths = _write_fixture_documents(root, "extension", list(data.get("extensions", [])))
+    capability_paths = _write_fixture_documents(root, "capability", list(data.get("capabilities", [])))
+
+    extensions = policy_validate.load_operation_extensions(extension_paths, contract)
+    if data.get("trust_expected"):
+        extensions = policy_validate.load_operation_extensions(
+            extension_paths, contract, expected_digests=[extensions["combined_digest"]]
+        )
+
+    capabilities = None
+    if capability_paths:
+        capabilities = policy_validate.load_adapter_capabilities(capability_paths)
+        if data.get("trust_expected"):
+            capabilities = policy_validate.load_adapter_capabilities(
+                capability_paths, expected_digests=[capabilities["combined_digest"]]
+            )
+    return extensions, capabilities
+
+
+def run_extension_contract(contract: dict, vector: dict) -> dict:
+    data = copy.deepcopy(vector["input"])
+    with tempfile.TemporaryDirectory() as first_td, tempfile.TemporaryDirectory() as second_td:
+        try:
+            first_extensions, first_capabilities = _extension_registries(contract, data, Path(first_td))
+            second_extensions, second_capabilities = _extension_registries(contract, data, Path(second_td))
+        except Exception as exc:
+            return {"status": "FAIL", "error_present": True}
+        return {
+            "status": "PASS",
+            "error_present": False,
+            "extension_digest_stable": (
+                first_extensions["combined_digest"] == second_extensions["combined_digest"]
+            ),
+            "extension_integrity": first_extensions["integrity"],
+            "capability_digest_stable": (
+                True if first_capabilities is None else
+                first_capabilities["combined_digest"] == second_capabilities["combined_digest"]
+            ),
+            "capability_integrity": (
+                "NOT_APPLICABLE" if first_capabilities is None else first_capabilities["integrity"]
+            ),
+        }
+
+
+def run_extension_boundary(contract: dict, vector: dict) -> dict:
+    data = copy.deepcopy(vector["input"])
+    with tempfile.TemporaryDirectory() as td:
+        try:
+            extensions, capabilities = _extension_registries(contract, data, Path(td))
+        except Exception as exc:
+            return {"status": "FAIL", "decision": "BLOCK_POLICY_ERROR", "error_present": True}
+        boundary_input = copy.deepcopy(data.get("boundary", {}))
+        boundary_input["vector_id"] = vector["id"]
+        kwargs = _boundary_input(boundary_input)
+        result = policy_validate.evaluate_execution_boundary(
+            contract,
+            kwargs["planned_operations"],
+            kwargs["actual_operations"],
+            kwargs["affected_resources"],
+            kwargs["targets"],
+            kwargs["environment"],
+            kwargs["declared_exposure"],
+            kwargs["runtime_effect"],
+            kwargs["actual_action"],
+            exposure_facts=kwargs["exposure_facts"],
+            correlation_id=kwargs["correlation_id"],
+            execution_nonce=kwargs["execution_nonce"],
+            adapter=kwargs["adapter"],
+            semantic_details=kwargs["semantic_details"],
+            extension_registry=extensions,
+            adapter_capabilities=capabilities,
+        )
+        return {
+            "status": result["status"],
+            "decision": result["decision"],
+            "effective_effect": result["effective_effect"],
+            "effective_exposure": result["effective_exposure"],
+            "action_gate": result["action_gate"],
+            "extension_integrity": result["extension_integrity"],
+            "adapter_capability_integrity": result["adapter_capability_integrity"],
+            "extension_authority": result["extension_authority"],
+            "adapter_capability_authority": result["adapter_capability_authority"],
+            "error_present": bool(result["errors"]),
+        }
+
+
 def run_routing(contract: dict, vector: dict) -> dict:
     data = vector["input"]
     return policy_validate.route_policies(
@@ -362,6 +458,8 @@ def run_integrity(contract: dict, vector: dict) -> dict:
 
 
 RUNNERS = {
+    "extension_contract": run_extension_contract,
+    "extension_boundary": run_extension_boundary,
     "routing": run_routing,
     "execution_boundary": run_execution_boundary,
     "digest_relation": run_digest_relation,

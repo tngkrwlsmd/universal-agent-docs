@@ -52,6 +52,8 @@
           },
           "kind": {
             "enum": [
+              "extension_boundary",
+              "extension_contract",
               "routing",
               "execution_boundary",
               "digest_relation",

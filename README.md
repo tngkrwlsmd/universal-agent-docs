@@ -115,7 +115,7 @@ A는 guidance, B는 validation이다. **B에서 gate를 계산하거나 `--routi
 
 실제 side effect를 기술적으로 차단하는 Profile C에는 소비 환경이 trusted runtime adapter/interceptor, independently observed actual operation, target/environment/raw exposure facts, higher-authority identity/transport trust, shared atomic replay ledger와 실제 allow/block 집행을 추가로 구현·연결해야 한다. 이 저장소는 그 경계에서 사용할 action digest, approval/override exact binding, gate 계산과 검증 contract/reference implementation을 제공하지만 완성된 범용 runtime executor를 제공하지 않는다.
 
-실행 흐름을 직접 보고 싶다면 **source repository checkout**의 `examples/runtime-adapter/` mock 예제를 실행한다. 이 source-only 예제는 canonical consumer/release bundle에 포함된다고 가정하지 않는다. 외부 side effect 없이 approval exact binding, atomic single-use consumption과 replay 차단을 재현한다.
+실행 흐름을 직접 보고 싶다면 **source repository checkout**의 `examples/runtime-adapter/`를 사용한다. `mock_runtime.py`는 외부 side effect 없이 binding/replay mechanics를 보여주고, `sandbox_artifact_adapter.py`는 capability 확인과 approval consumption 뒤에 임시 local sandbox 파일을 실제로 쓰는 final-dispatcher 형태를 보여준다. 둘 다 production identity/transport/runtime 구현은 아니다.
 
 **첫 설치가 목적이라면 여기까지 진행하고 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)만 읽으면 된다. 아래 내용은 policy/runtime 구현, adapter integration, release/conformance를 개발하거나 감사하는 사용자를 위한 reference다.**
 ## 구성
@@ -127,38 +127,28 @@ universal-agent-docs/
 ├── PROJECT.md
 ├── POLICY_CONTRACT.json
 ├── POLICY_CONTRACT.schema.json
+├── OPERATION_EXTENSION.schema.json
+├── ADAPTER_CAPABILITIES.schema.json
 ├── ROUTING_ALIASES.json
-├── ROUTING_ALIASES.schema.json
 ├── RUNTIME_ACTION.schema.json
 ├── APPROVAL_ASSERTION.schema.json
 ├── PROTECTED_OVERRIDE.schema.json
-├── README.md
-├── LICENSE
-├── requirements.txt
-├── requirements.lock
 ├── docs/
-│   └── adoption-profiles.md
+│   ├── adoption-profiles.md
+│   ├── extensions.md
+│   └── generated-policy-reference.md
+├── examples/
+│   ├── extensions/
+│   ├── capabilities/
+│   └── runtime-adapter/
 ├── conformance/
-│   ├── README.md
-│   ├── corpus.schema.json
-│   ├── result.schema.json
-│   ├── coverage.json
-│   ├── golden.json
-│   └── invalid.json
 ├── scripts/
 │   ├── validate.py
+│   ├── generate_policy_reference.py
 │   ├── conformance.py
-│   ├── package.py
-│   └── package_consumer.py
+│   └── validation/
 ├── tests/
-│   ├── __init__.py
-│   ├── test_policy.py
-│   ├── test_fuzz.py
-│   └── test_conformance.py
 └── .github/workflows/
-    ├── ci.yml
-    ├── release.yml
-    └── verify-release.yml
 ```
 
 각 파일은 하나의 분명한 책임만 가진다.
@@ -173,6 +163,10 @@ universal-agent-docs/
 - [`RUNTIME_ACTION.schema.json`](RUNTIME_ACTION.schema.json): runtime/tool adapter가 실행 직전에 제출하는 구조화된 action assertion 형식
 - [`APPROVAL_ASSERTION.schema.json`](APPROVAL_ASSERTION.schema.json): explicit approval을 exact action digest + single-use execution nonce에 결박하는 wire contract
 - [`PROTECTED_OVERRIDE.schema.json`](PROTECTED_OVERRIDE.schema.json): protected override를 `PROHIBITED_WITHOUT_OVERRIDE` imminent action에 정확히 결박하는 독립 wire contract
+- [`OPERATION_EXTENSION.schema.json`](OPERATION_EXTENSION.schema.json): 조직/vendor operation extension의 language-neutral wire contract
+- [`ADAPTER_CAPABILITIES.schema.json`](ADAPTER_CAPABILITIES.schema.json): adapter가 독립적으로 지원 operation을 선언하는 capability wire contract
+- [`docs/extensions.md`](docs/extensions.md): extension integrity/capability/authority 경계와 Profile C integration 설명
+- [`docs/generated-policy-reference.md`](docs/generated-policy-reference.md): `POLICY_CONTRACT.json`에서 생성되는 non-normative reference
 - [`LICENSE`](LICENSE): 코드·문서·스키마·테스트를 포함한 저장소 전체에 적용되는 Apache License 2.0
 - `requirements.txt`: validator의 직접 dependency intent
 - `requirements.lock`: CI/release용 hash-locked transitive dependency closure
@@ -254,17 +248,20 @@ python scripts/validate.py --compiled-policy \
   --json
 ```
 
-조직/vendor 전용 operation은 core catalog를 수정하지 않고 명시적 extension JSON으로 등록할 수 있다. namespace는 core namespace와 충돌할 수 없고, extension operation은 자연어 alias로 암묵 추론하지 않으며 explicit planned operation으로만 사용한다. runtime에서는 extension이 선언한 `supported_adapters`와 실제 adapter ID가 일치해야 한다. extension semantics의 canonical digest는 action digest가 이미 결박하는 `semantic_details`에 자동 포함되어 승인/override가 다른 extension 의미로 재사용되지 않는다.
+조직/vendor 전용 operation은 core catalog를 수정하지 않고 `OPERATION_EXTENSION.schema.json`을 따르는 명시적 extension JSON으로 등록한다. extension은 explicit-plan only이며, `supported_adapters`는 **extension 측 allowlist일 뿐 capability 증명이 아니다.** runtime에서 extension operation을 사용하려면 `ADAPTER_CAPABILITIES.schema.json`을 따르는 별도 adapter capability 선언이 exact operation을 지원해야 한다.
 
 ```bash
 python scripts/validate.py \
   --operation-extension examples/extensions/internal-sandbox-artifact.json \
+  --adapter-capabilities examples/capabilities/reference-sandbox-artifact-adapter.json \
   --compiled-policy \
   --routing-mode enforcement \
   --operation internal.sandbox_artifact_publish
 ```
 
-machine-owned 표와 operation catalog는 `POLICY_CONTRACT.json`에서 `POLICIES.md`의 generated block으로 파생한다. 변경 후 `python scripts/generate_policy_reference.py`로 갱신하고 CI의 `--check`가 stale 상태를 거부한다. rationale, 절차, 예제 같은 human-facing prose는 계속 `POLICIES.md`가 소유한다.
+Extension/capability digest는 integrity를 고정하지만 조직 authority를 증명하지 않는다. production/public/external runtime에서는 higher-authority channel에서 얻은 `--trusted-extension-digest`와 `--trusted-capability-digest`가 실제 semantics와 일치해야 하며, validator는 그래도 organization identity/authority 자체를 인증했다고 주장하지 않는다. 상세 contract와 trust boundary는 [docs/extensions.md](docs/extensions.md)를 따른다.
+
+machine-owned 표와 operation catalog는 `POLICY_CONTRACT.json`에서 [generated policy reference](docs/generated-policy-reference.md)로 결정적으로 파생한다. `POLICIES.md`는 rationale·절차·예외 같은 human-facing primary-owner prose에 집중한다. 변경 후 `python scripts/generate_policy_reference.py`로 갱신하고 CI의 `--check`가 stale 상태를 거부한다.
 
 ## 라우팅 모델
 
@@ -466,7 +463,7 @@ python -m unittest tests.test_conformance -v
 
 `conformance/corpus.schema.json`은 corpus wire format을, `result.schema.json`은 외부 구현체가 반환할 aggregate result 형식을 정의한다. `coverage.json`은 필수 semantic coverage와 operation direct-coverage/exemption ledger를 갖기 때문에 새 canonical operation이 추가되었는데 vector 또는 명시적 exemption이 없으면 coverage test가 실패한다.
 
-현재 suite는 routing authority/advisory/enforcement, unknown/deprecated lifecycle, Effect floor와 production/context escalation, raw Exposure derivation, plan/actual mismatch, opaque runtime operation, high-confidence signature, target/environment requirement, action digest determinism, approval/override exact binding·expiry·replay, readiness evidence state, ZIP traversal/duplicate/casefold/Unicode/symlink/resource limit, trust/release manifest integrity를 포함한다.
+현재 suite는 routing authority/advisory/enforcement, unknown/deprecated lifecycle, Effect floor와 production/context escalation, raw Exposure derivation, plan/actual mismatch, opaque runtime operation, high-confidence signature, target/environment requirement, action digest determinism, approval/override exact binding·expiry·replay, extension schema/namespace/digest/integrity, adapter capability intersection, readiness evidence state, ZIP traversal/duplicate/casefold/Unicode/symlink/resource limit, trust/release manifest integrity를 포함한다.
 
 다른 언어 구현체는 repository Python 코드를 import할 필요가 없다. `POLICY_CONTRACT.json`과 `conformance/` JSON 파일만 소비해 동일 vector ID와 normative result를 반환하면 된다. 상세 wire protocol과 stable vector lifecycle은 `conformance/README.md`를 따른다.
 
@@ -528,8 +525,8 @@ release 전에는 repository Settings의 Releases에서 **release immutability�
 
 ```bash
 # main의 원하는 release commit에서
-git tag -a v0.1.0 -m "universal-agent-docs v0.1.0"
-git push origin v0.1.0
+git tag -a v0.2.0 -m "universal-agent-docs v0.2.0"
+git push origin v0.2.0
 ```
 
 GitHub Actions의 외부 action reference는 mutable major tag 대신 검토한 **full commit SHA**로 pin한다. tag 생성 권한, tag ruleset, `main` branch protection, required review/CI는 repository governance의 별도 trust control이며 workflow 파일만으로 대체할 수 없다. 특히 임의 사용자가 과거 commit에 release tag를 만들지 못하도록 release tag namespace에 대한 ruleset을 함께 두는 것이 권장된다.
