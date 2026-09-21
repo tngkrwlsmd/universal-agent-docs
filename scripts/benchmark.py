@@ -24,7 +24,7 @@ def _text_metrics(text: str) -> dict:
     return {
         "utf8_bytes": len(text.encode("utf-8")),
         "characters": len(text),
-        "word_like_units": len(re.findall(r"[\\w가-힣]+", text, flags=re.UNICODE)),
+        "word_like_units": len(re.findall(r"[\w가-힣]+", text, flags=re.UNICODE)),
     }
 
 
