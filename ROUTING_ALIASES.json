@@ -1013,13 +1013,15 @@
         "dotnet build",
         "swift build",
         "프로젝트 빌드",
-        "빌드 실행"
+        "빌드 실행",
+        "docker build"
       ],
       "stems": [
         "빌드"
       ],
       "patterns": [
-        "\\b(?:npm\\s+run\\s+build|cargo\\s+build|go\\s+build|mvn\\s+package|gradle\\s+build|dotnet\\s+build|swift\\s+build)\\b"
+        "\\b(?:npm\\s+run\\s+build|cargo\\s+build|go\\s+build|mvn\\s+package|gradle\\s+build|dotnet\\s+build|swift\\s+build)\\b",
+        "\\bdocker\\s+build\\b"
       ]
     },
     "lint.execute": {
