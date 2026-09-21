@@ -36,13 +36,15 @@ class DistributionTests(unittest.TestCase):
             result = mod.validate_distribution(z, self.contract)
             self.assertEqual("PASS", result["status"], result)
 
-    def test_source_examples_are_allowed_but_not_required_policy_files(self):
+    def test_source_only_files_are_allowed_but_not_required_consumer_files(self):
         source_only = set(mod.CANONICAL_SOURCE_ONLY_FILES)
         self.assertTrue(source_only)
         self.assertEqual(source_only, set(self.allowed) - set(self.required))
-        self.assertTrue(all(path.startswith("examples/") for path in source_only))
+        self.assertTrue(set(self.required) <= set(self.allowed))
+        self.assertIn("templates/PROJECT.md", source_only)
         self.assertIn("examples/consumer-basic/README.md", source_only)
         self.assertIn("examples/runtime-adapter/README.md", source_only)
+        self.assertTrue(all(path == "templates/PROJECT.md" or path.startswith("examples/") for path in source_only))
 
     def test_partial_zip_fails_missing_manifest(self):
         with tempfile.TemporaryDirectory() as td:

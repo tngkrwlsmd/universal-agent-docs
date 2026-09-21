@@ -20,7 +20,7 @@
 - 새 evidence 없이 같은 실패 접근을 무제한 반복하지 않는다.
 - Observed / Intended / Contract / Evidence를 필요할 때 구분하고 추측으로 하나의 사실처럼 합치지 않는다.
 
-프로젝트 사실의 기본 위치는 [`PROJECT.md`](PROJECT.md)다. upstream의 `PROJECT.md`는 consumer template이므로 template/stale 상태라면 [Execution policy](POLICIES.md#policy-execution)의 Bootstrap 규칙을 따른다.
+Consumer project facts의 canonical path는 `.agent-policy/PROJECT.md`다. Upstream source에서는 `templates/PROJECT.md`가 primary template이고 root [`PROJECT.md`](PROJECT.md)는 compatibility mirror다. Template/stale 상태라면 [Execution policy](POLICIES.md#policy-execution)의 Bootstrap 규칙을 따른다.
 
 ## 3. Work start and execution boundary
 

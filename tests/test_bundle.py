@@ -76,9 +76,31 @@ class BundleTests(unittest.TestCase):
         self.assertTrue(provenance["consumer_verification_required"])
         self.assertIn("universal-agent-docs-consumer.zip", provenance["attested_artifacts"])
 
+    def test_project_template_primary_source_and_compatibility_mirror_are_in_sync(self):
+        template = ROOT / "templates" / "PROJECT.md"
+        compatibility = ROOT / "PROJECT.md"
+        self.assertTrue(template.is_file())
+        self.assertEqual(template.read_bytes(), compatibility.read_bytes())
+        self.assertEqual(template, mod.PROJECT_TEMPLATE_PATH)
+        contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
+        self.assertIn("PROJECT.md", contract["distribution"]["required_files"])
+        self.assertNotIn("templates/PROJECT.md", contract["distribution"]["required_files"])
+        self.assertIn("templates/PROJECT.md", contract["distribution"]["allowed_files"])
+        package_consumer = (ROOT / "scripts" / "package_consumer.py").read_text(encoding="utf-8")
+        self.assertIn('source_path = ROOT / "templates" / "PROJECT.md" if rel == "PROJECT.md"', package_consumer)
+
+    def test_distribution_schema_documents_required_and_allowed_file_roles(self):
+        schema = mod.load_json(ROOT / "POLICY_CONTRACT.schema.json")
+        props = schema["properties"]["distribution"]["properties"]
+        self.assertIn("vendored consumer policy/runtime surface", props["required_files"]["description"])
+        self.assertIn("Complete canonical source artifact allowlist", props["allowed_files"]["description"])
+
     def test_release_smoke_keeps_source_examples_out_of_consumer_bundle(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn("Verify released public feature and source example surface", workflow)
+        self.assertIn('test -f "$source_root/templates/PROJECT.md"', workflow)
+        self.assertIn('cmp "$source_root/templates/PROJECT.md" "$source_root/PROJECT.md"', workflow)
+        self.assertIn('cmp "$source_root/templates/PROJECT.md" "$policy_root/PROJECT.md"', workflow)
         self.assertIn('test -f "$source_root/examples/consumer-basic/README.md"', workflow)
         self.assertIn('test -f "$source_root/examples/runtime-adapter/README.md"', workflow)
         self.assertIn('test ! -e "$policy_root/examples"', workflow)
