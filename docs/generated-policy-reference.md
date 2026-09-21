@@ -41,6 +41,65 @@
 | external | X0 |
 | unknown | X2 |
 
+**Execution boundary required inputs**
+
+- `planned_operations`
+- `actual_operations`
+- `affected_resources`
+- `targets`
+- `environment`
+- `exposure_facts`
+- `correlation_id`
+- `execution_nonce`
+
+**Raw Exposure fact floors**
+
+| Fact | Value | Minimum Exposure |
+|---|---|---|
+| `data_classification` | `public` | X0 |
+| `data_classification` | `internal` | X1 |
+| `data_classification` | `confidential` | X2 |
+| `data_classification` | `restricted` | X2 |
+| `data_classification` | `regulated` | X3 |
+| `data_classification` | `unknown` | X2 |
+| `credential_class` | `none` | X0 |
+| `credential_class` | `user_secret` | X1 |
+| `credential_class` | `service_credential` | X2 |
+| `credential_class` | `privileged_credential` | X3 |
+| `credential_class` | `break_glass` | X3 |
+| `credential_class` | `unknown` | X2 |
+| `tenant_scope` | `single_user` | X0 |
+| `tenant_scope` | `single_tenant` | X1 |
+| `tenant_scope` | `multi_tenant` | X2 |
+| `tenant_scope` | `organization_wide` | X3 |
+| `tenant_scope` | `global` | X3 |
+| `tenant_scope` | `unknown` | X2 |
+| `public_visibility` | `none` | X0 |
+| `public_visibility` | `public_source` | X0 |
+| `public_visibility` | `public_destination` | X2 |
+| `public_visibility` | `bidirectional` | X2 |
+| `public_visibility` | `unknown` | X2 |
+| `estimated_blast_radius` | `single_resource` | X0 |
+| `estimated_blast_radius` | `bounded_set` | X1 |
+| `estimated_blast_radius` | `service` | X2 |
+| `estimated_blast_radius` | `organization` | X3 |
+| `estimated_blast_radius` | `global` | X3 |
+| `estimated_blast_radius` | `unknown` | X2 |
+| `estimated_financial_impact` | `none` | X0 |
+| `estimated_financial_impact` | `negligible` | X0 |
+| `estimated_financial_impact` | `bounded` | X1 |
+| `estimated_financial_impact` | `material` | X2 |
+| `estimated_financial_impact` | `critical` | X3 |
+| `estimated_financial_impact` | `unknown` | X2 |
+
+**Context Effect escalation rules**
+
+- `public_distribution_publish`: `artifact.publish`, `package.publish` -> `L4` when environment: `public`; exposure_facts.public_visibility: `public_destination`, `bidirectional`
+
+**Operation semantic requirements**
+
+- `tracked_delete_recoverability`: operations `filesystem.tracked_delete`; required details `recoverability`, `recovery_revision`; allowed environments `local`, `test`
+
 **Canonical operation catalog**
 
 | Operation | Policies | Effect floor | Execution policy | Lifecycle |
