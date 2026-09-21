@@ -1,8 +1,14 @@
 # universal-agent-docs
 
-`universal-agent-docs`는 특정 언어, 프레임워크, 클라우드 또는 AI 개발 도구에 종속되지 않는 범용 개발 에이전트 정책 번들이다.
+`universal-agent-docs`는 특정 언어·프레임워크·클라우드·AI 개발 도구와 분리된 **policy model과 machine contract**를 중심으로 하는 범용 개발 에이전트 정책 번들이다. 정책 의미와 JSON conformance protocol은 구현 언어에 종속되지 않지만, 이 저장소가 제공하는 reference validator와 packaging tooling은 현재 Python 3.10+ 기반이며 공식 release/provenance의 reference path는 GitHub Actions와 GitHub Release를 사용한다.
 
 목표는 정책 파일을 많이 만드는 것이 아니라, 개발 에이전트가 **무엇을 신뢰하고, 어떤 정책을 적용하고, 어떤 위험을 확인하고, 무엇을 실제로 검증했는지** 일관되게 판단하도록 하는 것이다.
+
+## 범용성의 경계
+
+이 프로젝트의 **범용성 주장은 policy semantics와 wire contract에 대한 것**이다. `POLICY_CONTRACT.json`과 `conformance/` JSON protocol은 Python 코드를 import하지 않고 다른 언어로 구현할 수 있다. 반면 이 저장소에 포함된 validator, packaging, reference conformance runner는 Python 구현이며, 현재 공식 supply-chain workflow는 GitHub Actions/GitHub Release를 기준 구현으로 제공한다.
+
+다른 CI/CD나 artifact repository도 source identity, artifact immutability, provenance/signature, trusted expectation을 동등하게 확립하는 구현을 만들 수 있다. 그러나 이 저장소가 모든 언어의 runtime adapter나 모든 CI/CD·artifact platform integration을 제공하거나 qualification했다고 주장하지 않는다. Profile별 실제 보장과 구현 책임은 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)를 따른다.
 
 ## 5분 Quick Start
 
@@ -12,9 +18,9 @@
 |---|---|---|---|
 | **A — Guidance** | 에이전트에게 저장소 규칙과 project facts를 일관되게 읽히고 싶다 | instruction hierarchy, human policy, PROJECT facts | runtime/tool 실행 차단, approval enforcement |
 | **B — Validated** | CI에서 policy/readiness/routing/risk/integrity를 검증하고 싶다 | A + validator, canonical routing, Effect/Exposure/gate 계산, distribution validation | trusted runtime assertion이 없으면 실제 side-effect 차단 보장 없음 |
-| **C — Enforced Runtime** | 실제 tool/API/action 직전에 allow/block/approval/override를 강제해야 한다 | B + trusted runtime adapter, actual-vs-planned check, digest, replay, protected override | adapter가 intercept하지 못하는 surface까지 자동 통제한다는 보장 없음 |
+| **C — Enforced Runtime** | 실제 tool/API/action 직전에 allow/block/approval/override를 강제해야 한다 | B + runtime assertion/approval/override wire contract, actual-vs-planned·Effect/Exposure·digest·binding/replay 검증 semantics | 완성된 범용 interceptor/adapter/executor, issuer 인증, trusted transport, production replay ledger는 제공하지 않음 |
 
-**선택법:** 지침만 필요하면 A, 자동 validation이 필요하면 B, 실제 실행을 기술적으로 막아야 하면 C다. production/customer data/privileged credential/external-public side effect를 자동 실행하는 환경은 C를 목표로 한다.
+**선택법:** 지침만 필요하면 A, 자동 validation이 필요하면 B, 실제 실행을 기술적으로 막아야 하면 C를 목표로 한다. C는 bundle만 설치하면 자동으로 생기는 기능이 아니라, 소비 환경이 trusted runtime boundary를 실제 tool/API/action 앞에 연결해야 달성되는 통합 상태다. production/customer data/privileged credential/external-public side effect를 자동 실행하는 환경은 이 상태를 목표로 한다.
 
 Profile은 서로 다른 ZIP이나 파일 subset이 아니다. **공식 consumer bundle은 A/B/C 모두 동일한 full `.agent-policy/` bundle을 설치**하고, A는 guidance만 사용하고 B는 validator/CI를 활성화하며 C는 실제 runtime boundary까지 연결한다.
 
@@ -104,7 +110,7 @@ python .agent-policy/scripts/validate.py \
 
 A는 guidance, B는 validation이다. **B에서 gate를 계산하거나 `--routing-mode enforcement`를 사용해도 그 자체로 shell/tool/API 호출을 intercept하거나 차단하지 않는다.** 이 routing mode는 unknown/unresolved planned operation을 계획 단계에서 fail-closed하는 validator mode다.
 
-실제 side effect를 기술적으로 차단하는 Profile C에는 trusted runtime adapter, independently observed actual operation, target/environment/raw exposure facts, action digest, approval/override exact binding, atomic replay consumption과 higher-authority identity/transport trust가 추가로 필요하다.
+실제 side effect를 기술적으로 차단하는 Profile C에는 소비 환경이 trusted runtime adapter/interceptor, independently observed actual operation, target/environment/raw exposure facts, higher-authority identity/transport trust, shared atomic replay ledger와 실제 allow/block 집행을 추가로 구현·연결해야 한다. 이 저장소는 그 경계에서 사용할 action digest, approval/override exact binding, gate 계산과 검증 contract/reference implementation을 제공하지만 완성된 범용 runtime executor를 제공하지 않는다.
 
 **첫 설치가 목적이라면 여기까지 진행하고 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)만 읽으면 된다. 아래 내용은 policy/runtime 구현, adapter integration, release/conformance를 개발하거나 감사하는 사용자를 위한 reference다.**
 ## 구성

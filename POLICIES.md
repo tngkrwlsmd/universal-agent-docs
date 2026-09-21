@@ -114,6 +114,30 @@ chatgpt-codex-connector = DISABLED UNLESS EXPLICITLY REQUESTED
 
 Effect 계산은 `max(operation effect_floor, runtime/context escalation)`이다. production 환경의 DB write/schema/destructive change, deploy/rollback, permission/credential/IAM change뿐 아니라 service restart, cloud resource mutation/delete, storage object delete, network configuration change도 L4로 승격한다. 또한 `package.publish`/`artifact.publish`가 `environment=public`이거나 `public_visibility=public_destination|bidirectional`이면 machine contract의 context rule이 L4로 승격한다. 격리된 non-production registry이고 public destination이 아니면 operation floor L3를 유지할 수 있다. Exposure는 environment와 각 raw fact dimension의 floor를 모두 모아 `max`로 계산한다. production과 unknown environment는 최소 X2이며, credential/regulated/broad-tenant/blast-radius/financial-impact facts는 그보다 높은 floor를 만들 수 있다. adapter의 declared Exposure가 더 낮아도 무시한다. L3/L4 또는 X2/X3는 concrete target이 없으면 실행 gate를 계산 완료한 것으로 취급하지 않는다. 계산 결과가 `REQUIRE_EXPLICIT_APPROVAL`이면 validator는 action digest를 생성해 승인 binding 근거를 제공하지만 issuer authority를 증명하지 않으며, `PROHIBITED_WITHOUT_OVERRIDE`이면 protected override authority와 정확한 task approval을 별도로 확인해야 한다.
 
+
+### Profile C runtime responsibility boundary
+
+Profile C는 이 policy bundle 자체가 모든 tool/API/shell을 가로채는 제품이라는 뜻이 아니라, **machine contract를 신뢰 가능한 실행 경계에 연결한 integration state**를 뜻한다. human-facing 책임 분리는 다음과 같다.
+
+- **planner/agent**는 canonical planned operation을 제안한다. planner의 텍스트나 자기 보고를 actual operation의 독립 증거로 사용하지 않는다.
+- **trusted runtime adapter/interceptor**는 실제 side effect 직전에 실행 surface를 가로채고, imminent action에서 actual canonical operation, affected resource, concrete target, environment와 raw exposure facts를 독립적으로 관찰·구성한다. 지원하지 못하거나 충분히 분류할 수 없는 action은 enforced surface에서 통과시키지 않는다.
+- **policy engine/reference validator**는 schema/canonical ID, plan↔actual coverage, Effect/Exposure, target requirement, action gate와 action digest를 계산하고 approval/override 객체의 exact binding·expiry·replay 조건을 검증한다. 이 계산만으로 adapter producer나 approval issuer의 identity/authority를 인증하거나 tool 실행을 물리적으로 차단할 수는 없다.
+- **higher-authority identity/transport layer**는 adapter assertion의 producer와 transport integrity, approval/override issuer의 조직 권한을 인증한다. schema-valid payload 자체를 신뢰 근거로 승격하지 않는다.
+- **atomic consumption ledger**는 실행 직전에 approval/override identity와 single-use execution nonce를 shared scope에서 원자적으로 소비한다. 여러 worker/process가 있는 환경에서도 동일 assertion을 두 번 성공시키지 않아야 하며 ledger가 불가용하거나 consumption 결과가 불확실하면 fail-closed한다.
+- **executor/tool boundary**는 현재 action에 필요한 gate가 충족되고 consumption이 성공한 뒤에만 실제 action을 실행한다. adapter가 관찰한 operation, target, environment, exposure facts, semantic details 또는 actual action이 바뀌면 digest를 다시 계산하고 이전 approval/override를 재사용하지 않는다.
+
+action digest는 **imminent action을 adapter가 관찰한 뒤, approval/override를 요청하기 전에** 계산한다. approval이 발급된 뒤 실행 의미가 달라지면 새 digest·새 nonce·새 binding이 필요하다.
+
+Profile C enforced surface에서는 최소한 다음 조건을 fail-closed로 처리한다.
+
+- actual operation이 canonical하지 않거나 planned operation에 포함되지 않음
+- runtime에서 금지된 opaque operation을 사용하거나 action 의미를 충분히 분류할 수 없음
+- contract가 요구하는 target, environment, raw exposure fact 또는 semantic detail이 없음
+- adapter producer/transport를 higher-authority boundary에서 신뢰할 수 없음
+- 필요한 approval/override가 없거나 issuer authority, digest, target, environment, correlation ID, nonce, expiry binding이 맞지 않음
+- single-use ledger의 atomic consumption이 실패했거나 replay로 확인됨
+- adapter가 intercept하지 못하는 surface를 enforced라고 표시하려 함
+
 ### Policy bundle integrity
 
 정책 번들이 자기 자신만 검증해서는 원본 정책 의미를 증명할 수 없다. `POLICIES.md`, contract/schema, validator가 함께 바뀌면 내부 consistency check만으로는 악의적 변경과 정상 release를 구분할 수 없기 때문이다. 무결성 계약은 두 층을 분리한다.
