@@ -76,6 +76,16 @@ class BundleTests(unittest.TestCase):
         self.assertTrue(provenance["consumer_verification_required"])
         self.assertIn("universal-agent-docs-consumer.zip", provenance["attested_artifacts"])
 
+    def test_release_smoke_keeps_source_examples_out_of_consumer_bundle(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn("Verify released public feature and source example surface", workflow)
+        self.assertIn('test -f "$source_root/examples/consumer-basic/README.md"', workflow)
+        self.assertIn('test -f "$source_root/examples/runtime-adapter/README.md"', workflow)
+        self.assertIn('test ! -e "$policy_root/examples"', workflow)
+        self.assertIn("blob/main/examples/", workflow)
+        self.assertIn("OPERATION_EXTENSION.schema.json", workflow)
+        self.assertIn("ADAPTER_CAPABILITIES.schema.json", workflow)
+
     def test_github_actions_are_pinned_to_full_commit_shas(self):
         import re
         for rel in [

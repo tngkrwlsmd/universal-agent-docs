@@ -92,14 +92,30 @@ jobs:
           python scripts/package.py --output-dir dist
           python scripts/package_consumer.py --output-dir dist
 
-      - name: Verify released public feature surface
+      - name: Verify released public feature and source example surface
         shell: bash
         run: |
           set -euo pipefail
           rm -rf release-smoke
-          mkdir release-smoke
-          python -m zipfile -e dist/universal-agent-docs-consumer.zip release-smoke
-          policy_root="release-smoke/universal-agent-docs-consumer/.agent-policy"
+          mkdir -p release-smoke/source release-smoke/consumer
+          python -m zipfile -e dist/universal-agent-docs.zip release-smoke/source
+          python -m zipfile -e dist/universal-agent-docs-consumer.zip release-smoke/consumer
+          source_root="release-smoke/source/universal-agent-docs"
+          policy_root="release-smoke/consumer/universal-agent-docs-consumer/.agent-policy"
+          test -f "$source_root/examples/consumer-basic/README.md"
+          test -f "$source_root/examples/runtime-adapter/README.md"
+          test -f "$source_root/examples/extensions/internal-sandbox-artifact.json"
+          test -f "$source_root/examples/capabilities/reference-sandbox-artifact-adapter.json"
+          test ! -e "$policy_root/examples"
+          if grep -R -F "blob/main/examples/" "$source_root/README.md" "$source_root/docs"; then
+            echo "canonical release docs must not depend on mutable main example links" >&2
+            exit 1
+          fi
+          if grep -R -F "blob/main/examples/" "$policy_root/README.md" "$policy_root/docs"; then
+            echo "consumer release docs must not depend on mutable main example links" >&2
+            exit 1
+          fi
+          grep -F -- "matching canonical source artifact" "$policy_root/README.md"
           python "$policy_root/scripts/validate.py" --help > release-smoke/help.txt
           grep -F -- "--compiled-policy" release-smoke/help.txt
           grep -F -- "--operation-extension" release-smoke/help.txt
@@ -108,7 +124,8 @@ jobs:
           test -f "$policy_root/ADAPTER_CAPABILITIES.schema.json"
           test -f "$policy_root/docs/extensions.md"
           test -f "$policy_root/docs/generated-policy-reference.md"
-
+          grep -F -- "OPERATION_EXTENSION.schema.json" "$source_root/conformance/README.md"
+          grep -F -- "ADAPTER_CAPABILITIES.schema.json" "$source_root/conformance/README.md"
       - name: Upload canonical source artifacts for workflow retention
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:

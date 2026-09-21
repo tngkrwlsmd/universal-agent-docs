@@ -51,7 +51,7 @@ def package(output_dir: Path) -> dict:
 
     contract = policy_validate.load_json(ROOT / "POLICY_CONTRACT.json")
     canonical_root = contract["distribution"]["canonical_root"]
-    files = list(contract["distribution"]["required_files"])
+    files = list(contract["distribution"]["allowed_files"])
     stem = canonical_root
     zip_path = output_dir / f"{stem}.zip"
     trust_path = output_dir / f"{stem}.trust.json"

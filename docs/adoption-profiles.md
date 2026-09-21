@@ -2,7 +2,7 @@
 
 `universal-agent-docs`는 하나의 "보안 모드"가 아니라, 같은 policy bundle을 어디까지 실제 runtime에 연결했는지에 따라 보장이 달라지는 도입 경로를 제공한다. 이 문서의 profile 이름은 **도입 설명을 위한 문서 분류**이며 `POLICY_CONTRACT.json`의 machine-enforceable state가 아니다.
 
-이 문서는 **consumer installation, PROJECT bootstrap/readiness, A→B→C adoption 절차의 primary owner**다. README는 방향 선택과 최소 시작점만 제공하며, 실제 도입 절차는 이 문서를 기준으로 유지한다. 처음 적용하는 작은 before/after 흐름은 [Profile A/B consumer example](https://github.com/tngkrwlsmd/universal-agent-docs/blob/main/examples/consumer-basic/README.md)을 함께 볼 수 있다.
+이 문서는 **consumer installation, PROJECT bootstrap/readiness, A→B→C adoption 절차의 primary owner**다. README는 방향 선택과 최소 시작점만 제공하며, 실제 도입 절차는 이 문서를 기준으로 유지한다. 처음 적용하는 작은 before/after 흐름은 [Profile A/B consumer example](../examples/consumer-basic/README.md)을 함께 볼 수 있다. 이 source example은 canonical source Release artifact에는 포함되지만 consumer `.agent-policy` artifact에는 포함되지 않는다.
 
 ## 구현 중립성의 범위
 
@@ -45,7 +45,8 @@ git clone https://github.com/tngkrwlsmd/universal-agent-docs.git
 cd universal-agent-docs
 python -m pip install --require-hashes --requirement requirements.lock
 python scripts/package_consumer.py --output-dir dist
-python -m zipfile -e dist/universal-agent-docs-consumer.zip /tmp/uad-consumer
+python -c "from pathlib import Path; import shutil; p=Path('uad-consumer-stage'); shutil.rmtree(p, ignore_errors=True); p.mkdir()"
+python -m zipfile -e dist/universal-agent-docs-consumer.zip uad-consumer-stage
 ```
 
 이 source-built artifact는 package self-validation과 local adoption에는 사용할 수 있지만, published immutable release의 publisher authenticity/provenance를 대신하지 않는다. production에서 official SemVer Release를 사용할 수 있다면 Release의 consumer ZIP을 우선하고, trusted `release_tag`와 별도 채널에서 확보한 `expected_source_sha`로 `.github/workflows/verify-release.yml`을 실행해 release/build provenance를 확인한다.
@@ -55,7 +56,7 @@ python -m zipfile -e dist/universal-agent-docs-consumer.zip /tmp/uad-consumer
 공식 source bundle을 소비 프로젝트 root에 그대로 overlay하지 않는다. consumer ZIP을 staging 위치에 푼 뒤 `.agent-policy/`와 generated root `AGENTS.md`를 검토하여 적용한다.
 
 ```text
-/tmp/uad-consumer/
+uad-consumer-stage/
 └── universal-agent-docs-consumer/
     ├── AGENTS.md
     └── .agent-policy/
@@ -99,9 +100,7 @@ consumer contract는 `overwrite_existing_root_agents=false`와 `extraction_requi
 소비 프로젝트 root에서 candidate를 생성한다.
 
 ```bash
-python .agent-policy/scripts/validate.py \
-  --bootstrap-project . \
-  --bootstrap-output ./PROJECT.candidate.md
+python .agent-policy/scripts/validate.py --bootstrap-project . --bootstrap-output ./PROJECT.candidate.md
 ```
 
 `PROJECT.candidate.md`는 repository를 관찰해 만든 **임시 review artifact**다. bootstrap은 source root, command source, runtime source, component 후보를 수집하지만 모든 자동 발견 fact를 `Inferred`로 유지하고 `Confirmed`로 자동 승격하지 않는다.
@@ -115,18 +114,13 @@ python .agent-policy/scripts/validate.py \
 5. development readiness를 실행한다.
 
 ```bash
-python .agent-policy/scripts/validate.py \
-  --project-root . \
-  --readiness development
+python .agent-policy/scripts/validate.py --project-root . --readiness development
 ```
 
 프로젝트 convention 때문에 다른 facts 문서를 canonical로 사용해야 한다면 validator의 `--project-file`을 명시할 수 있다.
 
 ```bash
-python .agent-policy/scripts/validate.py \
-  --project-root . \
-  --project-file ./docs/PROJECT.md \
-  --readiness development
+python .agent-policy/scripts/validate.py --project-root . --project-file ./docs/PROJECT.md --readiness development
 ```
 
 custom path를 선택하면 validator만 바꾸고 끝내지 말고, root/project agent instructions도 같은 canonical facts 위치를 가리키도록 함께 수정한다.
@@ -134,9 +128,7 @@ custom path를 선택하면 validator만 바꾸고 끝내지 말고, root/projec
 deploy까지 자동화한다면 같은 canonical facts 문서로 deployment readiness도 확인한다.
 
 ```bash
-python .agent-policy/scripts/validate.py \
-  --project-root . \
-  --readiness deployment
+python .agent-policy/scripts/validate.py --project-root . --readiness deployment
 ```
 
 `documented=PASS`, `evidence_verified=PASS`여도 build/test/deploy command가 실제 성공했다는 뜻은 아니다. validator는 기본적으로 command를 실행하지 않으므로 `execution_verified=NOT_RUN`이다.
@@ -182,10 +174,7 @@ python -m pip install --require-hashes --requirement .agent-policy/requirements.
 python .agent-policy/scripts/validate.py
 python .agent-policy/scripts/validate.py --project-root . --readiness development
 
-python .agent-policy/scripts/validate.py \
-  --routing-mode enforcement \
-  --route "run tests" \
-  --operation test.execute
+python .agent-policy/scripts/validate.py --routing-mode enforcement --route "run tests" --operation test.execute
 ```
 
 `--routing-mode enforcement`의 **enforcement는 routing validation 범위**다. unknown/unresolved planned operation을 계획 단계에서 fail-closed하지만 tool/API/shell 호출을 직접 intercept하거나 차단하지 않는다. Profile C의 runtime enforcement와 동일하지 않다.

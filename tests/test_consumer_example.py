@@ -42,6 +42,13 @@ class ConsumerBasicExampleTests(unittest.TestCase):
         self.assertIn("consumer ZIP 설치 != Profile C", readme)
         self.assertIn("bootstrap candidate != canonical PROJECT.md", readme)
         self.assertIn("readiness PASS != build/test command 실행 성공", readme)
+        self.assertNotIn("/tmp/", readme)
+        self.assertNotIn("cp -R", readme)
+        self.assertNotIn("rm -rf", readme)
+        self.assertNotIn(" \\\n", readme)
+        self.assertIn("Windows PowerShell, macOS, Linux", readme)
+        self.assertIn("canonical source Release artifact", readme)
+        self.assertIn("consumer `.agent-policy` artifact에는 포함되지 않는다", readme)
 
     def test_bootstrap_candidate_never_auto_confirms_example_facts(self):
         with tempfile.TemporaryDirectory() as td:

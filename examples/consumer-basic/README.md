@@ -1,8 +1,8 @@
 # Profile A/B consumer example
 
-이 디렉터리는 처음 도입하는 작은 Python 프로젝트가 **기존 project instruction을 보존하면서 Profile A를 연결하고, 같은 bundle의 validator를 활성화해 Profile B로 올라가는 흐름**을 보여주는 source-only example이다.
+이 디렉터리는 처음 도입하는 작은 Python 프로젝트가 **기존 project instruction을 보존하면서 Profile A를 연결하고, 같은 bundle의 validator를 활성화해 Profile B로 올라가는 흐름**을 보여주는 source example이다.
 
-정책 파일을 여기 복제하지 않는다. 실제 `.agent-policy/`는 canonical consumer artifact에서 설치한다. 이 example 자체는 canonical/consumer Release bundle의 일부가 아니다.
+정책 파일을 여기 복제하지 않는다. 실제 `.agent-policy/`는 canonical consumer artifact에서 설치한다. 이 example은 source repository와 canonical source Release artifact `universal-agent-docs.zip`에는 포함되지만 consumer `.agent-policy` artifact에는 포함되지 않는다.
 
 - `before/`: universal policy를 도입하기 전의 작은 프로젝트
 - `after/`: project-owned 파일이 어떤 모양이 되는지 보여주는 예시
@@ -13,23 +13,25 @@
 ## 1. 기존 프로젝트 확인
 
 ```bash
-cp -R examples/consumer-basic/before /tmp/uad-consumer-basic
-cd /tmp/uad-consumer-basic
+python -c "from pathlib import Path; import shutil; dst=Path('consumer-basic-work'); shutil.rmtree(dst, ignore_errors=True); shutil.copytree(Path('examples/consumer-basic/before'), dst)"
+cd consumer-basic-work
 python -m unittest discover -s tests -v
+cd ..
 ```
+
+위 준비 명령은 Python 표준 라이브러리와 shell의 `cd`만 사용하므로 Windows PowerShell, macOS, Linux에서 같은 형태로 사용할 수 있다. 예제의 `Makefile`은 project command evidence 예시이며 `make` 설치는 이 walkthrough의 필수 조건이 아니다.
 
 기존 `AGENTS.md`에는 이미 project-specific instruction이 있다. 이후 단계에서도 이 내용을 보존한다.
 
 ## 2. Consumer artifact 준비와 staging
 
-Source checkout에서 unreleased `main`을 평가하는 예:
+Source checkout에서 unreleased `main`을 평가하는 경우 repository root에서 실행한다.
 
 ```bash
-cd /path/to/universal-agent-docs
 python -m pip install --require-hashes --requirement requirements.lock
 python scripts/package_consumer.py --output-dir dist
-rm -rf /tmp/uad-stage
-python -m zipfile -e dist/universal-agent-docs-consumer.zip /tmp/uad-stage
+python -c "from pathlib import Path; import shutil; p=Path('uad-stage'); shutil.rmtree(p, ignore_errors=True); p.mkdir()"
+python -m zipfile -e dist/universal-agent-docs-consumer.zip uad-stage
 ```
 
 Published production adoption에서는 source-built ZIP 대신 최신 immutable SemVer Release의 consumer artifact를 우선한다.
@@ -56,9 +58,7 @@ If the two instruction sets appear to conflict, do not silently discard either o
 설치된 bundle을 기준으로 소비 프로젝트에서 실행한다.
 
 ```bash
-python .agent-policy/scripts/validate.py \
-  --bootstrap-project . \
-  --bootstrap-output ./PROJECT.candidate.md
+python .agent-policy/scripts/validate.py --bootstrap-project . --bootstrap-output ./PROJECT.candidate.md
 ```
 
 `PROJECT.candidate.md`는 임시 review artifact다. Canonical project facts 문서는 기본적으로 `.agent-policy/PROJECT.md`이며 candidate 자체가 canonical 문서가 아니다.
@@ -84,22 +84,9 @@ Validator dependency를 설치한 뒤:
 
 ```bash
 python -m pip install --require-hashes --requirement .agent-policy/requirements.lock
-
-python .agent-policy/scripts/validate.py \
-  --project-root . \
-  --readiness development
-
-python .agent-policy/scripts/validate.py \
-  --routing-mode enforcement \
-  --route "modify the greeter and run tests" \
-  --operation code.modify \
-  --operation test.execute \
-  --resource src/greeter.py
-
-python .agent-policy/scripts/validate.py \
-  --compiled-policy \
-  --operation code.modify \
-  --resource src/greeter.py
+python .agent-policy/scripts/validate.py --project-root . --readiness development
+python .agent-policy/scripts/validate.py --routing-mode enforcement --route "modify the greeter and run tests" --operation code.modify --operation test.execute --resource src/greeter.py
+python .agent-policy/scripts/validate.py --compiled-policy --operation code.modify --resource src/greeter.py
 ```
 
 Bundle/readiness/routing/risk를 자동 검증하기 시작하면 **Profile B**다.

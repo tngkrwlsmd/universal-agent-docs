@@ -114,7 +114,7 @@ def build_release_manifest(artifact_path: Path, root: Path = ROOT) -> dict:
     itself authenticate the publisher.
     """
     contract = load_json(root / "POLICY_CONTRACT.json")
-    files = list(contract.get("distribution", {}).get("required_files", []))
+    files = list(contract.get("distribution", {}).get("allowed_files", []))
     missing = [rel for rel in files if not (root / rel).is_file()]
     if missing:
         raise ValueError("cannot build release manifest; missing distribution file(s): " + ", ".join(missing))
@@ -178,7 +178,7 @@ def verify_release_manifest(path: Path, artifact_path: Path, contract: dict | No
     if artifact.get("name") != artifact_path.name:
         errors.append(f"release artifact name mismatch: manifest={artifact.get('name')!r}, actual={artifact_path.name!r}")
 
-    expected_files = list(contract.get("distribution", {}).get("required_files", []))
+    expected_files = list(contract.get("distribution", {}).get("allowed_files", []))
     declared = manifest.get("files")
     if not isinstance(declared, dict):
         errors.append("release manifest files must be an object")

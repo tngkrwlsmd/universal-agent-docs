@@ -412,8 +412,8 @@ def bundle_checks(root: Path = ROOT) -> list[Check]:
         ))
         checks.append(Check(
             "distribution_allowed_manifest_parity",
-            "PASS" if declared_allowed == CANONICAL_REQUIRED_FILES else "FAIL",
-            "canonical allowed file manifest" if declared_allowed == CANONICAL_REQUIRED_FILES else json.dumps(declared_allowed, ensure_ascii=False),
+            "PASS" if declared_allowed == CANONICAL_ALLOWED_FILES else "FAIL",
+            "canonical allowed file manifest" if declared_allowed == CANONICAL_ALLOWED_FILES else json.dumps(declared_allowed, ensure_ascii=False),
         ))
 
         consumer = contract.get("consumer_distribution") if isinstance(contract.get("consumer_distribution"), dict) else {}

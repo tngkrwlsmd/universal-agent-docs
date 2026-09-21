@@ -14,7 +14,7 @@
 | **machine semantics의 Source of Truth는?** | `POLICY_CONTRACT.json` |
 | **사람용 정책 설명의 primary owner는?** | `POLICIES.md` |
 
-> **Release channel note:** 현재 published immutable Release는 `v0.1.0`이며 `20d726f845a0e929103a6de57cb1c82eaeffedca`를 가리킨다. 현재 `main`의 operation-extension trust/capability contract와 강화된 compiled-policy surface는 아직 이 Release에 포함되지 않는다. Production adoption에는 published immutable Release를 우선하고, unreleased 기능 평가에만 `main` source checkout을 사용한다.
+> **Release channel:** Production adoption에는 최신 immutable SemVer Release를 우선한다. `main`에는 아직 Release되지 않은 변경이 있을 수 있으므로 source checkout은 unreleased 변경을 평가할 때 사용한다.
 
 ## 어떤 Profile을 써야 하나?
 
@@ -51,7 +51,7 @@ python -m pip install --require-hashes --requirement requirements.lock
 python scripts/package_consumer.py --output-dir dist
 ```
 
-Source-built ZIP은 local validation에는 사용할 수 있지만 published Release의 publisher authenticity/provenance를 대신하지 않는다.
+Source-built ZIP은 local validation에는 사용할 수 있지만 published Release의 publisher authenticity/provenance를 대신하지 않는다. Canonical source artifact `universal-agent-docs.zip`에는 `examples/`가 포함되며, consumer artifact는 runtime policy bundle을 작게 유지하기 위해 source examples를 포함하지 않는다.
 
 ### 2. 소비 프로젝트에 연결
 
@@ -59,26 +59,20 @@ Consumer artifact의 policy bundle은 프로젝트의 `.agent-policy/` 아래에
 
 Canonical project facts의 기본 위치는 `.agent-policy/PROJECT.md`다. 설치 직후에는 template이므로 readiness PASS를 기대하지 않는다.
 
-처음 적용하는 흐름은 [Profile A/B consumer example](https://github.com/tngkrwlsmd/universal-agent-docs/blob/main/examples/consumer-basic/README.md)에서 before → after 형태로 볼 수 있다.
+처음 적용하는 흐름은 [Profile A/B consumer example](examples/consumer-basic/README.md)에서 before → after 형태로 볼 수 있다.
 
 ### 3. Profile B validation
 
 ```bash
 python .agent-policy/scripts/validate.py --project-root . --readiness development
 
-python .agent-policy/scripts/validate.py \
-  --routing-mode enforcement \
-  --route "run tests" \
-  --operation test.execute
+python .agent-policy/scripts/validate.py --routing-mode enforcement --route "run tests" --operation test.execute
 ```
 
 필요한 policy context만 만들려면:
 
 ```bash
-python .agent-policy/scripts/validate.py \
-  --compiled-policy \
-  --operation code.modify \
-  --resource src/auth/login.py
+python .agent-policy/scripts/validate.py --compiled-policy --operation code.modify --resource src/auth/login.py
 ```
 
 `documented=PASS` 또는 `evidence_verified=PASS`는 build/test/deploy command를 실제 실행해 성공했다는 뜻이 아니다. Validator의 기본 `execution_verified`는 `NOT_RUN`이다.
@@ -87,7 +81,7 @@ python .agent-policy/scripts/validate.py \
 
 실제 tool/API/action 앞에 trusted runtime boundary를 연결해야 한다. Planner와 독립적으로 관찰된 actual operation, concrete target/environment/exposure facts, exact approval/override binding, atomic replay consumption, issuer/transport trust, final allow/block dispatcher가 필요하다.
 
-Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 source-only [runtime adapter examples](https://github.com/tngkrwlsmd/universal-agent-docs/blob/main/examples/runtime-adapter/README.md)를 본다.
+Reference shape는 [Adoption profiles](docs/adoption-profiles.md)와 [runtime adapter examples](examples/runtime-adapter/README.md)를 본다.
 
 ## 문서 지도
 

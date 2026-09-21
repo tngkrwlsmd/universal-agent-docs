@@ -124,6 +124,31 @@ class LanguageNeutralConformanceTests(unittest.TestCase):
         self.assertIn("authoritative 목록은 `corpus.schema.json`", readme)
         self.assertNotIn("지원 `kind`는 다음과 같다:", readme)
 
+    def test_cross_language_guide_names_kind_specific_wire_contracts(self):
+        readme = (ROOT / "conformance" / "README.md").read_text(encoding="utf-8")
+        required = [
+            "POLICY_CONTRACT.json",
+            "POLICY_CONTRACT.schema.json",
+            "ROUTING_ALIASES.json",
+            "ROUTING_ALIASES.schema.json",
+            "RUNTIME_ACTION.schema.json",
+            "APPROVAL_ASSERTION.schema.json",
+            "PROTECTED_OVERRIDE.schema.json",
+            "OPERATION_EXTENSION.schema.json",
+            "ADAPTER_CAPABILITIES.schema.json",
+            "conformance/golden.json",
+            "conformance/invalid.json",
+            "conformance/corpus.schema.json",
+            "conformance/result.schema.json",
+            "conformance/coverage.json",
+        ]
+        for rel in required:
+            self.assertIn(rel, readme)
+            self.assertTrue((ROOT / rel).is_file(), rel)
+        self.assertIn("`extension_contract`, `extension_boundary`", readme)
+        self.assertIn("`OPERATION_EXTENSION.schema.json` + `ADAPTER_CAPABILITIES.schema.json`", readme)
+        self.assertIn("Source of Truth는 계속 `corpus.schema.json` enum", readme)
+
     def test_reference_runner_passes_entire_corpus(self):
         result = runner.run_suite()
         jsonschema.Draft202012Validator.check_schema(self.result_schema)
