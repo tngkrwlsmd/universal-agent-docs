@@ -219,7 +219,7 @@
       "project_type": "database-migration",
       "kind": "routing",
       "category": "mixed-intent-negation",
-      "task": "migration은 실행하지 말고 테스트만 해줘",
+      "task": "migration은 실행하지 말고 테스트만 돌려줘",
       "expected_operations": [
         "test.execute"
       ]
@@ -229,7 +229,7 @@
       "project_type": "node-typescript",
       "kind": "routing",
       "category": "mixed-intent-negation",
-      "task": "publish 하지 말고 build만 해줘",
+      "task": "publish 하지 말고 run build 해줘",
       "expected_operations": [
         "build.execute"
       ]
@@ -239,7 +239,7 @@
       "project_type": "python",
       "kind": "routing",
       "category": "mixed-intent-negation",
-      "task": "배포하지 말고 코드 리팩터링한 다음 테스트해줘",
+      "task": "배포하지 말고 코드 리팩터링한 다음 테스트 돌려줘",
       "expected_operations": [
         "code.refactor",
         "test.execute"
