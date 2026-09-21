@@ -1,14 +1,17 @@
 # universal-agent-docs
 
-`universal-agent-docs`는 특정 언어·프레임워크·클라우드·AI 개발 도구와 분리된 **policy model과 machine contract**를 중심으로 하는 범용 개발 에이전트 정책 번들이다. 정책 의미와 JSON conformance protocol은 구현 언어에 종속되지 않지만, 이 저장소가 제공하는 reference validator와 packaging tooling은 현재 Python 3.10+ 기반이며 공식 release/provenance의 reference path는 GitHub Actions와 GitHub Release를 사용한다.
+`universal-agent-docs`는 개발 에이전트가 **무엇을 신뢰하고, 어떤 정책을 적용하고, 어떤 위험을 확인하며, 무엇을 실제로 검증했는지** 일관되게 판단하도록 돕는 policy bundle이다.
 
-목표는 정책 파일을 많이 만드는 것이 아니라, 개발 에이전트가 **무엇을 신뢰하고, 어떤 정책을 적용하고, 어떤 위험을 확인하고, 무엇을 실제로 검증했는지** 일관되게 판단하도록 하는 것이다.
+## 30초 요약
 
-## 범용성의 경계
+| 질문 | 답 |
+|---|---|
+| **무엇을 제공하나?** | human-readable policy, canonical operation/risk contract, Python reference validator, language-neutral JSON conformance corpus |
+| **무엇을 제공하지 않나?** | 모든 tool/API를 자동으로 가로채는 범용 runtime, 특정 agent/vendor에 대한 자동 설치·강제, 모든 CI/CD·artifact platform 구현 |
+| **얼마나 범용적인가?** | policy semantics와 JSON wire contract는 구현 언어·프레임워크와 분리되어 있다. 현재 reference validator/packaging은 Python 3.10+이고 공식 release/provenance reference path는 GitHub Actions/GitHub Release다. |
+| **어떻게 도입하나?** | A(Guidance) → B(Validated) → C(Enforced Runtime) 순으로 필요한 보장 수준만 선택한다. C는 bundle 설치가 아니라 trusted runtime boundary를 실제 실행 앞에 연결한 통합 상태다. |
 
-이 프로젝트의 **범용성 주장은 policy semantics와 wire contract에 대한 것**이다. `POLICY_CONTRACT.json`과 `conformance/` JSON protocol은 Python 코드를 import하지 않고 다른 언어로 구현할 수 있다. 반면 이 저장소에 포함된 validator, packaging, reference conformance runner는 Python 구현이며, 현재 공식 supply-chain workflow는 GitHub Actions/GitHub Release를 기준 구현으로 제공한다.
-
-다른 CI/CD나 artifact repository도 source identity, artifact immutability, provenance/signature, trusted expectation을 동등하게 확립하는 구현을 만들 수 있다. 그러나 이 저장소가 모든 언어의 runtime adapter나 모든 CI/CD·artifact platform integration을 제공하거나 qualification했다고 주장하지 않는다. Profile별 실제 보장과 구현 책임은 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)를 따른다.
+처음 도입하는 사용자는 아래 Quick Start와 [`docs/adoption-profiles.md`](docs/adoption-profiles.md)만 먼저 읽으면 된다. 정책 구현·감사·다른 언어 구현이 목적일 때만 이후의 contract, runtime, conformance reference로 내려간다.
 
 ## 5분 Quick Start
 
@@ -28,7 +31,7 @@ Profile은 서로 다른 ZIP이나 파일 subset이 아니다. **공식 consumer
 
 먼저 [GitHub Releases](https://github.com/tngkrwlsmd/universal-agent-docs/releases)를 확인한다.
 
-**현재 상태 (2026-09-20): published GitHub Release와 SemVer tag가 아직 없다.** 따라서 현재 첫 설치 경로는 source checkout에서 consumer artifact를 직접 build하는 것이다. 이 locally built ZIP은 구조·무결성 검증에는 사용할 수 있지만 **공식 immutable release나 publisher provenance가 검증된 artifact라고 부르지 않는다.**
+가능하면 [GitHub Releases](https://github.com/tngkrwlsmd/universal-agent-docs/releases)의 최신 immutable SemVer Release에서 `universal-agent-docs-consumer.zip`을 사용한다. 아직 published Release가 없거나 source checkout 자체를 검증하려는 경우에만 아래 source-build 경로를 fallback으로 사용한다. locally built ZIP은 구조·무결성 검증에는 사용할 수 있지만 **공식 immutable release나 publisher provenance가 검증된 artifact라고 부르지 않는다.**
 
 ```bash
 git clone https://github.com/tngkrwlsmd/universal-agent-docs.git
@@ -38,7 +41,7 @@ python scripts/package_consumer.py --output-dir dist
 python -m zipfile -e dist/universal-agent-docs-consumer.zip /tmp/uad-consumer
 ```
 
-향후 immutable SemVer Release가 발행되면 production에서는 Release의 `universal-agent-docs-consumer.zip`을 우선하고, trusted `release_tag`와 별도로 확보한 `expected_source_sha`로 `.github/workflows/verify-release.yml`의 provenance/release verification을 수행한다. Release 페이지에서 얻은 값만으로 같은 Release 페이지를 스스로 신뢰하는 순환 검증은 피한다.
+published immutable SemVer Release를 production에서 사용할 때는 Release의 `universal-agent-docs-consumer.zip`을 우선하고, trusted `release_tag`와 별도로 확보한 `expected_source_sha`로 `.github/workflows/verify-release.yml`의 provenance/release verification을 수행한다. Release 페이지에서 얻은 값만으로 같은 Release 페이지를 스스로 신뢰하는 순환 검증은 피한다.
 
 ### 2. 소비 프로젝트에 설치
 
@@ -50,7 +53,7 @@ universal-agent-docs-consumer/
 └── .agent-policy/
     ├── AGENTS.md
     ├── POLICIES.md
-    ├── PROJECT.md
+    ├── PROJECT.md                    # consumer project-facts template; upstream readiness 문서 아님
     ├── POLICY_CONTRACT.json
     ├── scripts/
     ├── conformance/
@@ -160,7 +163,7 @@ universal-agent-docs/
 
 - [`AGENTS.md`](AGENTS.md): 모든 에이전트가 처음 읽는 작은 root router와 공통 불변조건
 - [`POLICIES.md`](POLICIES.md): 상세 정책의 사람용 절차·근거·설명 Source of Truth. Execution, Implementation, Testing 등 각 `policy-*` 섹션이 human-facing primary owner다.
-- [`PROJECT.md`](PROJECT.md): 실제 프로젝트의 구조, 명령, 근거, readiness를 기록하는 단일 프로젝트 지도
+- [`PROJECT.md`](PROJECT.md): **consumer 프로젝트가 채워 넣는 project-facts template**. upstream 저장소 자체의 readiness 상태를 나타내는 문서가 아니다.
 - [`POLICY_CONTRACT.json`](POLICY_CONTRACT.json): canonical operation, 위험 floor, 실행 gate, binding/replay 등 **machine-enforceable 규칙의 normative Source of Truth**
 - [`ROUTING_ALIASES.json`](ROUTING_ALIASES.json): 자연어 task를 canonical operation으로 추론하기 위한 비권위 fallback 힌트. 정책 의미를 소유하지 않는다.
 - [`ROUTING_ALIASES.schema.json`](ROUTING_ALIASES.schema.json): routing alias hint 구조
