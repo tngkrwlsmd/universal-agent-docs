@@ -139,9 +139,10 @@ command 자체가 안전하게 실행되는지, runtime이 실제 운영 환경�
 | API / schema / protocol |  | Contract |  |
 | 현재 구현 |  | Observed |  |
 | 테스트 / 로그 / 측정 |  | Evidence |  |
+| 오류 / 장애 진단 이력 |  | Evidence / Intended | 반복되거나 진단 비용이 큰 실패의 root cause·수정·재발 방지 기록이 실제로 있을 때만 위치를 가리킨다. |
 | 주요 engineering decision |  | Intended / Evidence |  |
 
-빈 전용 디렉터리를 만들기 위해 이 표를 채우지 않는다. 프로젝트가 이미 ADR, specs, plans 체계를 가지고 있으면 그 위치를 가리킨다.
+빈 전용 디렉터리를 만들기 위해 이 표를 채우지 않는다. 프로젝트가 이미 ADR, incident log, postmortem, troubleshooting, specs, plans 체계를 가지고 있으면 그 위치를 가리킨다.
 
 ## Data / state
 

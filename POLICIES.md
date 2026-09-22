@@ -55,6 +55,8 @@ explicit-opt-in tool/connector = DISABLED UNLESS EXPLICITLY REQUESTED
 
 `test`, `build`, `seed`, `migration`, `sync`, `generate`, `install`이라는 이름만으로 안전성을 판단하지 않는다. 처음 보는 저장소의 lifecycle script, build plugin, test bootstrap, container entrypoint 등은 가능한 범위에서 정적으로 먼저 확인한다.
 
+명령 안에 다른 shell/interpreter 언어를 중첩할 때는 **현재 문자를 실제로 해석하는 parser 경계**를 구분한다. outer shell에서 필요한 escape를 quoted inner-language payload 안에 습관적으로 복제하지 않고, 반대로 inner-language quoting을 outer shell이 먼저 소비하지 않게 한다. 특히 shell → PowerShell/Python/SQL/JSON처럼 parser가 바뀌는 경계에서는 가능하면 최소 isolated command로 quoting/pipe/redirection 동작을 먼저 확인한다.
+
 ### Effect × Exposure
 
 위험을 단일 LOW/MEDIUM/HIGH로 축약하지 않는다.
@@ -303,6 +305,7 @@ Bootstrap:
 - backward compatibility가 요구되는 API/schema/file/protocol 변경은 기존 consumer와 새 consumer의 공존 구간을 고려한다.
 - 임시 우회, silent fallback, broad exception swallowing, validation 완화로 증상을 숨기지 않는다.
 - generated code는 직접 편집보다 generator와 입력 Source of Truth를 우선하고, dependency 변경은 Dependencies 정책을 함께 적용한다.
+- compile/import 가능한 단위는 자신이 직접 사용하는 dependency를 가능한 범위에서 명시적으로 선언한다. PCH, transitive include/import, 우연한 global registration, 다른 target의 ambient configuration이 누락 dependency를 가리지 않게 하며, standalone test/tool target도 필요한 dependency/include/import를 스스로 소유하게 한다.
 - auth/data/file/deployment 등 전문 위험이 드러나면 해당 primary-owner 정책을 추가 적용한다.
 
 ### Completion boundary
@@ -472,7 +475,10 @@ MOCK PASS != REAL SYSTEM PASS
 
 1. **test / fixture / oracle 문제** — stale expectation, 잘못된 fixture, test-only bug
 2. **prerequisite / environment 문제** — runtime, service, credential, dependency, network, configuration
-3. **product defect** — 실제 contract/behavior 위반이 독립적으로 재현됨
+3. **build / CI orchestration 문제** — compiler/linker 자체보다 runner, wrapper, parser, logging, packaging, generated configuration이 실패
+4. **product defect** — 실제 contract/behavior 위반이 독립적으로 재현됨
+
+compiler/linker/test 로그에 다수 오류가 연쇄적으로 나타나면 개수를 독립 defect 수로 해석하지 않는다. 가능한 범위에서 **최초 actionable error → root cause → cascade**를 분리하고, 파생 오류보다 root cause를 먼저 수정한다. orchestration이 제품 build 결과를 잘못 보고할 수 있으면 제품 결과와 orchestration 결과를 별도 evidence로 남긴다.
 
 분류를 위해 assertion, permission, validation을 약화하지 않는다.
 
@@ -508,7 +514,15 @@ MOCK PASS != REAL SYSTEM PASS
 → regression PASS → 주변 관련 검증
 ```
 
-재현 테스트를 만들 수 없다면 이유와 대신 확보한 evidence를 보고한다.
+재현 방어선은 항상 runtime test일 필요는 없다. 같은 결함을 더 싸고 deterministic하게 막을 수 있다면 source invariant, schema/contract validation, lint/static check, build preflight, resource/ABI fingerprint 같은 guard를 우선하거나 regression test와 함께 둔다. 반대로 brittle한 literal token 검사처럼 정상 변형을 자주 거짓 실패시키는 guard는 parser/contract/behavior 기반 검사로 개선한다.
+
+재현 테스트나 자동 guard를 만들 수 없다면 이유와 대신 확보한 evidence를 보고한다.
+
+### Durable failure learning
+
+프로젝트가 오류 이력, incident log, postmortem, troubleshooting record의 canonical 위치를 정의했다면 반복되거나 진단 비용이 큰 실패를 그 위치에 남기고, 같은 실패 접근을 반복하기 전에 유사 사례를 먼저 조회한다.
+
+기록할 때는 가능한 범위에서 **증상/실행 조건 → 최초 실제 오류 → 확인된 root cause → 수정 → 재발 방지 → 검증 상태 → 관련 revision**을 구분한다. compiler/linker cascade 전체를 복제하기보다 root cause와 대표 evidence를 남기고, secret·개인정보·불필요한 개인 경로는 기록하지 않는다. 일회성 노이즈까지 모두 영구 문서화해 기록을 무용하게 만들지 말고, 재발 가능성·진단 비용·영향이 의미 있는 사례를 우선한다.
 
 ### Runner strategy
 
