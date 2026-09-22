@@ -18,6 +18,7 @@
 - destructive, external, public, production 작업은 concrete target과 Effect × Exposure gate를 확인한다.
 - 실행하지 않은 검증을 `PASS`, 확인하지 않은 사실을 `VERIFIED`라고 표현하지 않는다.
 - 새 evidence 없이 같은 실패 접근을 무제한 반복하지 않는다.
+- 실패는 가능한 범위에서 최초 실제 오류와 root cause까지 분리하고, 반복 가능하면 regression/preflight/invariant 같은 자동 방어선과 프로젝트가 정의한 오류 이력에 지식을 남긴다.
 - Observed / Intended / Contract / Evidence를 필요할 때 구분하고 추측으로 하나의 사실처럼 합치지 않는다.
 
 Consumer project facts의 canonical path는 `.agent-policy/PROJECT.md`다. Upstream source에서는 `templates/PROJECT.md`가 primary template이고 root [`PROJECT.md`](PROJECT.md)는 compatibility mirror다. Template/stale 상태라면 [Execution policy](POLICIES.md#policy-execution)의 Bootstrap 규칙을 따른다.
