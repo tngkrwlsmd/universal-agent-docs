@@ -18,6 +18,7 @@
 - destructive, external, public, production 작업은 concrete target과 Effect × Exposure gate를 확인한다.
 - 실행하지 않은 검증을 `PASS`, 확인하지 않은 사실을 `VERIFIED`라고 표현하지 않는다.
 - 새 evidence 없이 같은 실패 접근을 무제한 반복하지 않는다.
+- 작업 전에 필요한 증거·호출 예산을 정하고 변경되지 않은 로그/화면/실패 명령을 반복 조회하지 않는다. [Execution policy](POLICIES.md#policy-execution)의 **Evidence-aware execution budget**을 모든 작업에 적용한다.
 - 실패는 가능한 범위에서 최초 실제 오류와 root cause까지 분리하고, 반복 가능하면 regression/preflight/invariant 같은 자동 방어선과 프로젝트가 정의한 오류 이력에 지식을 남긴다.
 - Observed / Intended / Contract / Evidence를 필요할 때 구분하고 추측으로 하나의 사실처럼 합치지 않는다.
 
@@ -25,7 +26,7 @@ Consumer project facts의 canonical path는 `.agent-policy/PROJECT.md`다. Upstr
 
 ## 3. Work start and execution boundary
 
-필요한 범위만 점진적으로 탐색한다.
+필요한 범위만 점진적으로 탐색한다. 요청별 완료 기준과 필수 검증을 먼저 확정하고, 기존 증거를 우선 재사용하며, 작업별 호출 예산과 중단 기준을 정한다. 프로젝트가 더 구체적인 예산을 정의하면 그 기준을 적용한다.
 
 1. repository root, revision/branch, working tree와 repository rule을 확인한다.
 2. 관련 구현과 contract, 공식 command source, target/input/output/side effect를 확인한다.
