@@ -552,6 +552,18 @@ test all
 
 빠른 수정 루프에서는 fail-fast, 종합 QA에서는 keep-going이 유용할 수 있다. production target 감지 같은 안전 invariant 위반은 즉시 중단한다.
 
+### CI runner trust and failure evidence
+
+CI 안전성은 `GitHub Actions`, `GitLab CI`, `Jenkins` 같은 서비스 이름이나 `hosted/self-hosted` 라벨 하나로 결정하지 않는다. 실제 runner의 **소유권, 격리 수준, credential, filesystem, 내부 network와 다른 workload에 대한 접근권한**을 기준으로 trust boundary를 판단한다.
+
+- project/organization이 통제하는 privileged self-hosted runner는 trusted repository commit 같은 허용된 입력에만 자동 사용한다. fork PR, 외부 사용자가 수정할 수 있는 workflow/script, 임의 다운로드 코드처럼 **untrusted code를 privileged runner에서 자동 실행하지 않는다.**
+- untrusted contribution 검증이 필요하면 disposable/ephemeral runner, 별도 VM/container, 최소 권한 계정, 제한된 network/credential 같은 **격리된 unprivileged path**를 사용한다. privileged runner와 같은 secret store나 내부 filesystem/network를 그대로 공유하지 않는다.
+- hosted runner 사용 여부와 승인/비용 정책은 프로젝트가 정한다. CI 서비스 전체를 하나의 trust level로 취급하지 말고 실제 job이 어느 runner에서 어떤 권한으로 실행되는지 구분한다.
+- runner/service 중지, cancellation, agent shutdown, queue/lease 회수처럼 orchestration이 먼저 끊긴 경우 이를 곧바로 product build/test defect로 단정하지 않는다. [Failure classification](#failure-classification)에 따라 최초 actionable error와 orchestration 원인을 분리한다.
+- 실패한 CI는 재현과 진단에 필요한 **bounded evidence**를 가능하면 자동 보존한다. scoped log, test report, crash dump, relevant artifact manifest, application/window-scoped screenshot처럼 실패 원인과 직접 관련된 자료를 우선한다.
+- 실패 evidence 수집을 이유로 전체 environment variable dump, 전체 사용자 디렉터리, 무관한 workspace, credential store, 전체 desktop screenshot 같은 과도한 자료를 기본 수집하지 않는다. 파일 수/크기/보존 기간을 제한하고 secret·개인정보·내부 경로가 불필요하게 노출되지 않게 한다.
+- 진단 artifact 업로드 성공은 원래 test/build 성공을 의미하지 않는다. 반대로 성공 run에 무거운 artifact를 매번 업로드할 필요가 없다면 실패 시에만 수집해 비용과 노출을 줄일 수 있다.
+
 ### Coverage
 
 line coverage 숫자만으로 충분하다고 가정하지 않는다. 프로젝트에 계약 단위가 있으면 다음과 같은 contract coverage를 우선 검토한다.
