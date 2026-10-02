@@ -552,6 +552,15 @@ test all
 
 빠른 수정 루프에서는 fail-fast, 종합 QA에서는 keep-going이 유용할 수 있다. production target 감지 같은 안전 invariant 위반은 즉시 중단한다.
 
+### CI runner trust and failure evidence
+
+CI trust는 서비스 이름보다 실제 runner의 소유권·격리·credential/filesystem/network 권한으로 판단한다.
+
+- privileged self-hosted runner에는 trusted repository 입력만 자동 실행하고, fork PR·외부 수정 workflow/script 같은 untrusted code는 disposable/격리·최소권한 runner로 분리한다.
+- hosted/self-hosted 사용 승인·비용 정책은 프로젝트가 정하되, 같은 CI 서비스의 모든 job을 하나의 trust level로 취급하지 않는다.
+- runner shutdown/cancellation처럼 orchestration이 먼저 끊기면 곧바로 product defect로 단정하지 않고 [Failure classification](#failure-classification)을 적용한다.
+- 실패 evidence는 scoped log/test report/crash dump/app-window screenshot 등 필요한 자료만 bounded하게 보존한다. 전체 env/user directory/credential store/desktop을 기본 수집하지 않고 크기·개수·보존 기간과 secret 노출을 제한한다. artifact 업로드 성공은 원래 test/build PASS를 뜻하지 않는다.
+
 ### Coverage
 
 line coverage 숫자만으로 충분하다고 가정하지 않는다. 프로젝트에 계약 단위가 있으면 다음과 같은 contract coverage를 우선 검토한다.
