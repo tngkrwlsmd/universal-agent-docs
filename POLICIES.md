@@ -28,7 +28,7 @@
 - **계획과 재사용:** 작업을 시작할 때 실제 완료 조건, 이미 유효한 소스·로그·실행 증거, 남은 불확실성, 예상 도구 호출 예산 및 종료 기준을 정한다. 호출 결과가 다음 결정에 어떤 영향을 주는지 설명할 수 없으면 기본적으로 호출하지 않는다. 변경된 파일과 필요한 코드 범위만 확인한다.
 - **기본 예산:** consumer가 자체 지침에서 달리 지정하지 않았다면 문서·현황 조회 **12회**, 보통의 코드 수정·단일 빌드 **20회**, 실기 GUI 재현·디버깅 **30회**를 *요청당 기본 점검 상한*으로 사용한다. 독립된 하위 호출을 각각 세며 래퍼·병렬 호출로 숫자를 감추거나 같은 작업을 새 세션으로 나눠 예산을 초기화하지 않는다. 실제 호출을 셀 수 없는 환경에서는 근거 없는 정확한 수치를 주장하지 않는다.
 - **75% 재평가와 예산 소진:** 기본 예산의 75%에 이르면 기존 근거·미해결 항목·직접적인 해결 경로를 재검토한다. 상한에 이르면 새로운 탐색과 추측성 실험을 멈추고, 추가 호출이 꼭 필요한 이유와 예상량을 알려 사용자에게 범위 확장 동의를 받는다. 이미 시작한 필수 검증의 결과 확인, 승인된 작업의 안전한 종료 및 사용자 데이터 보호는 이 상한으로 막지 않는다. 예산 때문에 검증하지 못했다면 PASS라고 보고하지 않는다.
-- **긴 작업:** 빌드·테스트는 한 번 실행하고 가능하면 완료까지 기다린 후 종료 코드와 의미 있는 결과를 한 번에 확인한다. 같은 실행에 대해 프로세스 출력과 로그 끝을 짧은 간격으로 번갈아 조회하거나 새로운 정보 없이 계속 폴링하지 않는다. 무변화 조회는 원칙적으로 연속 한 차례를 넘기지 않는다. 새 오류·합리적인 완료 시점 경과·필수 후속 결정이 있을 때만 추가 조회하고 가능한 한 새 로그 구간만 읽는다.
+- **긴 작업:** 빌드·테스트·CI·원격 작업은 한 번 실행하고 가능하면 완료까지 기다린 후 종료 코드와 의미 있는 결과를 한 번에 확인한다. 같은 실행에 대해 프로세스 출력과 로그 끝을 짧은 간격으로 번갈아 조회하거나 새로운 정보 없이 계속 폴링하지 않는다. 무변화 조회는 원칙적으로 연속 한 차례를 넘기지 않는다. 작업이 현재 세션보다 오래 지속될 수 있으면 stable run/job/request identifier와 대상 revision을 남기고, 합리적인 시점의 상태 확인 후에는 continuation 가능한 상태로 넘긴다. 새 오류·합리적인 완료 시점 경과·필수 후속 결정이 있을 때만 추가 조회하고 가능한 한 새 로그 구간만 읽는다.
 - **실패:** 최초의 실제 오류와 실행 조건을 먼저 분석한다. 같은 실패에 대해 조건·코드·가설을 바꾸지 않고 재시도하지 않는다. 동일 원인에 대한 재시도는 원칙적으로 **최대 두 차례**로 제한하고, 해결되지 않으면 접근법을 바꾸거나 확인된 blocker와 미검증 사항을 보고한다. 비멱등 외부 작업의 별도 retry 안전 규칙은 그대로 우선한다.
 - **시각적 검증:** 입력 이벤트 도달, 내부 상태 변화, 합성된 최종 화면은 각각 다른 증거다. 해석 기준 없는 연속 캡처·동일한 정지 화면 녹화·거듭 실패한 마우스 입력을 반복하지 않는다. 재현에 성공하고 요구한 화면·기능 검증이 충족되면 종료한다.
 - **보고:** 중요한 발견·차단 요인·필수 결정만 중간 보고하고, 최종에는 실제 변경, 수행한 검증, 미검증 범위와 필요한 후속 작업만 기술한다. 작은 진행 상황을 보고하려고 호출을 늘리지 않는다.
@@ -238,6 +238,21 @@ Consumer의 canonical project facts 문서(`.agent-policy/PROJECT.md` 또는 `--
 - 중요한 결정이 코드나 contract만으로 드러나지 않고 장기적으로 유지되어야 한다면 프로젝트가 사용하는 canonical decision/spec 문서에 남긴다. 단순 구현 세부사항까지 별도 문서로 과잉 기록하지 않는다.
 - session 종료, context 교체, 다른 agent/개발자에게 넘기기 전에는 working tree/revision, 수행한 검증, 실행하지 못한 검증, 외부 side effect 상태를 다시 확인한다.
 - 진행 상황 기록 자체를 완료 evidence로 취급하지 않는다. 실제 코드·데이터·remote 상태와 불일치하면 실제 상태가 우선이며 기록을 갱신한다.
+
+### Asynchronous external operations and continuation
+
+CI, hosted build/test, remote runner, batch job, deployment controller처럼 현재 대화나 tool session보다 오래 지속될 수 있는 외부 작업은 **session lifetime과 operation lifetime을 분리**해서 다룬다.
+
+- 작업을 시작하거나 기존 실행을 식별하면 가능한 범위에서 provider/run/job/request ID, target/environment, source revision 또는 request identity처럼 재개에 필요한 stable identifier를 남긴다.
+- 외부 작업이 `queued`/`running`이라는 이유만으로 짧은 간격 polling으로 응답 세션을 계속 점유하지 않는다. 한 번의 시작 확인과 합리적인 예상 완료 시점 뒤의 상태 확인을 우선하고, 계속 진행 중이면 현재 상태와 continuation identifier를 남겨 이후 세션에서 이어갈 수 있게 한다.
+- 대화 연결 끊김, tool transport timeout, client 응답 timeout은 **원격 작업 실패 evidence가 아니다**. 재시도 전 실제 provider 상태, 결과/artifact, 대상 revision과 이미 발생한 side effect를 먼저 reconciliation한다.
+- 이전 실행이 성공했거나 여전히 진행 중이면 동일 build/test/remote action을 단순히 session이 끊겼다는 이유로 다시 시작하지 않는다. 실패가 terminal로 확인되었거나 요청이 전달되지 않았다는 근거가 있을 때만 retry 규칙에 따라 재실행한다.
+- non-idempotent 또는 외부 상태를 바꾸는 작업은 run/request identity와 target을 사용해 중복 실행을 방지한다. single-slot/mutable request surface는 이전 작업이 queued/running인 동안 덮어쓰지 않으며, 의도적으로 supersede할 때는 이전 작업을 먼저 취소·무효화하고 그 사실을 기록한다.
+- offline runner나 delayed queue가 나중에 다시 실행될 수 있으면 stale 작업의 유효성을 먼저 판단한다. 더 이상 실행하면 안 되는 queued 작업은 runner/worker를 복구하기 전에 취소하거나 안전하게 retire한다.
+- resume 시에는 오래된 대화 설명보다 실제 branch/revision, workflow/job 상태, persisted result와 외부 side effect가 우선이다. 이미 유효한 evidence는 revision/target/condition이 같은 경우 재사용한다.
+
+이 절은 long-running operation의 **human-facing continuation discipline**이며 특정 CI vendor나 chat client에 종속되지 않는다. 프로젝트가 더 구체적인 job lifecycle, cancellation, deduplication 또는 checkpoint 규칙을 정의하면 그 규칙을 함께 적용한다.
+
 
 ### Ambiguity and escalation
 
