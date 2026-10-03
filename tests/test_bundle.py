@@ -9,6 +9,13 @@ from pathlib import Path
 from tests.policy_test_support import ROOT, mod
 
 class BundleTests(unittest.TestCase):
+    def test_required_ci_failure_probe(self):
+        import os
+        import sys
+
+        if os.environ.get("RUNNER_OS") == "Linux" and sys.version_info[:2] == (3, 10):
+            self.fail("intentional required-ci propagation probe")
+
     def test_bundle_checks_pass(self):
         checks = mod.bundle_checks(ROOT)
         failures = [c for c in checks if c.status != "PASS"]
