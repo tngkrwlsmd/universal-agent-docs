@@ -35,7 +35,7 @@ class BundleTests(unittest.TestCase):
         self.assertIn("universal-agent-docs-consumer", workflow)
         self.assertIn("package_consumer.py", workflow)
 
-    def test_release_workflow_is_semver_tag_driven_and_refuses_replacement(self):
+    def test_release_workflow_is_semver_tag_driven_and_resumable(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn('tags:', workflow)
         self.assertIn('- "v*"', workflow)
@@ -43,20 +43,44 @@ class BundleTests(unittest.TestCase):
         self.assertIn('test "$GITHUB_REF_TYPE" = "tag"', workflow)
         self.assertIn("release tag is not strict SemVer with v prefix", workflow)
         self.assertIn('git merge-base --is-ancestor "$SOURCE_SHA" origin/main', workflow)
-        self.assertIn('gh release view "$TAG"', workflow)
-        self.assertIn("refusing replacement", workflow)
+        self.assertIn("Inspect existing immutable release", workflow)
+        self.assertIn("existing immutable release exactly matches tag/source/assets", workflow)
+        self.assertIn("existing immutable release asset digest mismatch", workflow)
+        self.assertIn("if: steps.existing_release.outputs.exists != 'true'", workflow)
         self.assertIn("--verify-tag", workflow)
         self.assertNotIn("--clobber", workflow)
 
-    def test_release_workflow_publishes_and_verifies_immutable_release(self):
+    def test_release_workflow_separates_publish_and_verify_with_bounded_backoff(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        self.assertIn("  publish:", workflow)
+        self.assertIn("  verify:", workflow)
+        self.assertIn("needs: publish", workflow)
         self.assertIn('release create "$TAG"', workflow)
         self.assertIn('gh "${args[@]}"', workflow)
-        self.assertIn("test \"$(jq -r '.immutable' <<<\"$release_json\")\" = \"true\"", workflow)
+        self.assertIn("Verify immutable release attestation with bounded backoff", workflow)
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn("sleep \"$delay\"", workflow)
         self.assertIn("gh release verify", workflow)
         self.assertIn("gh release verify-asset", workflow)
         self.assertLess(workflow.index("Generate signed build provenance"), workflow.index("Publish GitHub Release with canonical assets"))
-        self.assertLess(workflow.index("Publish GitHub Release with canonical assets"), workflow.index("Require immutable published release and release attestation"))
+        self.assertLess(workflow.index("Publish GitHub Release with canonical assets"), workflow.index("  verify:"))
+
+    def test_ci_avoids_duplicate_pr_branch_runs_and_has_stable_required_check(self):
+        workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
+        self.assertIn('      - main', workflow)
+        self.assertNotIn('      - "**"', workflow)
+        self.assertIn("pull_request:", workflow)
+        self.assertIn("cancel-in-progress: true", workflow)
+        self.assertIn("name: required-ci", workflow)
+        self.assertIn("needs: validate", workflow)
+        self.assertIn("VALIDATE_RESULT:", workflow)
+        self.assertIn('test "$VALIDATE_RESULT" = "success"', workflow)
+
+    def test_manual_release_verifier_uses_bounded_backoff(self):
+        workflow = (ROOT / ".github/workflows/verify-release.yml").read_text(encoding="utf-8")
+        self.assertIn("Verify GitHub immutable release attestation with bounded backoff", workflow)
+        self.assertIn("for attempt in 1 2 3 4", workflow)
+        self.assertIn("sleep \"$delay\"", workflow)
 
     def test_release_workflow_attests_consumer_artifacts_before_publication(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
