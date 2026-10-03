@@ -5,18 +5,19 @@ on:
     tags:
       - "v*"
 
-permissions:
-  contents: write
-  id-token: write
-  attestations: write
-  artifact-metadata: write
+permissions: {}
 
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
-  release:
+  publish:
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -55,11 +56,6 @@ jobs:
 
           git fetch --no-tags origin main:refs/remotes/origin/main
           git merge-base --is-ancestor "$SOURCE_SHA" origin/main
-
-          if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "release already exists for $TAG; refusing replacement" >&2
-            exit 1
-          fi
 
           core_version="${TAG%%+*}"
           prerelease=false
@@ -208,7 +204,51 @@ jobs:
               --source-digest "$SOURCE_SHA"
           done
 
+      - name: Inspect existing immutable release
+        id: existing_release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.release_identity.outputs.tag }}
+          SOURCE_SHA: ${{ steps.release_identity.outputs.source_sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG" 2>/dev/null)"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          test "$(jq -r '.tag_name' <<<"$release_json")" = "$TAG"
+          test "$(jq -r '.draft' <<<"$release_json")" = "false"
+          test "$(jq -r '.immutable' <<<"$release_json")" = "true"
+          test "$(jq -r '.target_commitish' <<<"$release_json")" = "$SOURCE_SHA"
+
+          for file in \
+            universal-agent-docs.zip \
+            universal-agent-docs.sha256 \
+            universal-agent-docs.trust.json \
+            universal-agent-docs.release.json \
+            universal-agent-docs-consumer.zip \
+            universal-agent-docs-consumer.sha256 \
+            universal-agent-docs-consumer.release.json
+          do
+            local_digest="sha256:$(sha256sum "dist/$file" | awk '{print $1}')"
+            remote_digest="$(jq -r --arg name "$file" '.assets[] | select(.name == $name) | .digest' <<<"$release_json")"
+            if [[ -z "$remote_digest" || "$remote_digest" == "null" ]]; then
+              echo "existing immutable release is missing asset: $file" >&2
+              exit 1
+            fi
+            if [[ "$remote_digest" != "$local_digest" ]]; then
+              echo "existing immutable release asset digest mismatch: $file" >&2
+              exit 1
+            fi
+          done
+
+          echo "existing immutable release exactly matches tag/source/assets; publication will be skipped"
+          echo "exists=true" >> "$GITHUB_OUTPUT"
+
       - name: Publish GitHub Release with canonical assets
+        if: steps.existing_release.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.release_identity.outputs.tag }}
@@ -237,21 +277,89 @@ jobs:
           fi
           gh "${args[@]}"
 
-      - name: Require immutable published release and release attestation
+  verify:
+    name: verify published release
+    needs: publish
+    permissions:
+      contents: read
+      attestations: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.14"
+          cache: pip
+
+      - name: Install hash-locked validation dependencies
+        run: python -m pip install --require-hashes --requirement requirements.lock
+
+      - name: Download exact immutable release assets
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.release_identity.outputs.tag }}
-          SOURCE_SHA: ${{ steps.release_identity.outputs.source_sha }}
+          TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
+          test "$GITHUB_REF_TYPE" = "tag"
+          test "$(git rev-list -n 1 "$TAG")" = "$SOURCE_SHA"
           release_json="$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$TAG")"
+          test "$(jq -r '.tag_name' <<<"$release_json")" = "$TAG"
           test "$(jq -r '.draft' <<<"$release_json")" = "false"
           test "$(jq -r '.immutable' <<<"$release_json")" = "true"
-          test "$(jq -r '.tag_name' <<<"$release_json")" = "$TAG"
-          test "$(git rev-list -n 1 "$TAG")" = "$SOURCE_SHA"
+          test "$(jq -r '.target_commitish' <<<"$release_json")" = "$SOURCE_SHA"
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir downloaded
 
-          gh release verify "$TAG" --repo "$GITHUB_REPOSITORY"
+      - name: Verify immutable release attestation with bounded backoff
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          verify_once() {
+            gh release verify "$TAG" --repo "$GITHUB_REPOSITORY" || return 1
+            for file in \
+              universal-agent-docs.zip \
+              universal-agent-docs.sha256 \
+              universal-agent-docs.trust.json \
+              universal-agent-docs.release.json \
+              universal-agent-docs-consumer.zip \
+              universal-agent-docs-consumer.sha256 \
+              universal-agent-docs-consumer.release.json
+            do
+              gh release verify-asset "$TAG" "downloaded/$file" --repo "$GITHUB_REPOSITORY" || return 1
+            done
+          }
+
+          for attempt in 1 2 3 4; do
+            if verify_once; then
+              echo "immutable release attestation verified on attempt $attempt"
+              exit 0
+            fi
+            if [[ "$attempt" -eq 4 ]]; then
+              echo "immutable release attestation did not become available after bounded retries" >&2
+              exit 1
+            fi
+            delay=$((10 * (2 ** (attempt - 1))))
+            echo "release attestation not ready; retrying in ${delay}s (attempt $attempt/4)" >&2
+            sleep "$delay"
+          done
+
+      - name: Verify build provenance
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          SOURCE_SHA: ${{ github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          signer="github.com/$GITHUB_REPOSITORY/.github/workflows/release.yml"
           for file in \
             universal-agent-docs.zip \
             universal-agent-docs.sha256 \
@@ -261,5 +369,27 @@ jobs:
             universal-agent-docs-consumer.sha256 \
             universal-agent-docs-consumer.release.json
           do
-            gh release verify-asset "$TAG" "dist/$file" --repo "$GITHUB_REPOSITORY"
+            gh attestation verify "downloaded/$file" \
+              --repo "$GITHUB_REPOSITORY" \
+              --signer-workflow "$signer" \
+              --source-ref "refs/tags/$TAG" \
+              --source-digest "$SOURCE_SHA"
           done
+
+      - name: Verify detached ZIP checksums
+        working-directory: downloaded
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum --check universal-agent-docs.sha256
+          sha256sum --check universal-agent-docs-consumer.sha256
+
+      - name: Verify canonical distributions and manifests
+        run: |
+          python scripts/validate.py \
+            --distribution downloaded/universal-agent-docs.zip \
+            --trusted-manifest downloaded/universal-agent-docs.trust.json \
+            --release-manifest downloaded/universal-agent-docs.release.json
+          python scripts/package_consumer.py \
+            --verify downloaded/universal-agent-docs-consumer.zip \
+            --release-manifest downloaded/universal-agent-docs-consumer.release.json

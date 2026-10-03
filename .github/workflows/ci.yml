@@ -3,9 +3,13 @@ name: CI
 on:
   push:
     branches:
-      - "**"
+      - main
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -60,3 +64,17 @@ jobs:
           python scripts/package_consumer.py
           --verify dist/universal-agent-docs-consumer.zip
           --release-manifest dist/universal-agent-docs-consumer.release.json
+
+  required:
+    name: required-ci
+    needs: validate
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require validation matrix success
+        env:
+          VALIDATE_RESULT: ${{ needs.validate.result }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$VALIDATE_RESULT" = "success"
