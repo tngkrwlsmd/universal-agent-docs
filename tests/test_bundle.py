@@ -248,6 +248,22 @@ class BundleTests(unittest.TestCase):
         missing = [item for item in required if item not in text]
         self.assertEqual([], missing)
 
+    def test_async_external_operation_continuation_policy_is_preserved(self):
+        text = (ROOT / "POLICIES.md").read_text(encoding="utf-8")
+        required = [
+            "### Asynchronous external operations and continuation",
+            "session lifetime과 operation lifetime을 분리",
+            "stable identifier",
+            "대화 연결 끊김, tool transport timeout, client 응답 timeout",
+            "원격 작업 실패 evidence가 아니다",
+            "single-slot/mutable request surface",
+            "stale 작업",
+            "runner/worker를 복구하기 전에 취소하거나 안전하게 retire",
+            "persisted result와 외부 side effect가 우선",
+        ]
+        missing = [item for item in required if item not in text]
+        self.assertEqual([], missing)
+
     def test_basic_development_behavior_guardrails_are_preserved(self):
         policies = (ROOT / "POLICIES.md").read_text(encoding="utf-8")
         agents = (ROOT / "AGENTS.md").read_text(encoding="utf-8")
