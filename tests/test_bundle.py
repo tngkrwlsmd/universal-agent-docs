@@ -80,6 +80,15 @@ class BundleTests(unittest.TestCase):
         self.assertNotIn("for attempt in 1 2 3 4", workflow)
         self.assertNotIn("gh release verify-asset", workflow)
 
+    def test_manual_release_verifier_validates_with_trusted_release_source(self):
+        workflow = (ROOT / ".github/workflows/verify-release.yml").read_text(encoding="utf-8")
+        self.assertIn("Checkout trusted release source", workflow)
+        self.assertIn("ref: ${{ steps.source.outputs.sha }}", workflow)
+        self.assertIn("path: release-source", workflow)
+        self.assertIn("release-source/requirements.lock", workflow)
+        self.assertIn("python release-source/scripts/validate.py", workflow)
+        self.assertIn("python release-source/scripts/package_consumer.py", workflow)
+
     def test_release_workflow_attests_consumer_artifacts_before_publication(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn("python scripts/package_consumer.py --output-dir dist", workflow)
