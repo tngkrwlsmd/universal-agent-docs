@@ -243,15 +243,15 @@ Consumer의 canonical project facts 문서(`.agent-policy/PROJECT.md` 또는 `--
 
 CI, remote runner, batch/deploy job처럼 session보다 오래 지속될 수 있는 외부 작업은 **session lifetime과 operation lifetime을 분리**한다.
 
-- 시작하거나 기존 실행을 식별하면 provider/run/job/request ID 같은 stable identifier, target, source revision 또는 request identity를 남긴다.
+- 시작/식별 시 run/job/request ID 같은 stable identifier, target과 revision/request identity를 남긴다.
 - `queued`/`running` 상태를 짧은 간격으로 반복 polling하지 않는다. 시작 확인과 합리적인 예상 완료 시점 뒤의 상태 확인을 우선하고, 계속 진행 중이면 continuation identifier를 남겨 이후 세션에서 이어간다.
 - 대화 연결 끊김, tool transport timeout, client 응답 timeout은 **원격 작업 실패 evidence가 아니다**. 재시도 전 provider 상태, 결과/artifact, revision과 이미 발생한 side effect를 reconciliation한다.
 - 성공했거나 진행 중인 실행을 session 중단만으로 중복 실행하지 않는다. terminal failure 또는 요청 미전달 근거가 있을 때만 retry 규칙을 적용한다.
 - non-idempotent 작업은 identity/target으로 중복을 방지한다. single-slot/mutable request surface는 queued/running 작업이 있는 동안 덮어쓰지 않고, supersede할 때는 이전 작업을 먼저 취소·무효화한다.
-- stale queued 작업이 나중에 실행될 수 있으면 유효성을 확인한다. 더 이상 실행하면 안 되는 작업은 runner/worker를 복구하기 전에 취소하거나 안전하게 retire한다.
+- stale 작업이 나중에 실행될 수 있으면 유효성을 확인한다. 더 이상 실행하면 안 되는 작업은 runner/worker를 복구하기 전에 취소하거나 안전하게 retire한다.
 - resume 시 실제 branch/revision, workflow/job 상태, persisted result와 외부 side effect가 우선이다. evidence는 revision/target/condition이 같을 때 재사용한다.
 
-이 절은 특정 CI vendor나 chat client에 종속되지 않는 human-facing continuation discipline이다. 프로젝트의 더 구체적인 lifecycle/cancellation/deduplication 규칙을 함께 적용한다.
+이 절은 vendor-neutral human-facing continuation discipline이다. 프로젝트의 더 구체적인 lifecycle/cancellation/deduplication 규칙을 함께 적용한다.
 
 ### Ambiguity and escalation
 
