@@ -82,24 +82,41 @@ jobs:
           TAG: ${{ steps.source.outputs.tag }}
         run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir downloaded
 
-      - name: Verify GitHub immutable release attestation
+      - name: Verify GitHub immutable release attestation with bounded backoff
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.source.outputs.tag }}
         shell: bash
         run: |
           set -euo pipefail
-          gh release verify "$TAG" --repo "$GITHUB_REPOSITORY"
-          for file in \
-            universal-agent-docs.zip \
-            universal-agent-docs.sha256 \
-            universal-agent-docs.trust.json \
-            universal-agent-docs.release.json \
-            universal-agent-docs-consumer.zip \
-            universal-agent-docs-consumer.sha256 \
-            universal-agent-docs-consumer.release.json
-          do
-            gh release verify-asset "$TAG" "downloaded/$file" --repo "$GITHUB_REPOSITORY"
+
+          verify_once() {
+            gh release verify "$TAG" --repo "$GITHUB_REPOSITORY" || return 1
+            for file in \
+              universal-agent-docs.zip \
+              universal-agent-docs.sha256 \
+              universal-agent-docs.trust.json \
+              universal-agent-docs.release.json \
+              universal-agent-docs-consumer.zip \
+              universal-agent-docs-consumer.sha256 \
+              universal-agent-docs-consumer.release.json
+            do
+              gh release verify-asset "$TAG" "downloaded/$file" --repo "$GITHUB_REPOSITORY" || return 1
+            done
+          }
+
+          for attempt in 1 2 3 4; do
+            if verify_once; then
+              echo "immutable release attestation verified on attempt $attempt"
+              exit 0
+            fi
+            if [[ "$attempt" -eq 4 ]]; then
+              echo "immutable release attestation did not become available after bounded retries" >&2
+              exit 1
+            fi
+            delay=$((10 * (2 ** (attempt - 1))))
+            echo "release attestation not ready; retrying in ${delay}s (attempt $attempt/4)" >&2
+            sleep "$delay"
           done
 
       - name: Verify build provenance
