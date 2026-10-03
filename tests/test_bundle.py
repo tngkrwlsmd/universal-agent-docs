@@ -14,26 +14,23 @@ class BundleTests(unittest.TestCase):
         failures = [c for c in checks if c.status != "PASS"]
         self.assertEqual([], [(c.name, c.detail) for c in failures])
 
-    def test_release_attestation_verifier_is_part_of_canonical_distribution(self):
+    def test_release_verifier_is_part_of_canonical_distribution(self):
         contract = mod.load_json(ROOT / "POLICY_CONTRACT.json")
-        path = ".github/workflows/verify-release.yml"
-        workflow = (ROOT / path).read_text(encoding="utf-8")
+        path = "scripts/release/verify_release.py"
+        verifier = (ROOT / path).read_text(encoding="utf-8")
         self.assertIn(path, contract["distribution"]["required_files"])
         self.assertIn(path, contract["distribution"]["allowed_files"])
+        self.assertIn(path, contract["integrity"]["trusted_core_files"])
         self.assertIn(path, mod.CANONICAL_REQUIRED_FILES)
-        self.assertIn("release_tag", workflow)
-        self.assertIn("expected_source_sha", workflow)
-        self.assertIn('test "$resolved_sha" = "$EXPECTED_SOURCE_SHA"', workflow)
-        self.assertIn("test \"$(jq -r '.immutable' <<<\"$release_json\")\" = \"true\"", workflow)
-        self.assertIn("gh release verify", workflow)
-        self.assertIn("gh release verify-asset", workflow)
-        self.assertIn("gh attestation verify", workflow)
-        self.assertIn("--signer-workflow", workflow)
-        self.assertIn('--source-ref "refs/tags/$TAG"', workflow)
-        self.assertIn("--source-digest", workflow)
-        self.assertIn("sha256sum --check", workflow)
-        self.assertIn("universal-agent-docs-consumer", workflow)
-        self.assertIn("package_consumer.py", workflow)
+        self.assertIn(path, mod.TRUSTED_CORE_FILES)
+        self.assertIn("ASSET_NAMES = (", verifier)
+        self.assertIn("DEFAULT_ATTEMPTS = 4", verifier)
+        self.assertIn("DEFAULT_BASE_DELAY_SECONDS = 10", verifier)
+        self.assertIn('"release", "verify"', verifier)
+        self.assertIn('"verify-asset"', verifier)
+        self.assertIn('"attestation",', verifier)
+        self.assertIn('"verify",', verifier)
+        self.assertIn("backoff_delay_seconds", verifier)
 
     def test_release_workflow_is_semver_tag_driven_and_resumable(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
@@ -50,18 +47,18 @@ class BundleTests(unittest.TestCase):
         self.assertIn("--verify-tag", workflow)
         self.assertNotIn("--clobber", workflow)
 
-    def test_release_workflow_separates_publish_and_verify_with_bounded_backoff(self):
+    def test_release_workflow_separates_publish_and_verify_with_shared_verifier(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertIn("  publish:", workflow)
         self.assertIn("  verify:", workflow)
         self.assertIn("needs: publish", workflow)
         self.assertIn('release create "$TAG"', workflow)
         self.assertIn('gh "${args[@]}"', workflow)
-        self.assertIn("Verify immutable release attestation with bounded backoff", workflow)
-        self.assertIn("for attempt in 1 2 3 4", workflow)
-        self.assertIn("sleep \"$delay\"", workflow)
-        self.assertIn("gh release verify", workflow)
-        self.assertIn("gh release verify-asset", workflow)
+        self.assertGreaterEqual(workflow.count("python scripts/release/verify_release.py"), 2)
+        self.assertIn("--mode provenance", workflow)
+        self.assertIn("--mode all", workflow)
+        self.assertNotIn("for attempt in 1 2 3 4", workflow)
+        self.assertNotIn("gh release verify-asset", workflow)
         self.assertLess(workflow.index("Generate signed build provenance"), workflow.index("Publish GitHub Release with canonical assets"))
         self.assertLess(workflow.index("Publish GitHub Release with canonical assets"), workflow.index("  verify:"))
 
@@ -76,11 +73,12 @@ class BundleTests(unittest.TestCase):
         self.assertIn("VALIDATE_RESULT:", workflow)
         self.assertIn('test "$VALIDATE_RESULT" = "success"', workflow)
 
-    def test_manual_release_verifier_uses_bounded_backoff(self):
+    def test_manual_release_verifier_uses_shared_release_verifier(self):
         workflow = (ROOT / ".github/workflows/verify-release.yml").read_text(encoding="utf-8")
-        self.assertIn("Verify GitHub immutable release attestation with bounded backoff", workflow)
-        self.assertIn("for attempt in 1 2 3 4", workflow)
-        self.assertIn("sleep \"$delay\"", workflow)
+        self.assertIn("python scripts/release/verify_release.py", workflow)
+        self.assertIn("--mode all", workflow)
+        self.assertNotIn("for attempt in 1 2 3 4", workflow)
+        self.assertNotIn("gh release verify-asset", workflow)
 
     def test_release_workflow_attests_consumer_artifacts_before_publication(self):
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")

@@ -185,6 +185,7 @@ TRUSTED_CORE_FILES = [
     "scripts/validation/override.py",
     "scripts/package.py",
     "scripts/package_consumer.py",
+    "scripts/release/verify_release.py",
     "requirements.txt",
     "requirements.lock",
 ]
@@ -233,6 +234,7 @@ CANONICAL_REQUIRED_FILES = [
     "scripts/validation/override.py",
     "scripts/package.py",
     "scripts/package_consumer.py",
+    "scripts/release/verify_release.py",
     "tests/__init__.py",
     "tests/policy_test_support.py",
     "tests/test_bundle.py",

@@ -82,67 +82,18 @@ jobs:
           TAG: ${{ steps.source.outputs.tag }}
         run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir downloaded
 
-      - name: Verify GitHub immutable release attestation with bounded backoff
-        env:
-          GH_TOKEN: ${{ github.token }}
-          TAG: ${{ steps.source.outputs.tag }}
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          verify_once() {
-            gh release verify "$TAG" --repo "$GITHUB_REPOSITORY" || return 1
-            for file in \
-              universal-agent-docs.zip \
-              universal-agent-docs.sha256 \
-              universal-agent-docs.trust.json \
-              universal-agent-docs.release.json \
-              universal-agent-docs-consumer.zip \
-              universal-agent-docs-consumer.sha256 \
-              universal-agent-docs-consumer.release.json
-            do
-              gh release verify-asset "$TAG" "downloaded/$file" --repo "$GITHUB_REPOSITORY" || return 1
-            done
-          }
-
-          for attempt in 1 2 3 4; do
-            if verify_once; then
-              echo "immutable release attestation verified on attempt $attempt"
-              exit 0
-            fi
-            if [[ "$attempt" -eq 4 ]]; then
-              echo "immutable release attestation did not become available after bounded retries" >&2
-              exit 1
-            fi
-            delay=$((10 * (2 ** (attempt - 1))))
-            echo "release attestation not ready; retrying in ${delay}s (attempt $attempt/4)" >&2
-            sleep "$delay"
-          done
-
-      - name: Verify build provenance
+      - name: Verify release attestation and build provenance
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ steps.source.outputs.tag }}
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
-        shell: bash
-        run: |
-          set -euo pipefail
-          signer="github.com/$GITHUB_REPOSITORY/.github/workflows/release.yml"
-          for file in \
-            universal-agent-docs.zip \
-            universal-agent-docs.sha256 \
-            universal-agent-docs.trust.json \
-            universal-agent-docs.release.json \
-            universal-agent-docs-consumer.zip \
-            universal-agent-docs-consumer.sha256 \
-            universal-agent-docs-consumer.release.json
-          do
-            gh attestation verify "downloaded/$file" \
-              --repo "$GITHUB_REPOSITORY" \
-              --signer-workflow "$signer" \
-              --source-ref "refs/tags/$TAG" \
-              --source-digest "$SOURCE_SHA"
-          done
+        run: >-
+          python scripts/release/verify_release.py
+          --mode all
+          --repo "$GITHUB_REPOSITORY"
+          --tag "$TAG"
+          --source-sha "$SOURCE_SHA"
+          --asset-dir downloaded
 
       - name: Verify detached ZIP checksum
         working-directory: downloaded
