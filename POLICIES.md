@@ -73,14 +73,7 @@ explicit-opt-in tool/connector = DISABLED UNLESS EXPLICITLY REQUESTED
 
 ### Pre-dispatch preflight for remote and costly jobs
 
-원격 runner, CI, 대형 빌드 또는 비용이 큰 검증을 예약하기 **전에** 로컬/정적 확인으로 잡을 수 있는 오류를 먼저 제거한다. 관련되는 항목만 검사한다.
-
-- request/schema 형식과 필수 필드, 대상 environment/working directory, 참조하는 branch·SHA·파일·경로의 존재 및 최신성
-- shell·JSON·다중 interpreter의 quoting/escaping, 실제 entry point와 argument/API 이름
-- 변경된 test/harness의 syntax/import와 fixture·selector·automation ID의 근거, 영향받은 최소 contract 검사
-- 단일 요청 슬롯이나 제한된 runner를 공유한다면 기존 queued/running 작업의 소유권과 중복 실행 가능성 ([Asynchronous external operations and continuation](#asynchronous-external-operations-and-continuation) 참조)
-
-요청 형식 오류·존재하지 않는 참조·명백한 command serialization 오류처럼 사전에 검출 가능한 문제는 **preflight defect**로 분류하고 수정한 뒤 제출한다. 해당 오류를 제품 acceptance 실패로 기록하거나 runner를 첫 syntax/parser 검증기로 사용하지 않는다. 정적 preflight는 실제 runtime 성공을 증명하지 않으며 workflow/runtime validation의 대체물이 아니다.
+원격 runner·고비용 작업은 요청·대상·참조·quoting·기존 실행 점유 상태를 실행 전에 가능한 범위에서 검증한다. 사전에 검출 가능한 오류는 preflight defect로 수정하고 runner를 첫 parser로 사용하지 않는다. 이 정적 확인은 실제 실행 성공을 증명하지 않는다.
 
 ### Effect × Exposure
 
@@ -583,6 +576,17 @@ GUI·자동화 입력 실패는 가능하면 최소 재현 fixture에서 **input
 프로젝트가 오류 이력, incident log, postmortem, troubleshooting record의 canonical 위치를 정의했다면 반복되거나 진단 비용이 큰 실패를 그 위치에 남기고, 같은 실패 접근을 반복하기 전에 유사 사례를 먼저 조회한다.
 
 기록할 때는 가능한 범위에서 **증상/실행 조건 → 최초 실제 오류 → 확인된 root cause → 수정 → 재발 방지 → 검증 상태 → 관련 revision**을 구분한다. compiler/linker cascade 전체를 복제하기보다 root cause와 대표 evidence를 남기고, secret·개인정보·불필요한 개인 경로는 기록하지 않는다. 일회성 노이즈까지 모두 영구 문서화해 기록을 무용하게 만들지 말고, 재발 가능성·진단 비용·영향이 의미 있는 사례를 우선한다.
+
+### Pre-dispatch test and harness preflight
+
+원격 runner, CI 또는 비용이 큰 검증에 테스트·하네스 변경을 제출하기 전에 다음 중 해당하는 항목을 가볍게 점검한다. Execution의 [Command operational contract](#command-operational-contract)를 함께 적용한다.
+
+- request/schema의 필수 필드, 참조 SHA·branch·파일·경로, target/working directory의 일치
+- shell·JSON·다중 interpreter quoting/escaping과 호출할 script·argument/API의 실제 존재
+- 변경된 test/harness의 syntax/import, fixture·selector·automation ID의 근거, 영향받은 가장 좁은 contract 검사
+- 단일 슬롯이나 제한된 runner에서는 기존 queued/running 작업의 소유권·중복 실행 여부 ([Asynchronous external operations and continuation](#asynchronous-external-operations-and-continuation) 참조)
+
+사전에 검출 가능한 요청·하네스 오류는 runner를 소비하기 전에 수정하고 제품 acceptance 실패로 기록하지 않는다. workflow 자체의 validation과 실제 환경 검증은 여전히 별도의 필수 경계다.
 
 ### Runner strategy
 
