@@ -73,7 +73,11 @@ explicit-opt-in tool/connector = DISABLED UNLESS EXPLICITLY REQUESTED
 
 ### Pre-dispatch preflight for remote and costly jobs
 
-원격 runner·고비용 작업은 요청·대상·참조·quoting·기존 실행 점유 상태를 실행 전에 가능한 범위에서 검증한다. 사전에 검출 가능한 오류는 preflight defect로 수정하고 runner를 첫 parser로 사용하지 않는다. 이 정적 확인은 실제 실행 성공을 증명하지 않는다.
+원격 runner·고비용 작업은 요청 형식, 대상·참조 경로, quoting, 활성 실행 점유 여부를 제출 전에 검사한다. 사전 검출 가능한 오류는 **preflight defect**로 수정하고 runner를 첫 parser로 사용하지 않는다. 정적 점검은 실제 runtime 검증을 대신하지 않는다.
+
+- request/schema 필드와 branch·SHA·경로 존재 및 최신성, target/working directory
+- shell/JSON/interpreter 경계, 실제 script·API/argument·test fixture 참조
+- 변경된 test/harness의 최소 syntax/import·contract 검사와 single-slot 중복 제출 여부
 
 ### Effect × Exposure
 
@@ -455,7 +459,7 @@ Bootstrap:
 - **중간 위험**: business logic, CRUD, validation, parser, API response는 targeted unit/integration, positive/negative, regression 중심.
 - **높은 위험**: auth/permission, payment, migration, 운영 데이터, import, state machine, transaction, concurrency, 외부 전송, public contract는 negative/boundary, rollback/failure path, stale/replay/idempotency, concurrency, security, 실제 integration/E2E 필요성을 검토한다.
 
-대규모 fixture, 전체 GUI/E2E, 실기·특수 환경 등 **고비용 검증**은 먼저 가장 작은 대표 fixture와 source/contract/harness 검증으로 동일한 경계를 확인한 뒤 필요한 최종 acceptance에 사용한다. 값비싼 E2E를 selector, fixture, orchestration 문제를 발견하기 위한 기본 디버깅 루프로 사용하지 않는다. 후반 단계의 harness 실패는 이미 유효한 build/contract PASS를 무효화하지 않으며, 수정 후 영향받은 단계만 재검증한다. 다만 최종 acceptance에 필요한 실제 E2E를 이 원칙으로 생략하거나 PASS로 추정하지 않는다.
+**고비용 E2E/실기 fixture**는 작은 대표 fixture와 source/contract/harness 점검 후 최종 acceptance에 사용한다. 하네스 디버깅으로 반복하지 않고 기존 유효한 PASS를 보존해 영향받은 단계만 재검증한다. 필요한 최종 E2E는 생략하거나 PASS로 추정하지 않는다.
 
 ### Evidence levels
 
@@ -483,16 +487,11 @@ Bootstrap:
 
 ### UI functional and visual acceptance
 
-사용자에게 보이는 UI 픽셀·레이아웃·상태 표현이 바뀌면 **기능적 GUI 동작**과 **실제 렌더링된 화면의 시각적 결과**를 별도 evidence로 확인한다. 기능/UI automation PASS만으로 화면의 정렬·겹침·잘림·가독성·테마/대비까지 검증됐다고 주장하지 않는다.
-
-- 가능하면 변경 전 실제 제품의 BEFORE 화면과 변경 후 실제 제품의 AFTER 화면을 비교한다. revision/binary, viewport·window 크기, theme, DPI/scale, fixture, focus/selection 등 비교 조건을 맞추고 차이가 있으면 명시한다.
-- 변경으로 영향받은 loading/empty/error, hover/focus/disabled, 좁은 화면 등 관련 상태만 선택해 실제 composited pixels를 검토한다. mockup, source inspection, screenshot의 존재 자체는 pixel review를 대신하지 않는다.
-- 중요한 의도치 않은 시각적 회귀는 수정 후 다시 촬영·검토한다. 실제 시각적 검증을 못 했으면 `VISUAL ACCEPTANCE: NOT TESTED` 또는 정확한 blocker로 보고한다. 픽셀 변화가 없는 동작 보존 refactor에는 새 BEFORE/AFTER 촬영을 자동 요구하지 않는다.
-- screenshot/fixture는 test-owned·합성 데이터를 사용하고 개인 데스크톱, 민감 경로·내용을 수집하거나 commit하지 않는다.
+UI 픽셀·레이아웃이 바뀌면 실제 제품의 **기능적 동작**과 **최종 화면 픽셀**을 별개로 검증한다. 가능하면 변경 전후 화면을 같은 창 크기·theme·scale·test-owned fixture 조건에서 비교해 잘림·겹침·대비·관련 상태를 살핀다. revision·차이를 기록하고 회귀는 수정 후 재확인한다. 기능/UIA PASS나 screenshot 존재만으로 visual PASS를 주장하지 않는다. 화면 검토를 못 했으면 `VISUAL ACCEPTANCE: NOT TESTED`/blocker를 보고한다. 화면 불변 refactor에 새 캡처는 불필요하며 개인 화면·민감정보는 촬영/commit하지 않는다.
 
 ### Asynchronous completion evidence
 
-비동기 작업의 성공은 가능하면 **지속적인 결과**(생성된 artifact·저장 상태·내용), 명시적인 완료/idle 상태 전이, 필요한 프로세스 종료·cleanup으로 검증한다. toast·status text·진행 로그처럼 watcher나 후속 이벤트가 정상적으로 덮어쓸 수 있는 **일시적 표시 문자열 하나**를 유일한 성공 oracle로 삼지 않는다. 실제 결과가 없거나 완료 상태가 불명확하면 메시지 하나로 성공을 추정하지 말고 미확인 상태와 필요한 검증을 구분한다.
+비동기 성공은 실제 artifact·저장 결과와 안정적인 완료 상태(필요한 종료/cleanup 포함)로 판정한다. 후속 watcher가 덮어쓰는 toast·status·log 한 줄은 유일한 성공 oracle이 아니다. 실제 결과가 불명확하면 미검증으로 보고한다.
 
 ### Result status and claims
 
@@ -529,7 +528,7 @@ compiler/linker/test 로그에 다수 오류가 연쇄적으로 나타나면 개
 
 분류를 위해 assertion, permission, validation을 약화하지 않는다.
 
-GUI·자동화 입력 실패는 가능하면 최소 재현 fixture에서 **input → event delivery → model/state mutation → projection/rendering** 순으로 깨진 경계를 찾는다. selector/UIA 입력·fixture·하네스 문제를 확인하기 전에 입력 전략이나 제품 이벤트 처리를 추측으로 연속 변경하지 않는다. 화면·상태 결과와 입력 성공 신호를 같은 evidence로 합치지 않는다.
+GUI 실패는 작은 fixture로 **input → event → model/state → rendering** 순서에 따라 격리한다. selector/UIA·fixture 문제를 모른 채 입력 방식이나 제품 코드를 연속 변경하지 않는다.
 
 ### Minimum verification by change type
 
@@ -569,24 +568,13 @@ GUI·자동화 입력 실패는 가능하면 최소 재현 fixture에서 **input
 
 ### Semantic prose and source-contract assertions
 
-문서·정책의 **의미**를 검사하는 테스트는 가능하면 구조화된 parser/contract 검증이나 공백 정규화(예: `" ".join(text.split())`) 후 비교를 사용한다. Markdown 줄바꿈·들여쓰기 변화만으로 의미가 같은 문장을 실패시키는 exact substring 검사나 brittle source-token 검사를 기본값으로 두지 않는다. 반대로 YAML block, wire format, layout-sensitive data처럼 줄바꿈·공백 자체가 contract인 경우에는 해당 구조·정확성을 별도로 검증한다.
+문서·정책 의미 검사는 parser/contract 또는 공백 정규화(`" ".join(text.split())`)를 우선한다. Markdown 줄바꿈만 달라 실패하는 literal token 검사 대신 의미를 검증한다. YAML/wire처럼 공백 자체가 contract라면 정확한 형식을 요구한다.
 
 ### Durable failure learning
 
 프로젝트가 오류 이력, incident log, postmortem, troubleshooting record의 canonical 위치를 정의했다면 반복되거나 진단 비용이 큰 실패를 그 위치에 남기고, 같은 실패 접근을 반복하기 전에 유사 사례를 먼저 조회한다.
 
 기록할 때는 가능한 범위에서 **증상/실행 조건 → 최초 실제 오류 → 확인된 root cause → 수정 → 재발 방지 → 검증 상태 → 관련 revision**을 구분한다. compiler/linker cascade 전체를 복제하기보다 root cause와 대표 evidence를 남기고, secret·개인정보·불필요한 개인 경로는 기록하지 않는다. 일회성 노이즈까지 모두 영구 문서화해 기록을 무용하게 만들지 말고, 재발 가능성·진단 비용·영향이 의미 있는 사례를 우선한다.
-
-### Pre-dispatch test and harness preflight
-
-원격 runner, CI 또는 비용이 큰 검증에 테스트·하네스 변경을 제출하기 전에 다음 중 해당하는 항목을 가볍게 점검한다. Execution의 [Command operational contract](#command-operational-contract)를 함께 적용한다.
-
-- request/schema의 필수 필드, 참조 SHA·branch·파일·경로, target/working directory의 일치
-- shell·JSON·다중 interpreter quoting/escaping과 호출할 script·argument/API의 실제 존재
-- 변경된 test/harness의 syntax/import, fixture·selector·automation ID의 근거, 영향받은 가장 좁은 contract 검사
-- 단일 슬롯이나 제한된 runner에서는 기존 queued/running 작업의 소유권·중복 실행 여부 ([Asynchronous external operations and continuation](#asynchronous-external-operations-and-continuation) 참조)
-
-사전에 검출 가능한 요청·하네스 오류는 runner를 소비하기 전에 수정하고 제품 acceptance 실패로 기록하지 않는다. workflow 자체의 validation과 실제 환경 검증은 여전히 별도의 필수 경계다.
 
 ### Runner strategy
 
