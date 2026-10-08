@@ -71,6 +71,14 @@ explicit-opt-in tool/connector = DISABLED UNLESS EXPLICITLY REQUESTED
 
 명령 안에 다른 shell/interpreter 언어를 중첩할 때는 **현재 문자를 실제로 해석하는 parser 경계**를 구분한다. outer shell에서 필요한 escape를 quoted inner-language payload 안에 습관적으로 복제하지 않고, 반대로 inner-language quoting을 outer shell이 먼저 소비하지 않게 한다. 특히 shell → PowerShell/Python/SQL/JSON처럼 parser가 바뀌는 경계에서는 가능하면 최소 isolated command로 quoting/pipe/redirection 동작을 먼저 확인한다.
 
+### Pre-dispatch preflight for remote and costly jobs
+
+원격 runner·고비용 작업은 요청 형식, 대상·참조 경로, quoting, 활성 실행 점유 여부를 제출 전에 검사한다. 사전 검출 가능한 오류는 **preflight defect**로 수정하고 runner를 첫 parser로 사용하지 않는다. 정적 점검은 실제 runtime 검증을 대신하지 않는다.
+
+- request/schema 필드와 branch·SHA·경로 존재 및 최신성, target/working directory
+- shell/JSON/interpreter 경계, 실제 script·API/argument·test fixture 참조
+- 변경된 test/harness의 최소 syntax/import·contract 검사와 single-slot 중복 제출 여부
+
 ### Effect × Exposure
 
 위험을 단일 LOW/MEDIUM/HIGH로 축약하지 않는다.
@@ -451,6 +459,8 @@ Bootstrap:
 - **중간 위험**: business logic, CRUD, validation, parser, API response는 targeted unit/integration, positive/negative, regression 중심.
 - **높은 위험**: auth/permission, payment, migration, 운영 데이터, import, state machine, transaction, concurrency, 외부 전송, public contract는 negative/boundary, rollback/failure path, stale/replay/idempotency, concurrency, security, 실제 integration/E2E 필요성을 검토한다.
 
+**고비용 E2E/실기 fixture**는 작은 대표 fixture와 source/contract/harness 점검 후 최종 acceptance에 사용한다. 하네스 디버깅으로 반복하지 않고 기존 유효한 PASS를 보존해 영향받은 단계만 재검증한다. 필요한 최종 E2E는 생략하거나 PASS로 추정하지 않는다.
+
 ### Evidence levels
 
 - **Static**: syntax, compile, import, typecheck, lint, schema/config shape.
@@ -474,6 +484,14 @@ Bootstrap:
 - security: unauthenticated/unauthorized, tenant/object boundary, tampering, replay, injection, leakage
 - file: malformed, encoding, MIME/extension mismatch, archive traversal/bomb, preservation, reopen
 - external system: timeout, rate limit, malformed response, partial outage, unknown-state retry
+
+### UI functional and visual acceptance
+
+UI 픽셀·레이아웃이 바뀌면 실제 제품의 **기능적 동작**과 **최종 화면 픽셀**을 별개로 검증한다. 가능하면 변경 전후 화면을 같은 창 크기·theme·scale·test-owned fixture 조건에서 비교해 잘림·겹침·대비·관련 상태를 살핀다. revision·차이를 기록하고 회귀는 수정 후 재확인한다. 기능/UIA PASS나 screenshot 존재만으로 visual PASS를 주장하지 않는다. 화면 검토를 못 했으면 `VISUAL ACCEPTANCE: NOT TESTED`/blocker를 보고한다. 화면 불변 refactor에 새 캡처는 불필요하며 개인 화면·민감정보는 촬영/commit하지 않는다.
+
+### Asynchronous completion evidence
+
+비동기 성공은 실제 artifact·저장 결과와 안정적인 완료 상태(필요한 종료/cleanup 포함)로 판정한다. 후속 watcher가 덮어쓰는 toast·status·log 한 줄은 유일한 성공 oracle이 아니다. 실제 결과가 불명확하면 미검증으로 보고한다.
 
 ### Result status and claims
 
@@ -510,6 +528,8 @@ compiler/linker/test 로그에 다수 오류가 연쇄적으로 나타나면 개
 
 분류를 위해 assertion, permission, validation을 약화하지 않는다.
 
+GUI 실패는 작은 fixture로 **input → event → model/state → rendering** 순서에 따라 격리한다. selector/UIA·fixture 문제를 모른 채 입력 방식이나 제품 코드를 연속 변경하지 않는다.
+
 ### Minimum verification by change type
 
 | 변경 유형 | 최소 검토 |
@@ -545,6 +565,10 @@ compiler/linker/test 로그에 다수 오류가 연쇄적으로 나타나면 개
 재현 방어선은 항상 runtime test일 필요는 없다. 같은 결함을 더 싸고 deterministic하게 막을 수 있다면 source invariant, schema/contract validation, lint/static check, build preflight, resource/ABI fingerprint 같은 guard를 우선하거나 regression test와 함께 둔다. 반대로 brittle한 literal token 검사처럼 정상 변형을 자주 거짓 실패시키는 guard는 parser/contract/behavior 기반 검사로 개선한다.
 
 재현 테스트나 자동 guard를 만들 수 없다면 이유와 대신 확보한 evidence를 보고한다.
+
+### Semantic prose and source-contract assertions
+
+문서·정책 의미 검사는 parser/contract 또는 공백 정규화(`" ".join(text.split())`)를 우선한다. Markdown 줄바꿈만 달라 실패하는 literal token 검사 대신 의미를 검증한다. YAML/wire처럼 공백 자체가 contract라면 정확한 형식을 요구한다.
 
 ### Durable failure learning
 
