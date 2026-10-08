@@ -71,6 +71,17 @@ explicit-opt-in tool/connector = DISABLED UNLESS EXPLICITLY REQUESTED
 
 명령 안에 다른 shell/interpreter 언어를 중첩할 때는 **현재 문자를 실제로 해석하는 parser 경계**를 구분한다. outer shell에서 필요한 escape를 quoted inner-language payload 안에 습관적으로 복제하지 않고, 반대로 inner-language quoting을 outer shell이 먼저 소비하지 않게 한다. 특히 shell → PowerShell/Python/SQL/JSON처럼 parser가 바뀌는 경계에서는 가능하면 최소 isolated command로 quoting/pipe/redirection 동작을 먼저 확인한다.
 
+### Pre-dispatch preflight for remote and costly jobs
+
+원격 runner, CI, 대형 빌드 또는 비용이 큰 검증을 예약하기 **전에** 로컬/정적 확인으로 잡을 수 있는 오류를 먼저 제거한다. 관련되는 항목만 검사한다.
+
+- request/schema 형식과 필수 필드, 대상 environment/working directory, 참조하는 branch·SHA·파일·경로의 존재 및 최신성
+- shell·JSON·다중 interpreter의 quoting/escaping, 실제 entry point와 argument/API 이름
+- 변경된 test/harness의 syntax/import와 fixture·selector·automation ID의 근거, 영향받은 최소 contract 검사
+- 단일 요청 슬롯이나 제한된 runner를 공유한다면 기존 queued/running 작업의 소유권과 중복 실행 가능성 ([Asynchronous external operations and continuation](#asynchronous-external-operations-and-continuation) 참조)
+
+요청 형식 오류·존재하지 않는 참조·명백한 command serialization 오류처럼 사전에 검출 가능한 문제는 **preflight defect**로 분류하고 수정한 뒤 제출한다. 해당 오류를 제품 acceptance 실패로 기록하거나 runner를 첫 syntax/parser 검증기로 사용하지 않는다. 정적 preflight는 실제 runtime 성공을 증명하지 않으며 workflow/runtime validation의 대체물이 아니다.
+
 ### Effect × Exposure
 
 위험을 단일 LOW/MEDIUM/HIGH로 축약하지 않는다.
@@ -451,6 +462,8 @@ Bootstrap:
 - **중간 위험**: business logic, CRUD, validation, parser, API response는 targeted unit/integration, positive/negative, regression 중심.
 - **높은 위험**: auth/permission, payment, migration, 운영 데이터, import, state machine, transaction, concurrency, 외부 전송, public contract는 negative/boundary, rollback/failure path, stale/replay/idempotency, concurrency, security, 실제 integration/E2E 필요성을 검토한다.
 
+대규모 fixture, 전체 GUI/E2E, 실기·특수 환경 등 **고비용 검증**은 먼저 가장 작은 대표 fixture와 source/contract/harness 검증으로 동일한 경계를 확인한 뒤 필요한 최종 acceptance에 사용한다. 값비싼 E2E를 selector, fixture, orchestration 문제를 발견하기 위한 기본 디버깅 루프로 사용하지 않는다. 후반 단계의 harness 실패는 이미 유효한 build/contract PASS를 무효화하지 않으며, 수정 후 영향받은 단계만 재검증한다. 다만 최종 acceptance에 필요한 실제 E2E를 이 원칙으로 생략하거나 PASS로 추정하지 않는다.
+
 ### Evidence levels
 
 - **Static**: syntax, compile, import, typecheck, lint, schema/config shape.
@@ -474,6 +487,19 @@ Bootstrap:
 - security: unauthenticated/unauthorized, tenant/object boundary, tampering, replay, injection, leakage
 - file: malformed, encoding, MIME/extension mismatch, archive traversal/bomb, preservation, reopen
 - external system: timeout, rate limit, malformed response, partial outage, unknown-state retry
+
+### UI functional and visual acceptance
+
+사용자에게 보이는 UI 픽셀·레이아웃·상태 표현이 바뀌면 **기능적 GUI 동작**과 **실제 렌더링된 화면의 시각적 결과**를 별도 evidence로 확인한다. 기능/UI automation PASS만으로 화면의 정렬·겹침·잘림·가독성·테마/대비까지 검증됐다고 주장하지 않는다.
+
+- 가능하면 변경 전 실제 제품의 BEFORE 화면과 변경 후 실제 제품의 AFTER 화면을 비교한다. revision/binary, viewport·window 크기, theme, DPI/scale, fixture, focus/selection 등 비교 조건을 맞추고 차이가 있으면 명시한다.
+- 변경으로 영향받은 loading/empty/error, hover/focus/disabled, 좁은 화면 등 관련 상태만 선택해 실제 composited pixels를 검토한다. mockup, source inspection, screenshot의 존재 자체는 pixel review를 대신하지 않는다.
+- 중요한 의도치 않은 시각적 회귀는 수정 후 다시 촬영·검토한다. 실제 시각적 검증을 못 했으면 `VISUAL ACCEPTANCE: NOT TESTED` 또는 정확한 blocker로 보고한다. 픽셀 변화가 없는 동작 보존 refactor에는 새 BEFORE/AFTER 촬영을 자동 요구하지 않는다.
+- screenshot/fixture는 test-owned·합성 데이터를 사용하고 개인 데스크톱, 민감 경로·내용을 수집하거나 commit하지 않는다.
+
+### Asynchronous completion evidence
+
+비동기 작업의 성공은 가능하면 **지속적인 결과**(생성된 artifact·저장 상태·내용), 명시적인 완료/idle 상태 전이, 필요한 프로세스 종료·cleanup으로 검증한다. toast·status text·진행 로그처럼 watcher나 후속 이벤트가 정상적으로 덮어쓸 수 있는 **일시적 표시 문자열 하나**를 유일한 성공 oracle로 삼지 않는다. 실제 결과가 없거나 완료 상태가 불명확하면 메시지 하나로 성공을 추정하지 말고 미확인 상태와 필요한 검증을 구분한다.
 
 ### Result status and claims
 
@@ -510,6 +536,8 @@ compiler/linker/test 로그에 다수 오류가 연쇄적으로 나타나면 개
 
 분류를 위해 assertion, permission, validation을 약화하지 않는다.
 
+GUI·자동화 입력 실패는 가능하면 최소 재현 fixture에서 **input → event delivery → model/state mutation → projection/rendering** 순으로 깨진 경계를 찾는다. selector/UIA 입력·fixture·하네스 문제를 확인하기 전에 입력 전략이나 제품 이벤트 처리를 추측으로 연속 변경하지 않는다. 화면·상태 결과와 입력 성공 신호를 같은 evidence로 합치지 않는다.
+
 ### Minimum verification by change type
 
 | 변경 유형 | 최소 검토 |
@@ -545,6 +573,10 @@ compiler/linker/test 로그에 다수 오류가 연쇄적으로 나타나면 개
 재현 방어선은 항상 runtime test일 필요는 없다. 같은 결함을 더 싸고 deterministic하게 막을 수 있다면 source invariant, schema/contract validation, lint/static check, build preflight, resource/ABI fingerprint 같은 guard를 우선하거나 regression test와 함께 둔다. 반대로 brittle한 literal token 검사처럼 정상 변형을 자주 거짓 실패시키는 guard는 parser/contract/behavior 기반 검사로 개선한다.
 
 재현 테스트나 자동 guard를 만들 수 없다면 이유와 대신 확보한 evidence를 보고한다.
+
+### Semantic prose and source-contract assertions
+
+문서·정책의 **의미**를 검사하는 테스트는 가능하면 구조화된 parser/contract 검증이나 공백 정규화(예: `" ".join(text.split())`) 후 비교를 사용한다. Markdown 줄바꿈·들여쓰기 변화만으로 의미가 같은 문장을 실패시키는 exact substring 검사나 brittle source-token 검사를 기본값으로 두지 않는다. 반대로 YAML block, wire format, layout-sensitive data처럼 줄바꿈·공백 자체가 contract인 경우에는 해당 구조·정확성을 별도로 검증한다.
 
 ### Durable failure learning
 
