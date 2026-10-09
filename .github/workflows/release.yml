@@ -156,6 +156,7 @@ jobs:
             dist/universal-agent-docs.trust.json
             dist/universal-agent-docs.release.json
           if-no-files-found: error
+          retention-days: 1
 
       - name: Upload canonical consumer artifacts for workflow retention
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
@@ -166,6 +167,7 @@ jobs:
             dist/universal-agent-docs-consumer.sha256
             dist/universal-agent-docs-consumer.release.json
           if-no-files-found: error
+          retention-days: 1
 
       - name: Generate signed build provenance
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4
