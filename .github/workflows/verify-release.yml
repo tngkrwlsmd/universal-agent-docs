@@ -27,7 +27,7 @@ jobs:
       - name: Verify trusted tag and source revision
         id: source
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ inputs.release_tag }}
           EXPECTED_SOURCE_SHA: ${{ inputs.expected_source_sha }}
         shell: bash
@@ -84,13 +84,13 @@ jobs:
 
       - name: Download canonical release assets
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ steps.source.outputs.tag }}
         run: gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir downloaded
 
       - name: Verify release attestation and build provenance
         env:
-          GH_TOKEN: ${{ github.token }}
+          GITHUB_TOKEN: ${{ github.token }}
           TAG: ${{ steps.source.outputs.tag }}
           SOURCE_SHA: ${{ steps.source.outputs.sha }}
         run: >-
