@@ -62,12 +62,15 @@ class BundleTests(unittest.TestCase):
         self.assertLess(workflow.index("Generate signed build provenance"), workflow.index("Publish GitHub Release with canonical assets"))
         self.assertLess(workflow.index("Publish GitHub Release with canonical assets"), workflow.index("  verify:"))
 
-    def test_ci_avoids_duplicate_pr_branch_runs_and_has_stable_required_check(self):
+    def test_ci_avoids_pr_runs_and_has_stable_required_check(self):
         workflow = (ROOT / ".github/workflows/ci.yml").read_text(encoding="utf-8")
         self.assertIn('      - main', workflow)
+        self.assertIn("      - 'policy/**'", workflow)
         self.assertNotIn('      - "**"', workflow)
-        self.assertIn("pull_request:", workflow)
-        self.assertIn("cancel-in-progress: true", workflow)
+        self.assertNotIn("pull_request:", workflow)
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertIn("group: ci-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.ref }}", workflow)
+        self.assertIn("cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}", workflow)
         self.assertIn("name: required-ci", workflow)
         self.assertIn("needs: validate", workflow)
         self.assertIn("VALIDATE_RESULT:", workflow)
