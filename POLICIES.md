@@ -849,28 +849,27 @@ Regression / Coverage:
 
 ### 기본 branch 통합 workflow
 
-repository-specific instruction, branch protection, required review 같은 더 구체적인 규칙이 별도로 요구하지 않는 한 **새 Pull Request를 기본적으로 만들지 않는다.** 사용자가 PR을 명시적으로 요청했거나 저장소 규칙상 요구되는 경우에만 해당 절차의 적격성을 검토한다. **사용자가 PR 생성을 금지하거나 명시적 opt-in으로 제한했다면 일반 개발 요청에서 PR 허가를 추론하지 않는다.** 필수 branch protection/required review와 충돌하면 PR을 자동 생성하거나 보호 규칙을 우회하지 않고 중단하여 충돌을 보고한다. PR 사용 허가는 별도로 제한된 connector 사용 허가를 뜻하지 않는다.
+기본적으로 PR을 만들지 않는다. PR을 사용자가 금지하거나 opt-in으로 제한했다면 명시적 허가 없이 생성하지 않는다. 저장소 보호 규칙과 충돌하면 PR 자동 생성이나 보호 우회 대신 중단·보고한다. PR 허가는 제한된 connector의 사용 허가가 아니다.
 
 기본 통합 순서는 저장소의 **실제 실행 가능한 검증 경로**에 따라 결정한다.
 
 ```text
-최신 main · repository rule · 실제 runner 권한 확인
-→ 필요 시 짧은 작업 branch
-→ 구현/조사 + 변경 범위의 정적·로컬 검증
-→ 문서 정합성 확인 및 필요한 문서 즉시 수정
-→ 해당 저장소가 지원·허용하는 branch CI가 있으면 결과 확인
-→ 최신 main 재조회 · 변경 범위/충돌/fast-forward 확인
-→ 필수 gate가 허용할 때 force 없이 main 통합
-→ 해당 저장소가 요구하는 main CI 또는 검토된 main SHA 수동 검증
-→ 실측 PASS / NOT TESTED / 미충족 gate 구분
+main · 저장소 규칙 · runner 권한 확인
+→ 작업 branch(필요시) 및 정적·로컬 검증
+→ 코드·문서 정합성 확인
+→ 허용된 branch CI가 있다면 검증
+→ 최신 main/fast-forward 및 필수 gate 확인
+→ 비강제 main 통합
+→ 요구된 main CI 또는 main SHA 중앙 수동 검증
+→ 실측 PASS/NOT TESTED 구분
 ```
 
-- branch CI는 **실제로 존재하고 허용되는 저장소에서만** 실행한다. source repository가 Actions 실행을 금지하거나 검토된 main에 대한 중앙 수동 CI만 허용하면 branch CI를 생성·시작하지 않는다. branch CI 부재를 성공으로 표현하거나 자동으로 trigger를 추가하지 않는다.
-- privileged self-hosted runner에서 불신 PR/fork/branch 코드를 자동 실행하지 않는다. 중앙 수동 CI를 사용하는 저장소는 승인된 registry·profile·범위, 검토된 `main`의 정확한 commit SHA, 별도 명시적 실행 요청을 확인한다. 중앙 CI의 source/health 검사 결과를 다른 환경의 MySQL·browser·GUI·병원 FULL QA PASS로 확대 해석하지 않는다.
-- 사용자가 GitHub-hosted 실행을 금지한 저장소에서는 짧은 검사나 자체 실행기 offline을 이유로 hosted runner를 선택하지 않는다. CI 경로를 임의로 우회하거나 성공한 것으로 처리하지 않고 가능한 로컬·승인된 자체 실행기 검증 또는 `NOT TESTED`를 보고한다.
-- 필수 변경 전 검증이 실패하면 `main`에 반영하지 않는다. 검증 이후 `main`이 앞서 나갔다면 stale branch를 그대로 반영하지 않고 최신 상태에 맞춘 뒤 필요한 검증을 다시 수행한다.
-- 통합 후 요구된 CI나 수동 검증이 실패·미실행이면 완료로 보고하지 않는다. 현재 변경이 `main`에 반영됐는지와 검증이 PASS인지 별도로 보고하고 복구/후속 조치를 결정한다.
-- branch protection/ruleset이 direct fast-forward를 막으면 force, 권한 우회, 승인 생략 또는 자동 PR 생성으로 해결하지 않는다. 실제 적용 가능한 승인 경로를 확인한다.
+- branch CI는 허용·제공되는 경우에만 사용한다. 중앙 main-SHA 수동 CI 전용 저장소에 branch CI를 자동 추가·실행하거나 미실행을 PASS로 표현하지 않는다.
+- privileged self-hosted에는 불신 PR/fork/branch 코드를 자동 실행하지 않는다. 중앙 수동 CI는 승인된 등록부·프로필·범위·정확한 검토 `main` SHA·별도 실행 요청이 필요하다. source/health PASS는 MySQL·browser·GUI·병원 FULL QA가 아니다.
+- GitHub-hosted 금지 저장소에서는 검사 크기나 runner offline을 이유로 hosted를 우회 사용하지 않는다. 승인된 로컬·자체 실행기 검증 또는 `NOT TESTED`로 처리한다.
+- 통합 전 필수 검증 실패 시 중단한다. `main`이 이동했다면 최신 기준으로 갱신·재검증한다.
+- 통합 후 필수 CI/수동 검증이 미통과면 완료로 보고하지 않는다. 적용 상태·검증 상태를 구분한다.
+- ruleset이 직접 통합을 막으면 강제 푸시·승인 생략·자동 PR 없이 중단하고 승인 경로를 확인한다.
 
 ### 작업 종료 전 문서 정합성
 
