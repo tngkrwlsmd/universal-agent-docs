@@ -238,13 +238,15 @@ class OperationExtensionAndCompiledPolicyTests(unittest.TestCase):
 
     def test_compiled_policy_has_concrete_context_budgets(self):
         full_chars = len((ROOT / "POLICIES.md").read_text(encoding="utf-8"))
+        # Absolute context caps prevent unrelated policy prose from diluting a
+        # ratio-based test while keeping the actual agent context bounded.
+        # Round budgets allow a small amount of intentional policy growth.
         cases = [
-            ("simple-code", ["code.modify"], ["src/simple.py"], 0.32),
-            ("auth-code", ["code.modify"], ["src/auth/login.py"], 0.40),
-            # Git policy intentionally includes execution/history safety; still require >50% reduction.
-            ("git-commit", ["git.commit"], [".git/COMMIT_EDITMSG"], 0.50),
+            ("simple-code", ["code.modify"], ["src/simple.py"], 22_000),
+            ("auth-code", ["code.modify"], ["src/auth/login.py"], 26_000),
+            ("git-commit", ["git.commit"], [".git/COMMIT_EDITMSG"], 33_000),
         ]
-        for name, operations, resources, max_ratio in cases:
+        for name, operations, resources, max_chars in cases:
             with self.subTest(name=name):
                 view = mod.compile_policy_view(
                     self.contract,
@@ -253,8 +255,8 @@ class OperationExtensionAndCompiledPolicyTests(unittest.TestCase):
                     routing_mode="enforcement",
                 )
                 rendered = mod.render_compiled_policy_view(view)
-                ratio = len(rendered) / full_chars
-                self.assertLessEqual(ratio, max_ratio, (name, len(rendered), full_chars, ratio))
+                self.assertLessEqual(len(rendered), max_chars, (name, len(rendered), max_chars))
+                self.assertLess(len(rendered), full_chars, (name, len(rendered), full_chars))
                 self.assertIn("## 2. Always-on invariants", rendered)
 
     def test_consumer_distribution_declares_public_extension_surface(self):
