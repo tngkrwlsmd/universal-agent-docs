@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor
 import os
 import re
 import subprocess
@@ -19,6 +20,7 @@ ASSET_NAMES = (
     "universal-agent-docs-consumer.release.json",
 )
 DEFAULT_ATTEMPTS = 4
+MAX_VERIFY_WORKERS = 3  # Limit concurrent GitHub CLI calls to avoid API bursts.
 DEFAULT_BASE_DELAY_SECONDS = 10
 SOURCE_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 
@@ -60,18 +62,15 @@ def verify_release_attestation(
     for attempt in range(1, attempts + 1):
         verified = _run(["gh", "release", "verify", tag, "--repo", repo])
         if verified:
-            for name in ASSET_NAMES:
-                if not _run([
-                    "gh",
-                    "release",
-                    "verify-asset",
-                    tag,
-                    str(asset_dir / name),
-                    "--repo",
-                    repo,
-                ]):
-                    verified = False
-                    break
+            commands = [
+                [
+                    "gh", "release", "verify-asset", tag,
+                    str(asset_dir / name), "--repo", repo,
+                ]
+                for name in ASSET_NAMES
+            ]
+            with ThreadPoolExecutor(max_workers=MAX_VERIFY_WORKERS) as workers:
+                verified = all(workers.map(_run, commands))
 
         if verified:
             print(f"immutable release attestation verified on attempt {attempt}")
@@ -104,21 +103,19 @@ def verify_build_provenance(
     _require_assets(asset_dir)
     signer = signer_workflow or f"github.com/{repo}/.github/workflows/release.yml"
 
-    for name in ASSET_NAMES:
-        _require([
-            "gh",
-            "attestation",
-            "verify",
-            str(asset_dir / name),
-            "--repo",
-            repo,
-            "--signer-workflow",
-            signer,
-            "--source-ref",
-            f"refs/tags/{tag}",
-            "--source-digest",
-            source_sha,
-        ])
+    commands = [
+        [
+            "gh", "attestation", "verify", str(asset_dir / name),
+            "--repo", repo,
+            "--signer-workflow", signer,
+            "--source-ref", f"refs/tags/{tag}",
+            "--source-digest", source_sha,
+        ]
+        for name in ASSET_NAMES
+    ]
+    with ThreadPoolExecutor(max_workers=MAX_VERIFY_WORKERS) as workers:
+        # Every asset must independently pass its provenance check.
+        list(workers.map(_require, commands))
 
 
 def main() -> int:

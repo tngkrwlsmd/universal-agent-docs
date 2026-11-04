@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 from tests.policy_test_support import ROOT, mod
 
@@ -72,9 +74,77 @@ class BundleTests(unittest.TestCase):
         self.assertIn("group: ci-${{ github.event_name == 'workflow_dispatch' && github.run_id || github.ref }}", workflow)
         self.assertIn("cancel-in-progress: ${{ github.event_name != 'workflow_dispatch' }}", workflow)
         self.assertIn("name: required-ci", workflow)
-        self.assertIn("needs: validate", workflow)
+        self.assertIn("needs: [classify, quick, validate]", workflow)
+        self.assertIn("name: Fast branch checks (Python 3.15)", workflow)
+        self.assertIn("name: required-ci", workflow)
+        self.assertIn("CLASSIFY_RESULT:", workflow)
+        self.assertIn("QUICK_RESULT:", workflow)
         self.assertIn("VALIDATE_RESULT:", workflow)
         self.assertIn('test "$VALIDATE_RESULT" = "success"', workflow)
+        self.assertIn('test "$QUICK_RESULT" = "success"', workflow)
+        self.assertIn("if [[ \"$GITHUB_REF\" == refs/heads/main ]]", workflow)
+        self.assertIn("if: ${{ github.ref == 'refs/heads/main' }}", workflow)
+        self.assertEqual(2, workflow.count('python-version: "3.15"'))
+        self.assertNotIn('python-version: "3.10"', workflow)
+        self.assertNotIn('python-version: "3.14"', workflow)
+        # Branch changes affecting implementation cannot skip the full Linux checks.
+        self.assertIn("level=code", workflow)
+        self.assertIn("needs.classify.outputs.level != 'docs'", workflow)
+
+    def test_release_verification_checks_each_asset_with_bounded_parallelism(self):
+        script = ROOT / "scripts/release/verify_release.py"
+        spec = importlib.util.spec_from_file_location("release_verifier_ci", script)
+        self.assertIsNotNone(spec)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            asset_dir = Path(temp_dir)
+            for name in module.ASSET_NAMES:
+                (asset_dir / name).write_bytes(name.encode("utf-8"))
+            calls = []
+
+            def collect(command):
+                calls.append(command)
+                return True
+
+            with patch.object(module, "_run", side_effect=collect):
+                module.verify_release_attestation(
+                    repo="test/consumer", tag="v1.0.0", asset_dir=asset_dir
+                )
+
+            self.assertEqual(8, len(calls))
+            self.assertEqual(1, sum(cmd[1:3] == ["release", "verify"] for cmd in calls))
+            checked_assets = {
+                Path(cmd[4]).name for cmd in calls
+                if cmd[1:3] == ["release", "verify-asset"]
+            }
+            self.assertEqual(set(module.ASSET_NAMES), checked_assets)
+
+            attestations = []
+            with patch.object(module, "_require", side_effect=lambda cmd: attestations.append(cmd)):
+                module.verify_build_provenance(
+                    repo="test/consumer",
+                    tag="v1.0.0",
+                    source_sha="a" * 40,
+                    asset_dir=asset_dir,
+                )
+            self.assertEqual(7, len(attestations))
+            self.assertEqual(
+                set(module.ASSET_NAMES),
+                {Path(cmd[3]).name for cmd in attestations},
+            )
+            self.assertTrue(all("--source-digest" in cmd for cmd in attestations))
+
+            def reject_one(command):
+                return Path(command[4]).name != module.ASSET_NAMES[0] if command[2] == "verify-asset" else True
+
+            with patch.object(module, "_run", side_effect=reject_one):
+                with self.assertRaises(RuntimeError):
+                    module.verify_release_attestation(
+                        repo="test/consumer", tag="v1.0.0",
+                        asset_dir=asset_dir, attempts=1,
+                    )
 
     def test_manual_release_verifier_uses_shared_release_verifier(self):
         workflow = (ROOT / ".github/workflows/verify-release.yml").read_text(encoding="utf-8")
