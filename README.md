@@ -184,7 +184,7 @@ python scripts/evaluate.py --fail-on-mismatch
 
 Conformance는 normative semantics의 구현 정합성이고 `evaluation/`은 representative real-world routing/gate 품질 측정이다. 둘을 같은 PASS 의미로 취급하지 않는다. Policy contract upgrade 영향을 비교하려면 `python scripts/policy_diff.py <before.json> <after.json>`을 사용한다. JSON Schema required-field 변화까지 보려면 `--before-schema`와 `--after-schema`를 함께 넘긴다. 또한 정책 적용 비용 baseline은 `python scripts/benchmark.py --static-only --json`으로 측정할 수 있다. Timing benchmark는 환경 의존 값이므로 기본 CI threshold로 사용하지 않는다.
 
-CI는 Linux/macOS/Windows × Python 3.10/3.14에서 bundle validation, tests, conformance, practical evaluation, canonical/consumer distribution build와 verification을 수행한다.
+CI는 `policy/**` 개발 브랜치에서 변경 유형에 따라 Python 3.15 단일 Linux 빠른 검증을 실행하고, `main`에서는 Linux/macOS/Windows × Python 3.15 단일 버전으로 전체 bundle validation, tests, conformance, practical evaluation 및 canonical/consumer distribution 검증을 수행한다. `required-ci`는 각 경로의 실제 성공 여부를 검사한다. 배포 태그에서는 전체 소스 검증 및 변경 불가능한 배포 파일 검증을 별도로 실행한다.
 
 Release는 `.github/workflows/release.yml`의 SemVer tag flow를 사용하며 immutable Release와 provenance verification을 우회하지 않는다. Canonical source artifact 이름은 `universal-agent-docs.zip`, consumer artifact 이름은 `universal-agent-docs-consumer.zip`이다.
 
