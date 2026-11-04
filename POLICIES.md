@@ -23,12 +23,11 @@
 
 ### Resume checkpoint and current-state precedence
 
-중단·세션 교체 후 개발을 재개하거나 여러 작업자가 이어받을 때는 **현재 원격 저장소와 실행 시스템의 실제 상태**를 이전 대화·계획·인계 문서보다 먼저 확인한다. 관련성이 없는 작은 독립 작업에 전체 저장소·CI를 반복 조사할 필요는 없다.
+개발 재개 시 이전 인계보다 **최신 기본 branch/HEAD, 관련 변경, 진행 중인 CI·외부 작업과 canonical 현황**을 우선한다. 작은 독립 작업에 불필요한 전체 재조사는 하지 않는다.
 
-- 재개할 논리적 작업의 **기본 branch/HEAD, 관련 최근 commit, working tree 또는 동시 변경**, canonical 진행 현황·미완료 목록을 서로 대조한다. 최근 commit 전체를 기계적으로 읽기보다 이번 작업을 완료·무효화할 수 있는 변경부터 확인한다.
-- 해당 변경의 **정확한 revision, 환경, 검사 범위, 실행 중이거나 대기 중인 CI·외부 job, 이미 수용된 결과**를 확인해 실제 미완료 사항을 결정한다. 작업이 이미 현재 기준에서 완료됐으면 이전 세션의 미완료 표식만으로 재구현·재검증하지 않는다.
-- 인계 문서와 현재 코드·실행 결과가 충돌하면 근거를 분리해 현재 사실을 갱신한다. 현재 상태에 접근할 수 없으면 이전 기록만으로 최신 상태·검증 완료를 주장하지 않는다.
-- 원격 작업이 이미 진행 중인 경우에는 해당 요청의 식별자와 소유권을 확인하고 [Asynchronous external operations and continuation](#asynchronous-external-operations-and-continuation)의 중복 실행 방지 규칙을 따른다.
+- 해당 작업의 현재 구현과 검증된 **revision·환경·검사 범위**를 대조해 이미 수용된 단위를 재작업하지 않는다.
+- 기록과 현재 상태가 충돌하면 실제 근거를 확인해 갱신한다. 확인하지 못한 사항을 완료·PASS로 주장하지 않는다.
+- 진행 중 원격 작업은 식별자·소유권을 확인하고 [중복 실행 방지 절차](#asynchronous-external-operations-and-continuation)를 적용한다.
 
 ### Evidence-aware execution budget (human guidance)
 
@@ -66,11 +65,7 @@ explicit-opt-in tool/connector = DISABLED UNLESS EXPLICITLY REQUESTED
 
 ### Prefer established, least-invasive execution paths
 
-도구 선택은 작업의 실제 목적·권한·영향 범위를 기준으로 한다. 프로젝트가 검증해 둔 공식 스크립트·자동화·테스트 실행 경로가 이번 작업을 지원한다면 이를 먼저 사용하고, 동일 기능을 직접 원격 명령·GUI 수동 조작·새 connector로 우회하지 않는다.
-
-- 기존 경로의 최신 기능과 안전 제약을 확인하고, 필요한 경우 그 경로의 추적 가능한 작업 단위로 확장한다.
-- 공식 경로를 사용할 수 없거나 필요한 capability가 없는 근거가 확인된 때에만 더 직접적인 수단을 검토한다. 더 직접적인 수단도 별도 승인·Effect/Exposure·소유권·정리 조건을 생략하지 않는다.
-- 프로젝트의 특정 runner·VM·서비스·도구 이름과 우선순위는 consumer의 project-specific instructions가 소유한다. 이 범용 절은 특정 플랫폼을 의무화하거나 사용자가 제한한 도구의 opt-in을 대체하지 않는다.
+작업을 지원하는 **기존 프로젝트 공식 스크립트·자동화·검증 경로**를 우선하고, 동일 작업을 직접 원격 명령·GUI·새 connector로 우회하지 않는다. 기존 경로의 미지원이 확인된 때에만 다른 수단을 검토하며 승인·위험 gate는 유지한다. 특정 runner·VM·도구의 우선순위와 opt-in 제한은 프로젝트·사용자 지침을 따른다.
 
 ### Command operational contract
 
