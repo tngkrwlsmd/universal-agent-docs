@@ -259,6 +259,15 @@ Consumer의 canonical project facts 문서(`.agent-policy/PROJECT.md` 또는 `--
 - session 종료, context 교체, 다른 agent/개발자에게 넘기기 전에는 working tree/revision, 수행한 검증, 실행하지 못한 검증, 외부 side effect 상태를 다시 확인한다.
 - 진행 상황 기록 자체를 완료 evidence로 취급하지 않는다. 실제 코드·데이터·remote 상태와 불일치하면 실제 상태가 우선이며 기록을 갱신한다.
 
+### Time-bounded work checkpoint and response
+
+사용자가 볼 수 있는 개발·조사·검증 작업은 **작업 시작 시점**을 기준으로 관리한다. 소비 프로젝트가 더 엄격한 시간·승인 계약을 정했다면 그 계약을 유지한다.
+
+- 작업 시작 후 **20분이 경과하면** 현재 요청 범위, 실제 완료·미완료, 검증 근거, 외부 작업 상태, 남은 필수 작업을 점검한다. 20분 전에 완료했다면 점검 시각을 채우려고 대기하지 않는다.
+- **25분이 경과하기 전에** 확인된 실질적 결과를 사용자에게 전달한다. 전체 완료가 어렵다면 범위 내에서 안전하게 마친 단위, 실제 revision·실행 ID·검증 여부, 미완료·차단 항목과 재개 조건을 구분해 보고한다. 보고를 위해 필수 안전·승인·검증을 생략하거나 성공을 꾸미지 않는다.
+- 시각 측정이 불가능하면 경과 시간을 추정하거나 20분 점검을 수행했다고 주장하지 않는다. 도구·연결 지연으로 기한을 완전히 제어할 수 없을 때도 확보한 결과를 우선 제공하고 지연·미검증 범위를 숨기지 않는다.
+- 응답·체크포인트는 외부 작업 종료 또는 새로운 자동 실행·재전송·승인 연장을 의미하지 않는다. 장기 외부 작업은 실제 실행 소유권·식별자와 기존 [비동기 재개 규칙](#asynchronous-external-operations-and-continuation)에 따라 별도로 추적한다.
+
 ### Asynchronous external operations and continuation
 
 CI, remote runner, batch/deploy job처럼 session보다 오래 지속될 수 있는 외부 작업은 **session lifetime과 operation lifetime을 분리**한다.
@@ -376,6 +385,16 @@ Bootstrap:
 - 기존 abstraction이 충분하면 재사용하고, 새 abstraction은 중복·결합도·테스트 가능성을 실제로 개선할 때만 만든다.
 - 성능 최적화, 캐시, 병렬화는 correctness invariant와 invalidation/failure semantics를 먼저 정의한다.
 
+### Failure and recovery predesign
+
+코드를 작성하거나 수정하기 **전에**, 해당 기능에서 현실적으로 발생할 수 있는 실패 경로를 정상 경로와 함께 검토한다. 관련 없는 가상 시나리오를 무한히 열거하거나 모든 변경에 대규모 설계 문서를 강제하지 않으며, 위험에 비례해 간단한 점검 또는 재현 가능한 시나리오로 남긴다.
+
+- 적용 가능한 입력 오류·경계값, 대상 부재·삭제·접근 불가, 인증·권한 만료, 네트워크/API 부분 장애와 시간 초과, 프로세스 종료·재시작, 중복 요청·경합, 이전 버전·상태 충돌, 부분 실행·저장·검증 실패를 검토한다.
+- 실제 적용되는 실패 유형별 **감지 근거, 재시도 가능한 오류와 영구 오류의 구분, 중단·복구·보류 조건, 기존 데이터와 사용자 변경 보존, 중복 실행 방지, 사용자에게 보이는 오류, 복구 후 검증 조건**을 정한다. 실패를 broad catch·침묵 fallback·거짓 성공으로 바꾸지 않는다.
+- 채팅·세션·파일·설정·원격 자원은 **사용 가능하면 재사용**한다. 단순 조회 실패·로그인 만료·네트워크 장애를 삭제로 추정하지 않는다. 실제 부재·삭제가 확인되고 대상·소유권·권한이 유효할 때만 그 범위에서 재생성을 검토하며, 새 식별자와 참조·상태 연결을 재검증한다.
+- 외부 write·게시·전송이 성공했는지 불확실하다면 새 자원을 생성했다는 이유만으로 기존 작업을 다시 실행하지 않는다. 읽기 전용 근거로 실제 상태를 대조하고 기존 승인·중단·기한·중복 방지 규칙을 유지한다.
+- 장애 처리와 재시작 복구는 실제 상태를 소유하는 책임 계층에 구현한다. 다른 계층의 임시 우회나 중복 복구 경로를 늘리지 않고 [Testing](#policy-testing)의 해당 시나리오로 결과를 확인한다.
+
 ### Architecture and responsibility boundaries
 
 프로젝트마다 구체적인 레이어 이름은 다를 수 있으므로 `Controller/Service/Repository` 같은 고정 구조를 강제하지 않는다. 대신 **입력·업무 규칙·외부 I/O·계약·표현의 책임 경계**를 확인하고 변경을 실제 owner에 둔다.
@@ -387,6 +406,7 @@ Bootstrap:
 - 공통 validation/normalization/mapping 규칙은 실제로 공유되는 의미가 있을 때 하나의 canonical owner를 둔다. 화면별 copy-paste validator를 만들지 않는다.
 - reporting/export/presentation용 파생값은 저장해야 할 domain fact와 구분한다. 표시 편의를 위해 계산 가능한 값을 물리 schema에 임의 저장하지 않는다.
 - 사용자 입력 문자열을 table/column/path/command identifier로 직접 승격하지 않는다. 동적 identifier가 필요하면 공식 metadata 또는 allow-list를 사용하고 값 데이터는 해당 API의 parameterization/binding 메커니즘을 따른다.
+- 여러 PC·계정·테넌트·저장소·브라우저·환경의 식별자와 경로는 해당 소유 경계에서 명시적으로 확인한다. 대상이 없거나 불명확할 때 다른 대상의 기본값·인증·상태로 암묵적으로 대체하지 않는다. 환경별 차이는 adapter/설정 경계에서 처리하고 공통 업무·복구 로직에 대상별 하드코딩을 퍼뜨리지 않는다.
 - 기존 아키텍처가 위와 다른 책임 분리를 사용한다면 이름을 맞추려 재구성하지 말고 **현재 책임 경계를 보존하면서 잘못 배치된 변경만 바로잡는다**. 아키텍처 개선 자체가 요청 범위를 벗어나면 별도 과제로 분리한다.
 
 ### Simplicity and abstraction discipline
@@ -514,6 +534,9 @@ Bootstrap:
 - security: unauthenticated/unauthorized, tenant/object boundary, tampering, replay, injection, leakage
 - file: malformed, encoding, MIME/extension mismatch, archive traversal/bomb, preservation, reopen
 - external system: timeout, rate limit, malformed response, partial outage, unknown-state retry
+- resource lifecycle: 기존 자원 재사용, 실제 부재·삭제, 일시적 조회 불가·권한 거부를 구별하고 잘못된 재생성·참조 손실·다른 대상 대체가 없는지 확인
+- restart and recovery: 상태 저장 전·후 비정상 종료, 일부 반영 뒤 종료, 재시작·중복 완료·오래된 작업 재진입을 자극해 누락·중복 실행·거짓 성공·복구 불능 상태가 없는지 확인
+- target isolation: 잘못된 PC·계정·테넌트·프로젝트·환경 정보와 누락된 소유권을 주입해 묵시적 대체 없이 안전하게 보류·거부하는지 확인
 
 ### UI functional and visual acceptance
 
@@ -850,6 +873,14 @@ Regression / Coverage:
 
 <a id="policy-git"></a>
 ## Git — working tree, commits, history, push
+
+### Pre-development branch and active-work check
+
+**새 개발 단위에 착수하기 전에**, 현재 요청의 대상 저장소에 한정하여 최신 기본 branch·원격 작업 branch 전체(필요하면 페이지 끝까지)·열린 PR·대기/실행 중인 CI 및 원격 작업·기존 working tree와 미수용 변경을 확인한다. 과거 대화나 오래된 목록을 현재 상태로 대체하지 않는다.
+
+- 불필요한 임시·진단·검증 branch는 개발 전에 정리 후보로 검토한다. **커밋이 남아 있다는 사실만으로 무조건 보존하지도, 기본 branch에 병합됐다는 사실만으로 무조건 삭제하지도 않는다.** branch별 고유 변경·미수용 코드·검증 증거·다른 작업자의 소유권·열린 PR·활성 작업의 참조를 실제로 대조한다.
+- 삭제가 안전하고 현재 작업 범위 안임이 확인된 정확한 branch만 비강제로 삭제하고 원격 ref 부재를 재조회한다. 기본·보호 branch, 활성 실행의 ref, 고유 미수용 자산은 보호한다. 불명확하면 보류 이유를 기록하고 그 branch를 삭제하지 않는다.
+- 원격 branch가 기본 branch 하나뿐이면 그 사실을 기록하고 삭제하지 않는다. 이미 관련 없는 저장소까지 조사·정리하거나, branch 정리를 이유로 승인·권한·CI 보호 규칙을 우회하지 않는다. 통합 후 정리는 아래 [Post-integration temporary branch hygiene](#post-integration-temporary-branch-hygiene)도 따른다.
 
 ### Working tree
 
