@@ -24,6 +24,9 @@
 - 실패는 가능한 범위에서 최초 실제 오류와 root cause까지 분리하고, 반복 가능하면 regression/preflight/invariant 같은 자동 방어선과 프로젝트가 정의한 오류 이력에 지식을 남긴다.
 - CI 실행 환경은 서비스 이름이 아니라 실제 runner의 소유권·권한·credential/network 접근을 기준으로 신뢰 경계를 판단한다. privileged self-hosted runner에 untrusted fork/PR 코드를 자동 실행하지 않고, 실패 evidence는 필요한 범위로 제한해 secret·사용자 데이터가 섞이지 않게 한다.
 - Observed / Intended / Contract / Evidence를 필요할 때 구분하고 추측으로 하나의 사실처럼 합치지 않는다.
+- 개발·수정 전에 적용 가능한 실패·예외·복구 경로를 설계하고 해당 위험에 맞게 검증한다. [Implementation](POLICIES.md#policy-implementation)과 [Testing](POLICIES.md#policy-testing)을 따른다.
+- 새 개발 단위 전에 현재 대상 저장소의 원격 브랜치·열린 PR·활성 작업을 확인하고, 소유권과 보존 필요성이 확인된 불필요한 브랜치만 안전하게 정리한다. [Git](POLICIES.md#policy-git)을 따른다.
+- 시간 확인이 가능한 작업은 시작 후 20분에 점검하고 25분 이전에 실질적 결과 또는 미완료 체크포인트를 사용자에게 보고한다. [Execution](POLICIES.md#policy-execution)을 따른다.
 
 Consumer project facts의 canonical path는 `.agent-policy/PROJECT.md`다. Upstream source에서는 `templates/PROJECT.md`가 primary template이고 root [`PROJECT.md`](PROJECT.md)는 compatibility mirror다. Template/stale 상태라면 [Execution policy](POLICIES.md#policy-execution)의 Bootstrap 규칙을 따른다.
 
